@@ -45,6 +45,7 @@ extern DLL_GLOBAL BOOL		g_fGameOver;
 extern DLL_GLOBAL	BOOL	g_fDrawLines;
 int gEvilImpulse101;
 extern DLL_GLOBAL int		g_iSkillLevel, gDisplayTitle;
+//extern float g_flWeaponCheat3; //teamplay mode
 
 
 BOOL gInitHUD = TRUE;
@@ -2564,7 +2565,7 @@ void CBasePlayer::PostThink()
 	// Track button info so we can detect 'pressed' and 'released' buttons next frame
 	m_afButtonLast = pev->button;
 
-pt_end:
+	pt_end:
 #if defined( CLIENT_WEAPONS )
 		// Decay timers on weapons
 	// go through all of the weapons and make a list of the ones to pack
@@ -2674,44 +2675,65 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 	edict_t		*player;
 
 	player = pPlayer->edict();
+	int index = g_pGameRules->GetTeamIndex( pPlayer->TeamID() );
+	
+	//CBaseEntity *Coop = CBaseEntity::Instance( FIND_ENTITY_BY_CLASSNAME( NULL, "info_player_coop" ) );
+	
 	
 // choose a info_player_deathmatch point
-/* 	if (g_pGameRules->IsCoOp())
-	{
+
+		if ( g_pGameRules->IsTeamplay() && index == 0 )
+		{
+		//Coop->pev->targetname=15;
 		pSpot = UTIL_FindEntityByClassname( g_pLastSpawn, "info_player_coop");
 		if ( !FNullEnt(pSpot) )
 			goto ReturnSpot;
-		pSpot = UTIL_FindEntityByClassname( g_pLastSpawn, "info_player_start");
+		pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_coop");
 		if ( !FNullEnt(pSpot) ) 
 			goto ReturnSpot;
-	} */
+		
+		}
+		 
 
+		if ( g_pGameRules->IsTeamplay() && index != 0 )
+		{
+		pSpot = UTIL_FindEntityByClassname( g_pLastSpawn, "info_player_deathmatch");
+		if ( !FNullEnt(pSpot) )
+			goto ReturnSpot;
+		}
 	
-	
-	
-	
-	
-	
-	
-	////////////////////////////////////////
+
+//buggg
 	if ( g_pGameRules->IsDeathmatch() )
 	{
+	
+		CBaseEntity *pFirstSpot = pSpot;
 		pSpot = g_pLastSpawn;
+		
+
 		// Randomize the start spot
+		if ( g_pGameRules->IsTeamplay() && index != 0 )
+		{
 		for ( int i = RANDOM_LONG(1,5); i > 0; i-- )
-			pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_deathmatch" );
+			pSpot = UTIL_FindEntityByClassname( g_pLastSpawn, "info_player_deathmatch" );
+		}
+		else
+		{
+
+		if (!(g_pGameRules->IsDeathmatch()))
+			{
+			for ( int i = RANDOM_LONG(1,5); i > 0; i-- )
+				pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_coop" );
+			}
+		else
+			{
+			for ( int i = RANDOM_LONG(1,5); i > 0; i-- )
+				pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_deathmatch" );
+			}
+		}
 		if ( FNullEnt( pSpot ) )  // skip over the null point
 			pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_deathmatch" );
 
-		CBaseEntity *pFirstSpot = pSpot;
-
-		
-		
-		
-		
-		
-		do 
-		{
 			if ( pSpot )
 			{
 				// check if pSpot is valid
@@ -2720,7 +2742,7 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 					if ( pSpot->pev->origin == Vector( 0, 0, 0 ) )
 					{
 						pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_deathmatch" );
-						continue;
+						
 					}
 
 					// if so, go to pSpot
@@ -2728,22 +2750,11 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 				}
 			}
 			// increment pSpot
+			
 			pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_deathmatch" );
-		} while ( pSpot != pFirstSpot ); // loop if we're not back to the start
-		
-		// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
-		if ( !FNullEnt( pSpot ) )
-		{
-			//CBaseEntity *ent = NULL;
-			//while ( (ent = UTIL_FindEntityInSphere( ent, pSpot->pev->origin, 128 )) != NULL )
-			//{
-				// if ent is a client, kill em (unless they are ourselves)
-				//if ( ent->IsPlayer() && !(ent->edict() == player) )
-				//	ent->TakeDamage( VARS(INDEXENT(0)), VARS(INDEXENT(0)), 1, DMG_GENERIC );
-			//}
-			goto ReturnSpot;
-		}
+			pPlayer->pev->nextthink = gpGlobals->time + 0.5;
 	}
+	
 	/////////////////////////////
 
 	
@@ -2761,7 +2772,7 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 			goto ReturnSpot;
 	}
 
-ReturnSpot:
+	ReturnSpot:
 	if ( FNullEnt( pSpot ) )
 	{
 		ALERT(at_error, "PutClientInServer: no info_player_start on level");
@@ -4731,9 +4742,6 @@ public:
 	void	EXPORT LoadThink( void );
 	void	KeyValue( KeyValueData *pkvd );
 
-	virtual int		Save( CSave &save );
-	virtual int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
 
 	inline	float	Duration( void ) { return pev->dmg_take; }
 	inline	float	HoldTime( void ) { return pev->dmg_save; }
@@ -4751,14 +4759,6 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS( player_loadsaved, CRevertSaved );
-
-TYPEDESCRIPTION	CRevertSaved::m_SaveData[] = 
-{
-	DEFINE_FIELD( CRevertSaved, m_messageTime, FIELD_FLOAT ),	// These are not actual times, but durations, so save as floats
-	DEFINE_FIELD( CRevertSaved, m_loadTime, FIELD_FLOAT ),
-};
-
-IMPLEMENT_SAVERESTORE( CRevertSaved, CPointEntity );
 
 void CRevertSaved :: KeyValue( KeyValueData *pkvd )
 {

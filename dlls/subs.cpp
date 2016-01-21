@@ -62,7 +62,7 @@ class CBaseDMStart : public CPointEntity
 	//set targetname for crowbar third attack
 	void Spawn( void )
 	{ 
-	pev->targetname=5;
+	pev->targetname=75;
 	}
 
 public:
@@ -72,7 +72,16 @@ public:
 private:
 };
 
+class CBaseDMStart2 : public CPointEntity
+{
+	void Spawn( void )
+	{ 
+	pev->targetname=500;
+	}
+};
+
 // These are the new entry points to entities. 
+LINK_ENTITY_TO_CLASS(info_player_coop,CBaseDMStart2);
 LINK_ENTITY_TO_CLASS(info_player_deathmatch,CBaseDMStart);
 LINK_ENTITY_TO_CLASS(info_player_start,CPointEntity);
 LINK_ENTITY_TO_CLASS(info_landmark,CPointEntity);

@@ -477,10 +477,18 @@ it gets sent into the rest of the engine.
 */
 void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 {
+
 	// Is the client spawned yet?
 	if ( !pEntity->pvPrivateData )
 		return;
-/* 
+		
+		// team match?
+		if ( g_teamplay )
+		{
+				CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
+				pPlayer->AddPoints(-99, false);
+		}
+		
 	// msg everyone if someone changes their name,  and it isn't the first time (changing no name to current name)
 	if ( pEntity->v.netname && STRING(pEntity->v.netname)[0] != 0 && !FStrEq( STRING(pEntity->v.netname), g_engfuncs.pfnInfoKeyValue( infobuffer, "name" )) )
 	{
@@ -515,6 +523,8 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 			WRITE_STRING( text );
 		MESSAGE_END();
 
+
+		
 		// team match?
 		if ( g_teamplay )
 		{
@@ -535,9 +545,10 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 				g_engfuncs.pfnInfoKeyValue( infobuffer, "name" ) );
 		}
 	}
+				
 
 	g_pGameRules->ClientUserInfoChanged( GetClassPtr((CBasePlayer *)&pEntity->v), infobuffer );
-	 */
+	 
 }
 
 static int g_serveractive = 0;
@@ -786,7 +797,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.29";
+		return "Half-Life zxc mod 1.30";
 }
 
 /*

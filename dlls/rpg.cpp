@@ -23,7 +23,7 @@
 #include "player.h"
 #include "gamerules.h"
 #include	"schedule.h"
-
+extern float g_flWeaponCheat;
 
 
 
@@ -516,14 +516,14 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	Vector trace_origin;
 	trace_origin = m_pPlayer->pev->origin;
 	if ( m_pPlayer->pev->flags & FL_DUCKING )
-	{
+		{
 		trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
-	}
+		}
 	 
-	//UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
 
+	 
 	//experiment with trace hull 
-	if (m_pPlayer->m_flNextChatTime13 < 5)
+	if (m_pPlayer->m_flNextChatTime13 < m_limit) //limit turrets (5 normal, 3 sv_cheats)
 	{
 	UTIL_TraceHull( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, ignore_monsters, head_hull, edict(), &tr );
 	if ( !tr.fStartSolid ) //if ( tr.fStartSolid ) - sentry be created only in walls, use negative '!'
@@ -537,16 +537,29 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 	Vector vecThrow = gpGlobals->v_forward;
 	CBaseEntity *pHornet = CBaseEntity::Create( "monster_sentry", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, vecThrow, m_pPlayer->edict() );
-	UTIL_SetSize( pHornet->pev, Vector(0,0,0), Vector(0,0,0) ); // set size for created sentry, unused
-#endif
-	int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_GLOBAL;
-#else
-	flags = 0;
-#endif
+	#endif
+	//multiply hp x2
+	if (g_flWeaponCheat != 0)
+		pHornet->pev->health = pHornet->pev->health * 2; 
+	
+	//simple test for future Tesla-gun
+	// pHornet->SetAttachment2( m_pPlayer->edict(), 1 ); ///declared \ linked with cbase.h
+/* 	
+	m_pEyeGlow = CSprite::SpriteCreate( GARG_EYE_SPRITE_NAME, pev->origin, FALSE );
+	m_pEyeGlow->SetTransparency( kRenderGlow, 255, 255, 255, 0, kRenderFxNoDissipation );
+	m_pEyeGlow->SetAttachment( edict(), 1 );
+	EyeOff();
+	m_seeTime = gpGlobals->time + 5;
+	m_flameTime = gpGlobals->time + 2;
+*/
 
-	PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
+	
+	UTIL_SetSize( pHornet->pev, Vector(0,0,0), Vector(0,0,0) ); // set size for created sentry, unused
+	
+
+
+	
+	PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 	m_iClip--; 
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.25;
@@ -618,6 +631,12 @@ UpdateSpot( );
 
 if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
+	
+	//1.30 smart balance
+	if (g_flWeaponCheat != 0)
+		m_limit = 3;
+	else
+		m_limit = 5;
 
 //big gun part
 if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
@@ -640,17 +659,11 @@ if (m_iClip >= 1)
 		// find place to toss monster
 		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
 
-	int flags;
-	#ifdef CLIENT_WEAPONS
-		flags = FEV_GLOBAL;
-	#else
-		flags = 0;
-	#endif
 
 
-	if ( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
+	if ( !tr.fAllSolid && !tr.fStartSolid )
 	{
-	if (m_pPlayer->m_flNextChatTime13 < 5)
+	if (m_pPlayer->m_flNextChatTime13 < m_limit)
 	{
 	{
 	if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
@@ -666,7 +679,9 @@ if (m_iClip >= 1)
 		Vector vecThrow = gpGlobals->v_forward;
 		m_pPlayer->m_flNextChatTime13 ++;
 		CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
-
+		//multiply hp x2
+		if (g_flWeaponCheat != 0)
+			pHornet->pev->health = pHornet->pev->health * 1.5; 
 
 		PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 		m_iClip--; 

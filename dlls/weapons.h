@@ -111,7 +111,7 @@ public:
 #define	_9MM_MAX_CARRY			400
 #define _357_MAX_CARRY			64
 #define BUCKSHOT_MAX_CARRY		32
-#define BOLT_MAX_CARRY			100
+#define BOLT_MAX_CARRY			20
 #define ROCKET_MAX_CARRY		10
 #define HANDGRENADE_MAX_CARRY	20
 #define SATCHEL_MAX_CARRY		10
@@ -527,6 +527,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	int m_iSwing;
 	TraceResult m_trHit;
+	int index;
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -716,6 +717,8 @@ public:
 	BOOL Deploy( void );
 	BOOL CanHolster( void );
 	void Holster( int skiplocal = 0 );
+	
+
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
@@ -725,6 +728,7 @@ public:
 	void UpdateSpot( void );
 	BOOL ShouldWeaponIdle( void ) { return TRUE; };
 	int m_flNextChatTime13;
+	int m_limit;
 
 
 	CLaserSpot *m_pSpot;
@@ -896,6 +900,7 @@ float XXX;
 	CBeam				*m_pBeam;
 	CBeam				*m_pNoise;
 	CSprite				*m_pSprite;
+	short m_LaserSprite;
 
 	virtual BOOL UseDecrement( void )
 	{ 

@@ -233,9 +233,6 @@ void DispatchThink( edict_t *pent )
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
 	if (pEntity)
 	{
-		if ( FBitSet( pEntity->pev->flags, FL_DORMANT ) )
-			ALERT( at_error, "Dormant entity %s is thinking!!\n", STRING(pEntity->pev->classname) );
-				
 		pEntity->Think();
 	}
 }

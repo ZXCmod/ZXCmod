@@ -533,9 +533,10 @@ void CBasePlayerItem::Materialize( void )
 {
 	if (g_flWeaponCheat != 0.0)
 	{
-	SUB_Remove(); //no spawn weapons
-		pev->nextthink = gpGlobals->time + 0.1;
-		SetThink( SUB_Remove );
+		// SUB_Remove(); //no spawn weapons
+		// pev->nextthink = gpGlobals->time + 0.25;
+		// SetThink( SUB_Remove );
+		UTIL_Remove( this );
 	}
 		//
 	if ( pev->effects & EF_NODRAW )

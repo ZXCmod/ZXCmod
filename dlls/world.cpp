@@ -478,13 +478,14 @@ extern DLL_GLOBAL BOOL		g_fGameOver;
 float g_flWeaponCheat; 
 float g_flWeaponCheat2; 
 
+
 void CWorld :: Spawn( void )
 {
 	g_fGameOver = FALSE;
 	Precache( );
 	g_flWeaponCheat = CVAR_GET_FLOAT( "sv_cheats" );  // Is the impulse 101 command allowed?
 	g_flWeaponCheat2 = CVAR_GET_FLOAT( "mp_dmode" );  // regen mode
-	
+
 
 }
 

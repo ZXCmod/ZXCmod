@@ -438,7 +438,7 @@ void CGauss::ThirdAttack( void )
 		
 		//fix cheat in teamplay
 		CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
-		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE) && m_pPlayer->pev->health <= 250) // && (pEntity->IsPlayer())
+		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE) && m_pPlayer->pev->health <= 300) // && (pEntity->IsPlayer())
 			m_pPlayer->pev->health += 3.0; //take unlimited health
 
 	
@@ -488,21 +488,18 @@ void CGauss::StartFire( void )
 	
 	if ( gpGlobals->time - m_pPlayer->m_flStartCharge > GetFullChargeTime() )
 	{
-		flDamage = 200;
+		flDamage = 150;
 	}
 	else
 	{
-		flDamage = 200 * (( gpGlobals->time - m_pPlayer->m_flStartCharge) / GetFullChargeTime() );
+		flDamage = 150 * (( gpGlobals->time - m_pPlayer->m_flStartCharge) / GetFullChargeTime() );
 	}
 
 	if ( m_fPrimaryFire )
 	{
 		// fixed damage on primary attack
-#ifdef CLIENT_DLL
-		flDamage = 21;
-#else 
-		flDamage = 21;
-#endif
+		flDamage = RANDOM_LONG(10,20);
+
 	}
 
 	if (m_fInAttack != 3)
@@ -514,7 +511,7 @@ void CGauss::StartFire( void )
 
 		if ( !m_fPrimaryFire )
 		{
-			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * flDamage * 5;
+			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (flDamage+50) * 5;
 		}
 
 		if ( !g_pGameRules->IsMultiplayer() )
@@ -1004,12 +1001,10 @@ void    CBlaster2Beam :: Explode( TraceResult* TResult, int DamageType )
 					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(77,110), DMG_BURN); //destroy all near thinks
 					else
 					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(1,37), DMG_BURN); //nuke wave immune bonus
-					#ifndef CLIENT_DLL
 					UTIL_ScreenFade( pEntity, Vector(RANDOM_LONG(128,255),RANDOM_LONG(0,64),0), 300, 30, 100, FFADE_IN );
 					pEntity->pev->punchangle.x = 10;
 					pEntity->pev->punchangle.y = RANDOM_LONG(-22, 20);
 					pEntity->pev->punchangle.z = -20;
-					#endif
 					}
 				}
 				
@@ -1083,7 +1078,9 @@ void    CBlaster2Beam :: MoveThink( )
 		// return;
 	// }
  
-pev->angles = UTIL_VecToAngles (pev->velocity);
+		pev->angles = UTIL_VecToAngles (pev->velocity); //dynamic angles
+		
+		
         MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
                 WRITE_BYTE      ( TE_BEAMFOLLOW );
                 WRITE_SHORT     ( entindex() );
@@ -1240,7 +1237,7 @@ void    CRadiation :: Spawn( )
 //edited in 1.26
 void    CRadiation:: Explode()
 {	
-::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(3,11), 512, CLASS_NONE, DMG_RADIATION  );
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(3,11), 512, CLASS_NONE, DMG_RADIATION  );
 		// lots of smoke
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_SMOKE );
@@ -1253,7 +1250,7 @@ void    CRadiation:: Explode()
 		MESSAGE_END();
 		
 			//lights
-		Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
+	Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
 		WRITE_BYTE(TE_DLIGHT);
 		WRITE_COORD(vecSrc.x);	// X
@@ -1266,8 +1263,9 @@ void    CRadiation:: Explode()
 		WRITE_BYTE( 15 );		// life * 10
 		WRITE_BYTE( 0 );		// decay * 0.1
 	MESSAGE_END( );
-pev->nextthink = gpGlobals->time + 1.4;
-SetThink(MoveThink);
+	
+	pev->nextthink = gpGlobals->time + 1.4;
+	SetThink(MoveThink);
 }
 
 

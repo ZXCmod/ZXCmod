@@ -45,6 +45,8 @@
 #define BLASTER_OFFSET_RIGHT    7
 #define BLASTER_OFFSET_UP               0
 
+extern float g_flWeaponCheat3; //teamplay mode
+
 
 class   CBlasterBeam : public CGrenade
 {
@@ -83,6 +85,7 @@ class   CRc2 : public CGrenade
 
 LINK_ENTITY_TO_CLASS( weapon_rocketlauncher, CRc2 );
 LINK_ENTITY_TO_CLASS( weapon_crowbar, CCrowbar );
+
 
 
 
@@ -247,9 +250,9 @@ if (allowmonsters3.value != 1)
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
 		
 		
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1;
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1;
-	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1;
 		SetThink( SwingAgain );
 		
 	}
@@ -263,32 +266,58 @@ void CCrowbar::ThirdAttack()
 {
 //new weapon: teleporter. Target is spawn points (info_deathmatch). Linked with subs.cpp 
 //1.27
+
+
 if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]<=0)
 	return;
 
 	entvars_t* pevToucher = m_pPlayer->pev; //player object
 	edict_t	*pentTarget = NULL; //teleport target
+	edict_t	*pentTarget2 = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(500) ); //teleport target
+	index = g_pGameRules->GetTeamIndex( m_pPlayer->TeamID() ); //1.30 for teamplay
+	
 
-	for ( int i = RANDOM_LONG(1,10); i > 0; i-- )
-	pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(5) ); //find targetname at "5"
+		
+		
+		
+		//if first team (used coop ent)
+		if ( g_pGameRules->IsTeamplay() && index == 0 )
+		{
+
+			
+			for ( int i = RANDOM_LONG(1,16); i > 0; i-- )
+				pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(500) ); //find team targetname at "500"
+
+			if (FNullEnt(pentTarget2))
+			{
+			for ( int i = RANDOM_LONG(1,16); i > 0; i-- )
+				pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(75) ); //find targetname at "75"
+			}
+
+		}
 	
+	//if secnd
+		if ( g_pGameRules->IsTeamplay() && index == 1 )
+		{
+		for ( int i = RANDOM_LONG(1,16); i > 0; i-- )
+			pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(75) ); //find targetname at "75"
+		}
+
+	//only deathmatch
+ 	if ( !g_pGameRules->IsTeamplay() )
+	{
+	for ( int i = RANDOM_LONG(1,16); i > 0; i-- )
+		pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(75) ); //find targetname at "75"
+	}
 	
-	if (FNullEnt(pentTarget)) //not execute, if singleplayer
+	if (FNullEnt(pentTarget)) //not execute, if singleplayer (?)
 	   return;	
 	
 	Vector tmp = VARS( pentTarget )->origin; //teleport to the point
 
-/* 	if ( m_pPlayer->IsPlayer() ) //now need?
-	{
-		tmp.z -= m_pPlayer->pev->mins.z;// make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
-	} */
-
 	tmp.z++;
-
 	pevToucher->flags &= ~FL_ONGROUND;
-	
 	UTIL_SetOrigin( pevToucher, tmp );
-
 	pevToucher->angles = pentTarget->v.angles;
 
 	if ( m_pPlayer->IsPlayer() )
@@ -296,10 +325,8 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]<=0)
 		pevToucher->v_angle = pentTarget->v.angles;
 	}
 
-
 	pevToucher->velocity = pevToucher->basevelocity = g_vecZero;
- 
-    
+	
     //delays and sound
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
@@ -308,6 +335,7 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]<=0)
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=10;
 	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 0.9, ATTN_NORM); //play sound
 	
+
 }
 
 
@@ -560,7 +588,8 @@ void    CBlasterBeam :: Spawn( )
         pev->solid = SOLID_BBOX;
         UTIL_SetSize( pev, Vector(0,0,0), Vector(8,1,1) );//Point sized bounding box
         UTIL_SetOrigin( pev, pev->origin );
-        pev->classname = MAKE_STRING( "Crowbar-rocket" );
+        //pev->classname = MAKE_STRING( "Crowbar-rocket" );
+		pev->classname = MAKE_STRING( "weapon_crowbar" );
         SetThink( MoveThink );
         SetTouch( Hit );
         //pev->angles.x = 0;
@@ -708,7 +737,8 @@ void    CRc2 :: Spawn( )
         pev->solid = SOLID_BBOX;
         UTIL_SetSize( pev, Vector(0,0,0), Vector(8,1,1) );
         UTIL_SetOrigin( pev, pev->origin );
-        pev->classname = MAKE_STRING( "Crowbar-rocket_2" );
+        //pev->classname = MAKE_STRING( "Crowbar-rocket_2" );
+		pev->classname = MAKE_STRING( "weapon_crowbar" );
         SetThink( MoveThink );
         SetTouch( Hit );
         pev->angles.x = -(pev->angles.x);

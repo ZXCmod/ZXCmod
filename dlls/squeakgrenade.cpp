@@ -53,11 +53,6 @@ class CSqueakGrenade : public CGrenade
 	void Killed( entvars_t *pevAttacker, int iGib );
 	void GibMonster( void );
 
-	virtual int		Save( CSave &save ); 
-	virtual int		Restore( CRestore &restore );
-	
-	static	TYPEDESCRIPTION m_SaveData[];
-
 	static float m_flNextBounceSoundTime;
 
 	// CBaseEntity *m_pTarget;
@@ -83,10 +78,6 @@ class CSqueakGrenade2 : public CGrenade
 	void Killed( entvars_t *pevAttacker, int iGib );
 	void GibMonster( void );
 
-	virtual int		Save( CSave &save ); 
-	virtual int		Restore( CRestore &restore );
-	
-	static	TYPEDESCRIPTION m_SaveData[];
 
 	static float m_flNextBounceSoundTime;
 
@@ -111,17 +102,7 @@ class CSqueakGrenade2 : public CGrenade
 float CSqueakGrenade::m_flNextBounceSoundTime = 0;
 
 LINK_ENTITY_TO_CLASS( monster_snark, CSqueakGrenade );
-TYPEDESCRIPTION	CSqueakGrenade::m_SaveData[] = 
-{
-	DEFINE_FIELD( CSqueakGrenade, m_flDie, FIELD_TIME ),
-	DEFINE_FIELD( CSqueakGrenade, m_vecTarget, FIELD_VECTOR ),
-	DEFINE_FIELD( CSqueakGrenade, m_flNextHunt, FIELD_TIME ),
-	DEFINE_FIELD( CSqueakGrenade, m_flNextHit, FIELD_TIME ),
-	DEFINE_FIELD( CSqueakGrenade, m_posPrev, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( CSqueakGrenade, m_hOwner, FIELD_EHANDLE ),
-};
 
-IMPLEMENT_SAVERESTORE( CSqueakGrenade, CGrenade );
 
 #define SQUEEK_DETONATE_DELAY	5.0
 
@@ -755,6 +736,9 @@ void CSqueak::ThirdAttack( void )
 
 void CSqueak::WeaponIdle( void )
 {
+
+
+
 	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 
@@ -821,17 +805,6 @@ void CSqueak::WeaponIdle( void )
 float CSqueakGrenade2::m_flNextBounceSoundTime = 0;
 
 LINK_ENTITY_TO_CLASS( monster_larve, CSqueakGrenade2 );
-TYPEDESCRIPTION	CSqueakGrenade2::m_SaveData[] = 
-{
-	DEFINE_FIELD( CSqueakGrenade2, m_flDie, FIELD_TIME ),
-	DEFINE_FIELD( CSqueakGrenade2, m_vecTarget, FIELD_VECTOR ),
-	DEFINE_FIELD( CSqueakGrenade2, m_flNextHunt, FIELD_TIME ),
-	DEFINE_FIELD( CSqueakGrenade2, m_flNextHit, FIELD_TIME ),
-	DEFINE_FIELD( CSqueakGrenade2, m_posPrev, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( CSqueakGrenade2, m_hOwner, FIELD_EHANDLE ),
-};
-
-IMPLEMENT_SAVERESTORE( CSqueakGrenade2, CGrenade );
 
 #define SQUEEK_DETONATE_DELAY2	7 //1.79
 
@@ -861,6 +834,7 @@ void CSqueakGrenade2 :: Spawn( void )
 {
 	Precache( );
 	// motor
+	pev->classname = MAKE_STRING( "monster_snark" );
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
 
@@ -893,7 +867,7 @@ void CSqueakGrenade2 :: Spawn( void )
 	pev->gravity		= 0.1;
 	pev->friction		= 0.1;
 
-	pev->dmg = RANDOM_FLOAT(64, 74);
+	pev->dmg = RANDOM_FLOAT(97, 114);
 
 	// +BubbleMod
 
@@ -1150,7 +1124,7 @@ void CSqueakGrenade2::SuperBounceTouch( CBaseEntity *pOther )
 			{
 				// ALERT( at_console, "hit enemy\n");
 				ClearMultiDamage( );
-				pOther->TraceAttack(pev, RANDOM_LONG( 97, 134 ), gpGlobals->v_forward, &tr, DMG_SLASH ); 
+				pOther->TraceAttack(pev, pev->dmg, gpGlobals->v_forward, &tr, DMG_SLASH ); 
 				if (m_hOwner != NULL)
 					ApplyMultiDamage( pev, m_hOwner->pev );
 				else

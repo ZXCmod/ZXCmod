@@ -853,6 +853,51 @@ int CBaseMonster :: DeadTakeDamage( entvars_t *pevInflictor, entvars_t *pevAttac
 	return 1;
 }
 
+short m_LaserSprite2;
+
+void CBaseEntity :: TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType )
+{
+//pev->nextthink = gpGlobals->time + 0.25;
+
+
+	m_LaserSprite2 = PRECACHE_MODEL( "sprites/bolt1.spr" );
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 1024 )) != NULL)
+			{
+				
+		if ((pEntity->edict() != pevInflictor->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()) && FVisible( pEntity )) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+				{
+			EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart15.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
+				
+			/////beam ray
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				WRITE_BYTE( TE_BEAMPOINTS );
+				WRITE_COORD(pev->origin.x);
+				WRITE_COORD(pev->origin.y);
+				WRITE_COORD(pev->origin.z);
+				WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+				WRITE_COORD( pEntity->pev->origin.y );
+				WRITE_COORD( pEntity->pev->origin.z );
+				WRITE_SHORT( m_LaserSprite2 ); //sprite
+				WRITE_BYTE( 1 ); // Starting frame
+				WRITE_BYTE( 0  ); // framerate * 0.1
+				WRITE_BYTE( 100 ); // life * 0.1
+				WRITE_BYTE( 20 ); // width
+				WRITE_BYTE( 0 ); // noise
+				WRITE_BYTE( 100 ); // color r,g,b
+				WRITE_BYTE( 100 ); // color r,g,b
+				WRITE_BYTE( 216 ); // color r,g,b
+				WRITE_BYTE( 255 ); // brightness
+				WRITE_BYTE( 0 ); // scroll speed
+			MESSAGE_END();
+			//pev->nextthink = gpGlobals->time + 0.1;
+			//pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg + RANDOM_LONG(16,30), DMG_GENERIC);	
+			pEntity->TakeDamage ( pevInflictor, pevAttacker, flDamage, bitsDamageType );
+			
+		}
+	}
+
+
+}
 
 float CBaseMonster :: DamageForce( float damage )
 { 
@@ -1380,7 +1425,7 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 				break;
 			
 			case BULLET_NONE: // FIX 
-				pEntity->TraceAttack(pevAttacker, 50, vecDir, &tr, DMG_CLUB);
+				pEntity->TraceAttack(pevAttacker, 30, vecDir, &tr, DMG_CLUB);
 				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
 				// only decal glass
 				if ( !FNullEnt(tr.pHit) && VARS(tr.pHit)->rendermode != 0)

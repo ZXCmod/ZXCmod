@@ -681,7 +681,7 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		pPlayer->GiveAmmo( 600, "9mm", _9MM_MAX_CARRY );
 		pPlayer->GiveAmmo( 60, "357", _357_MAX_CARRY );
 		pPlayer->GiveAmmo( 30, "buckshot", BUCKSHOT_MAX_CARRY );
-		pPlayer->GiveAmmo( 60, "bolts", BOLT_MAX_CARRY );
+		pPlayer->GiveAmmo( 20, "bolts", BOLT_MAX_CARRY );
 		pPlayer->GiveAmmo( 9, "rockets", ROCKET_MAX_CARRY );
 		pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
 		pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );

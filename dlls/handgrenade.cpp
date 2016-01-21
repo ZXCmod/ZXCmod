@@ -699,7 +699,7 @@ if (gpGlobals->time >= m_flDie+5)
 
 
 
-void    CSmoke :: Spawn( )
+void    CSmoke :: Spawn( void )
 {
 		Precache( );
         SET_MODEL( ENT(pev), "models/w_grenade.mdl" );
@@ -723,14 +723,14 @@ void CSmoke :: Precache( void )
 
 
 
-void    CSmoke:: Explode( )
+void    CSmoke:: Explode( void )
 {
 	pev->nextthink = gpGlobals->time + 0.3; //0.15 old
 	SetThink(MoveThink);
 }
 
 
-void    CSmoke :: MoveThink( )
+void    CSmoke :: MoveThink( void )
 {
 		// lots of smoke
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -758,9 +758,10 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
 	//SetThink( SUB_Remove );
-		SUB_Remove();
+		//SUB_Remove();
+	UTIL_Remove( this );
 	}
 
-	Explode();
+	Explode( );
 }
 

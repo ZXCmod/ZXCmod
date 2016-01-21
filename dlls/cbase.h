@@ -138,6 +138,7 @@ class CBaseEntity
 public:
 	float				FTime1; //frrrreeeeezzzzzz
 	float				FTime2; //frrrreeeeezzzzzz2
+	void	TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
 	// Constructor.  Set engine to use C/C++ callback functions
 	// pointers to engine data
 	entvars_t *pev;		// Don't need to save/restore this pointer, the engine resets it
@@ -199,6 +200,18 @@ public:
 	virtual	BOOL	IsPlayer( void ) { return FALSE; }
 	virtual BOOL	IsNetClient( void ) { return FALSE; }
 	virtual const char *TeamID( void ) { return ""; }
+	
+
+	inline void SetAttachment2( edict_t *pEntity, int attachment )
+	{
+		if ( pEntity )
+		{
+			pev->skin = ENTINDEX(pEntity);
+			pev->body = attachment;
+			pev->aiment = pEntity;
+			pev->movetype = MOVETYPE_FOLLOW;
+		}
+	}
 
 
 //	virtual void	SetActivator( CBaseEntity *pActivator ) {}

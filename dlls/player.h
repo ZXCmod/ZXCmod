@@ -320,7 +320,7 @@ public:
 	int m_flNextChatTime4; //satchels limit
 	int m_flNextChatTime5; //tripmine limit
 	float m_flNextChatTime6; //GravGrenades delay
-	float m_flNextChatTime7; //turrets limit
+//	float m_flNextChatTime7; //turrets limit
 	float m_flNextChatTime8; //hornetgun reload delay
 	float m_flNextChatTime9; //heavy turets reload delay
 	float m_flNextChatTime10; //egon reload delay

@@ -45,11 +45,6 @@ class CTripmineGrenade : public CGrenade
 	void Spawn( void );
 	void Precache( void );
 
-	virtual int		Save( CSave &save );
-	virtual int		Restore( CRestore &restore );
-
-	static	TYPEDESCRIPTION m_SaveData[];
-
 	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
 	
 	void EXPORT WarningThink( void );
@@ -88,7 +83,6 @@ class CTripmineGrenade2 : public CGrenade
 	//virtual int		Save( CSave &save );
 	//virtual int		Restore( CRestore &restore );
 
-	static	TYPEDESCRIPTION m_SaveData[];
 
 	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
 	
@@ -98,7 +92,7 @@ class CTripmineGrenade2 : public CGrenade
 	void EXPORT DelayDeathThink( void );
 	void Killed( entvars_t *pevAttacker, int iGib );
 //CBasePlayer	*m_pPlayer;
-int m_flNextChatTime5;
+	int m_flNextChatTime5;
 	void MakeBeam( void );
 	void KillBeam( void );
 
@@ -118,28 +112,6 @@ LINK_ENTITY_TO_CLASS( monster_replicateur, CTripmineGrenade2 );
 
 
 
-
-
-
-
-
-
-
-
-TYPEDESCRIPTION	CTripmineGrenade::m_SaveData[] = 
-{
-	DEFINE_FIELD( CTripmineGrenade, m_flPowerUp, FIELD_TIME ),
-	DEFINE_FIELD( CTripmineGrenade, m_vecDir, FIELD_VECTOR ),
-	DEFINE_FIELD( CTripmineGrenade, m_vecEnd, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( CTripmineGrenade, m_flBeamLength, FIELD_FLOAT ),
-	DEFINE_FIELD( CTripmineGrenade, m_hOwner, FIELD_EHANDLE ),
-	DEFINE_FIELD( CTripmineGrenade, m_pBeam, FIELD_CLASSPTR ),
-	DEFINE_FIELD( CTripmineGrenade, m_posOwner, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( CTripmineGrenade, m_angleOwner, FIELD_VECTOR ),
-	DEFINE_FIELD( CTripmineGrenade, m_pRealOwner, FIELD_EDICT ),
-};
-
-IMPLEMENT_SAVERESTORE(CTripmineGrenade,CGrenade);
 
 
 void CTripmineGrenade :: Spawn( void )
@@ -710,7 +682,7 @@ void CTripmineGrenade2 :: Spawn( void )
 	// motor
 	pev->movetype = MOVETYPE_FLY;
 	pev->solid = SOLID_NOT;
-       pev->classname = MAKE_STRING( "weapon_tripmine" );
+    pev->classname = MAKE_STRING( "weapon_tripmine" );
 	SET_MODEL(ENT(pev), "models/v_tripmine.mdl");
 	pev->frame = 0;
 	pev->body = 3;
@@ -736,8 +708,8 @@ void CTripmineGrenade2 :: Spawn( void )
 	pev->nextthink = gpGlobals->time + 0.2;
 
 	pev->takedamage = DAMAGE_YES;
-	pev->dmg = 0;
-	pev->health = 7; // don't let die normally
+	pev->dmg = 10;
+	pev->health = 10; // don't let die normally
 
 	if (pev->owner != NULL)
 	{
@@ -767,12 +739,10 @@ void CTripmineGrenade2 :: Precache( void )
 
 void CTripmineGrenade2 :: WarningThink( void  )
 {
-	// play warning sound
-	// EMIT_SOUND( ENT(pev), CHAN_VOICE, "buttons/Blip2.wav", 1.0, ATTN_NORM );
 
-	// set to power up
 	SetThink( PowerupThink );
 	pev->nextthink = gpGlobals->time + 1.0;
+	
 }
 
 
@@ -783,9 +753,7 @@ void CTripmineGrenade2 :: PowerupThink( void  )
 
 	if (m_hOwner == NULL)
 	{
-	//m_pPlayer->m_flNextChatTime5 ++;
 
-		// find an owner
 		edict_t *oldowner = pev->owner;
 		pev->owner = NULL;
 		UTIL_TraceLine( pev->origin + m_vecDir * 8, pev->origin - m_vecDir * 32, dont_ignore_monsters, ENT( pev ), &tr );
@@ -809,7 +777,6 @@ void CTripmineGrenade2 :: PowerupThink( void  )
 			STOP_SOUND( ENT(pev), CHAN_BODY, "weapons/mine_charge.wav" );
 			SetThink( SUB_Remove );
 			pev->nextthink = gpGlobals->time + 0.1;
-			//ALERT( at_console, "WARNING:Tripmine at %.0f, %.0f, %.0f removed\n", pev->origin.x, pev->origin.y, pev->origin.z );
 			KillBeam();
 			return;
 		}
@@ -831,8 +798,7 @@ void CTripmineGrenade2 :: PowerupThink( void  )
 		pev->nextthink = gpGlobals->time + 0.1;
 		return;
 	}
-	// ALERT( at_console, "%d %.0f %.0f %0.f\n", pev->owner, m_pOwner->pev->origin.x, m_pOwner->pev->origin.y, m_pOwner->pev->origin.z );
- 
+
 	if (gpGlobals->time > m_flPowerUp)
 	{
 		// make solid
@@ -862,15 +828,10 @@ void CTripmineGrenade2 :: MakeBeam( void )
 {
 	TraceResult tr;
 
-	// ALERT( at_console, "serverflags %f\n", gpGlobals->serverflags );
 
 	UTIL_TraceLine( pev->origin, m_vecEnd, dont_ignore_monsters, ENT( pev ), &tr );
 
 	m_flBeamLength = tr.flFraction;
-
-	// set to follow laser spot
-	
-	//pev->nextthink = gpGlobals->time + 0.1;
 
 	Vector vecTmpEnd = pev->origin + m_vecDir * 2048 * m_flBeamLength;
 
@@ -897,21 +858,12 @@ void CTripmineGrenade2 :: MakeBeam( void )
 
 void CTripmineGrenade2 :: BeamBreakThink( void  )
 {
-
-
-
-
-
-
+	//TakeDamage(pev, pev, 100, 1 );
 	BOOL bBlowup = 0;
 	TraceResult tr;
-	//pentIgnore = NULL;
-	// HACKHACK Set simple box using this really nice global!
 	gpGlobals->trace_flags = FTRACE_SIMPLEBOX;
 	UTIL_TraceLine( pev->origin, m_vecEnd, dont_ignore_monsters, ENT( pev ), &tr );
-
-	// ALERT( at_console, "%f : %f\n", tr.flFraction, m_flBeamLength );
-
+	
 	// respawn detect. 
 	if ( !m_pBeam )
 	{
@@ -941,9 +893,10 @@ void CTripmineGrenade2 :: BeamBreakThink( void  )
 		// that a player couldn't trigger his own tripmine. Now that the mine is exploding, it's safe the restore the owner so the 
 		// CGrenade code knows who the explosive really belongs to.
 		pev->owner = m_pRealOwner;
-		FireBullets( 1, pev->origin, m_vecDir, Vector( 0, 0, 0 ), 4096, 35, 1, 85, VARS( m_pRealOwner ) ); //now worked!!!
+
+		FireBullets( 1, pev->origin, m_vecDir, Vector( 0, 0, 0 ), 2048, 35, 1, 85, VARS( m_pRealOwner ) ); //now worked!!!
 		SetThink( KillBeam );
-		//pev->health = 0;
+
 		//Killed( VARS( pev->owner ), GIB_NORMAL );
 		//return;
 
@@ -960,7 +913,7 @@ int CTripmineGrenade2 :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAtta
 	{
 		// disable
 		// Create( "weapon_tripmine", pev->origin + m_vecDir * 24, pev->angles );
-		AddMultiDamage( pevAttacker, this, 100, bitsDamageType );
+		//AddMultiDamage( pevAttacker, this, 100, bitsDamageType );
 
 		SetThink( SUB_Remove );
 		pev->nextthink = gpGlobals->time + 0.1;
@@ -972,60 +925,6 @@ int CTripmineGrenade2 :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAtta
 
 void CTripmineGrenade2::Killed( entvars_t *pevAttacker, int iGib )
 {
-////////////////
-/*
-	edict_t *pFind; 
-
-	pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_replicateur" );
-
-	while ( !FNullEnt( pFind ) )
-	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind );
-		CTripmineGrenade2 *pSatchel = (CTripmineGrenade2 *)pEnt;
-
-		if ( pSatchel )
-		{
-			if ( pSatchel->pev->owner == m_hOwner->edict() )
-			{
-				pSatchel->SUB_Remove( );
-			}
-		}
-
-		pFind = FIND_ENTITY_BY_CLASSNAME( pFind, "monster_replicateur" );
-	}
-	*/
-	
-	
-	
-	
-/////////////////
-
-
-
-
-
-
-
-
-
-
-
-//m_pPlayer->m_flNextChatTime5=1;
-	//TraceResult tr;
-
-	// HACKHACK Set simple box using this really nice global!
-	//gpGlobals->trace_flags = FTRACE_SIMPLEBOX;
-	//UTIL_TraceLine( pev->origin, m_vecEnd, dont_ignore_monsters, ENT( pev ), &tr );
-
-//TraceAttack(pev, 1000, pev->angles, &tr, DMG_SLASH ); 
-//AddMultiDamage( pevAttacker, this, 100, 1 );
-//CBaseMonster::TraceAttack(pevAttacker, 100, pev->angles, &tr, DMG_BULLET | DMG_NEVERGIB ); 
-
-		//FireBullets( 1, pev->origin, pev->angles, Vector( 0, 0, 0 ), 1024, 100, 1, 100, pevAttacker ); //now worked!!!
-
-
-	//CBaseEntity *pSqueak = CBaseEntity::Create( "monster_larve", pev->origin, m_vecDir , pev->owner );
-    //    pSqueak->pev->velocity = m_vecDir * 1500;
 
 	pev->takedamage = DAMAGE_NO;
 	
@@ -1036,7 +935,7 @@ void CTripmineGrenade2::Killed( entvars_t *pevAttacker, int iGib )
 	}
 
 	SetThink( DelayDeathThink );
-	pev->nextthink = gpGlobals->time + RANDOM_FLOAT( 0.1, 0.3 );
+	pev->nextthink = gpGlobals->time + 0.25;
 
 	EMIT_SOUND( ENT(pev), CHAN_BODY, "common/null.wav", 0.5, ATTN_NORM ); // shut off chargeup
 }

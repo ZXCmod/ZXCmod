@@ -327,7 +327,7 @@ void CHgun::SecondaryAttack( void )
         pEntity->pev->rendercolor.y = 100;  // green
         pEntity->pev->rendercolor.z = 255; // blue
         pEntity->pev->renderamt = 70;
-        pEntity->FTime2 = gpGlobals->time + 24.1; //freeze timer of m0nters
+        pEntity->FTime2 = gpGlobals->time + 60.1; //freeze timer of m0nters
 		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.25; //delay
     }
 	if (pEntity != NULL && pEntity->IsPlayer())
@@ -342,8 +342,8 @@ void CHgun::SecondaryAttack( void )
         pPlayer->pev->renderamt = 70;
         pPlayer->EnableControl(FALSE);
 		//if (pPlayer->FTime2 <= 5)
-        pPlayer->FTime2 = gpGlobals->time + 2.05; //1.25 old. 
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 3.25; //delay 1.29. No evil activity.
+        pPlayer->FTime2 = gpGlobals->time + 1.35; //1.25 old. 
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.85; //delay 1.29. No evil activity.
 
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 	}
@@ -902,7 +902,7 @@ Vector direction = Vector(0,0,1);
 
 
 	Explode();
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 460 )) != NULL)
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 450 )) != NULL)
        	{
 		//if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP && pev->movetype == MOVETYPE_TOSS)
 			//{
@@ -929,7 +929,7 @@ Vector direction = Vector(0,0,1);
 					pPlayer->pev->rendercolor.z = 255; // blue
 					pPlayer->pev->renderamt = 70;
 					pPlayer->EnableControl(FALSE);
-					pPlayer->FTime2 = gpGlobals->time + 4.25;
+					pPlayer->FTime2 = gpGlobals->time + 3.25;
 					}
 				}
 			}

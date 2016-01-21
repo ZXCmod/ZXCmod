@@ -485,7 +485,7 @@ void CBarney :: Spawn()
 
 	MonsterInit();
 	SetUse( FollowerUse );
-	void SpawnCrab( void );
+	//void SpawnCrab( void );
 
 }
 

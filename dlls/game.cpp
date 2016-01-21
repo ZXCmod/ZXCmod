@@ -40,7 +40,7 @@ cvar_t	defaultteam = {"mp_defaultteam","0" };
 cvar_t	allowmonsters={"mp_allowmonsters","0", FCVAR_SERVER };
 cvar_t	allowmonsters2={"mp_fragmonsters","1", FCVAR_SERVER };
 cvar_t	allowmonsters3={"mp_crowbar","1", FCVAR_SERVER };
-cvar_t	allowmonsters4={"mp_dmode","0", FCVAR_SERVER }; //1.29, regeneration mod
+cvar_t	allowmonsters4={"mp_dmode","1", FCVAR_SERVER }; //1.29, regeneration mod
 
 	// CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	// CVAR_SET_STRING("sv_stepsize", "18");

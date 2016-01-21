@@ -177,16 +177,9 @@ float speed = m_pPlayer->pev->velocity.Length();
 
 	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( 0.00016, 0.04976, 0.02976 ), 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
-	
-	
-  int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_GLOBAL;
-#else
-	flags = 0;
-#endif
 
-	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usMP5, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
+
+	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usMP5, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
@@ -232,14 +225,8 @@ void CMP5::SecondaryAttack( void )
 							m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16, 
 							gpGlobals->v_forward * 800 );
 
-	int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_GLOBAL;
-#else
-	flags = 0;
-#endif
 
-	PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usMP52 );
+	PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usMP52 );
 	
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1;
@@ -270,6 +257,8 @@ void CMP5::ThirdAttack( void )
 		Vector vecSrc;
 		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 		UTIL_MakeVectors( anglesAim );
+		m_pPlayer->pev->punchangle.x += RANDOM_LONG(0,2);
+		m_pPlayer->pev->punchangle.y += RANDOM_LONG(0,2);
 		vecSrc = m_pPlayer->GetGunPosition( )  + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
 		Vector vecDir = gpGlobals->v_forward;
 		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 4096, dont_ignore_monsters, m_pPlayer->edict(), &tr);
