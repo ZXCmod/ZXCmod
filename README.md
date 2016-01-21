@@ -7,21 +7,16 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
 
-v1.25
+###v1.25
 
-+New weapons: alt-nuke on egon (press reload) and freeze hornets (secondary attack on hornetgun).
-
--Rebalance of turrets. Sentry has 90% hp, turret - 100%. Low dmg.
-
-+added "Headhot" message.
++ New weapons: alt-nuke on egon (press reload) and freeze hornets (secondary attack on hornetgun).
+- Rebalance of turrets. Sentry has 90% hp, turret - 100%. Low dmg.
++ added "Headhot" message.
 
  
-v1.24
+###v1.24
 
-+New turret for Rocket launcher.
-
--small rebalance of turrets. Sentry has 100% hp, turret - 150%.
-
--turret and sentry are do not shot ally in mp_teamplay 1.
-
-+some effects to players, machines and radiation. 
++ New turret for Rocket launcher.
+- small rebalance of turrets. Sentry has 100% hp, turret - 150%.
+- turret and sentry are do not shot ally in mp_teamplay 1.
++ some effects to players, machines and radiation. 
