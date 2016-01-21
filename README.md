@@ -1,4 +1,4 @@
-# ZXCmod 1.31-3 free source 2008-2009.
+# ZXCmod 1.31-3 free source 2008-2010.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
