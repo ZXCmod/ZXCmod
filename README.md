@@ -1,4 +1,4 @@
-# ZXCmod 1.28 free source 2008-2009.
+# ZXCmod 1.29 free source 2008-2009.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -6,6 +6,18 @@ Get current HL SDK [here](https://github.com/ValveSoftware/halflife).
 Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other information. 
 
 #Changelog
+
+###1.29
+
+- third attack on snarks: stomp. - (squeakgrenade.cpp)
+- third attack on RPG: dual missiles. - (rpg.cpp)
+- new console command: `mp_dmode`. Default `0` - (game.cpp, game.h, player.cpp, world.cpp, shotgun.cpp)
+- decrease damage x2 by yourself explosive - (combat.cpp)
+- when `sv_cheats 1`, available all weapons on start 
+- bad code cleanup
+- include some maps
+- other bug fixes, little changes. 
+
 
 ###1.28 
  
