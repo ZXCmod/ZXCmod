@@ -1,4 +1,4 @@
-# ZXCmod 1.34 free source 2008-2011.
+# ZXCmod 1.35 free source 2008-2012.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -7,6 +7,22 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
  
+###1.35
+  
+- nuclear missile rebalance and possibility of creating the `Red Crystal` - (gauss.cpp)
+- upgraded gravel. grenades, they can now be charged - (handgrenade.cpp)
+- replacement of smoke grenades to radiation dust - (handgrenade.cpp)
+- clusters are suitable as touch-personnel mines, the more charged - the greater the explosion - (shotgun.cpp)
+- bullets from Glock paralyze and poison goal - (cbase.h, hl_wpn_glock.cpp, player.cpp)
+- `trigger_hurt` brings frags attacked trigger entity - (buttons.cpp, triggers.cpp)
+- adjusted invisibility. Under the action set a limit of `10%` of your health - (satchel.cpp, player.cpp)
+- added `Red Crystal`, that doubling the damage of any weapon - (cbase.cpp, cbase.h, gauss.cpp, combat.cpp)
+- ordinary beetles fly straight and fast. The secondary objective of parasites and touch the wall of the current fighting - (squeakgrenade.cpp)
+- amend the first attack on egon - (egon.cpp)
+- added new beaty visual effects.
+- refactored the most part of sources.
+ 
+  
 ###1.34
  
 - third attack on 357: inferno capsule - (python.cpp, weapons.h)
