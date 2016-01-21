@@ -38,6 +38,14 @@ cvar_t	teamlist = {"mp_teamlist","hgrunt;scientist", FCVAR_SERVER };
 cvar_t	teamoverride = {"mp_teamoverride","1" };
 cvar_t	defaultteam = {"mp_defaultteam","0" };
 cvar_t	allowmonsters={"mp_allowmonsters","1", FCVAR_SERVER };
+cvar_t	allowmonsters2={"mp_fragmonsters","1", FCVAR_SERVER };
+
+	// CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
+	// CVAR_SET_STRING("sv_stepsize", "18");
+	// CVAR_SET_STRING("sv_maxspeed", "350");
+	// CVAR_SET_STRING("pausable", "0");
+	
+	
 
 cvar_t  mp_chattime = {"mp_chattime","9", FCVAR_SERVER };
 
@@ -474,6 +482,8 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&teamoverride);
 	CVAR_REGISTER (&defaultteam);
 	CVAR_REGISTER (&allowmonsters);
+	CVAR_REGISTER (&allowmonsters2); //1.27
+
 
 	CVAR_REGISTER (&mp_chattime);
 

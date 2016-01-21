@@ -21,6 +21,7 @@
 #include "nodes.h"
 #include "player.h"
 #include "gamerules.h"
+#include "game.h"
 #include "soundent.h"
 #include "shake.h"
 #include "func_break.h"
@@ -120,6 +121,8 @@ void CCrowbar::Precache( void )
 	PRECACHE_SOUND("weapons/cbar_hitbod3.wav");
 	PRECACHE_SOUND("weapons/cbar_miss1.wav");
 	PRECACHE_MODEL( "sprites/shock.spr" );
+	PRECACHE_SOUND("debris/beamstart7.wav");
+	
 
 	m_usCrowbar = PRECACHE_EVENT ( 1, "events/crowbar.sc" );
 }
@@ -141,7 +144,7 @@ int CCrowbar::GetItemInfo(ItemInfo *p)
 
 BOOL CCrowbar::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 293 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 304 );
 	return DefaultDeploy( "models/v_crowbar.mdl", "models/p_crowbar.mdl", CROWBAR_DRAW, "crowbar" );
 }
 
@@ -247,6 +250,64 @@ void CCrowbar::SecondaryAttack()
 	}
 	
 }
+
+
+
+void CCrowbar::ThirdAttack()
+{
+//new weapon: teleporter. Target is spawn points (info_deathmatch). Linked with subs.cpp 
+//1.27
+
+ 
+ 
+	entvars_t* pevToucher = m_pPlayer->pev; //player object
+	edict_t	*pentTarget = NULL; //teleport target
+
+	for ( int i = RANDOM_LONG(1,5); i > 0; i-- )
+	pentTarget = FIND_ENTITY_BY_TARGETNAME( pentTarget, STRING(5) ); //find targetname at "5"
+	
+	
+	if (FNullEnt(pentTarget)) //not execute, if singleplayer
+	   return;	
+	
+	Vector tmp = VARS( pentTarget )->origin; //teleport to the point
+
+/* 	if ( m_pPlayer->IsPlayer() ) //now need?
+	{
+		tmp.z -= m_pPlayer->pev->mins.z;// make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
+	} */
+
+	tmp.z++;
+
+	pevToucher->flags &= ~FL_ONGROUND;
+	
+	UTIL_SetOrigin( pevToucher, tmp );
+
+	pevToucher->angles = pentTarget->v.angles;
+
+	if ( m_pPlayer->IsPlayer() )
+	{
+		pevToucher->v_angle = pentTarget->v.angles;
+	}
+
+
+	pevToucher->velocity = pevToucher->basevelocity = g_vecZero;
+ 
+    
+    //delays and sound
+	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=10;
+	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 0.9, ATTN_NORM); //play sound
+	
+}
+
+
+
+
+
 
 void CCrowbar::Smack( )
 {
@@ -502,6 +563,7 @@ void    CBlasterBeam :: Spawn( )
         pev->nextthink = gpGlobals->time + 0.1;//10 times a second
         pev->dmg = BLASTER_DAMAGE;
 		pev->effects = EF_MUZZLEFLASH;
+		//pev->takedamage = DAMAGE_YES;
 
 }
 
@@ -569,6 +631,7 @@ void    CBlasterBeam :: Explode( TraceResult* TResult, int DamageType )
 			WRITE_BYTE( 128 ); // brightness
 			WRITE_BYTE( 0 );		// speed
 		MESSAGE_END();
+		//pev->takedamage = DAMAGE_NO;
 		SUB_Remove( );
 }
 
@@ -662,14 +725,13 @@ void    CRc2 :: Spawn( )
 		//if (pEntity != NULL)
         //pev->velocity = gpGlobals->v_forward * 300 *(pPlayer->pev->health / 50); //*350 test
 		pev->velocity = gpGlobals->v_forward * 375; //*350
+		pev->takedamage = DAMAGE_YES;
 
 }
 
 void    CRc2 :: Precache( )
 {
-        PRECACHE_MODEL( "models/rpgrocket.mdl" );
 		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shock.spr" );
-
 }
 
 void    CRc2 :: Hit( CBaseEntity* Target )
@@ -731,6 +793,7 @@ STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
 			WRITE_BYTE( 55 ); // brightness
 			WRITE_BYTE( 8 );		// speed
 		MESSAGE_END();
+		pev->takedamage = DAMAGE_NO;
 		SUB_Remove( );
 }
 

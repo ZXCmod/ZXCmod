@@ -637,6 +637,7 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 	}
 }
 }
+
 if (gpGlobals->time >= m_flDie+5)
 	{
 					// random explosions
@@ -651,6 +652,8 @@ if (gpGlobals->time >= m_flDie+5)
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
 	pev->takedamage = DAMAGE_NO;
-	SetThink( SUB_Remove );	}
+	SetThink( SUB_Remove );	
+	}
+	
 }
 

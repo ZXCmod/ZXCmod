@@ -586,7 +586,7 @@ void CSqueak::PrimaryAttack()
 
 	int flags;
 #ifdef CLIENT_WEAPONS
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -646,7 +646,7 @@ void CSqueak::SecondaryAttack( void )
 
 	int flags;
 #ifdef CLIENT_WEAPONS
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif

@@ -1879,13 +1879,13 @@ void CBaseTrigger :: TeleportTouch( CBaseEntity *pOther )
 	if (!UTIL_IsMasterTriggered(m_sMaster, pOther))
 		return;
  	
-	if ( !( pev->spawnflags & SF_TRIGGER_ALLOWMONSTERS ) )
+/* 	if ( !( pev->spawnflags & SF_TRIGGER_ALLOWMONSTERS ) )
 	{// no monsters allowed!
 		if ( FBitSet( pevToucher->flags, FL_MONSTER ) )
 		{
 			return;
 		}
-	}
+	} */
 
 	if ( ( pev->spawnflags & SF_TRIGGER_NOCLIENTS ) )
 	{// no clients allowed

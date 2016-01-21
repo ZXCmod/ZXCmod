@@ -202,6 +202,7 @@ void CRpgRocket :: RocketTouch ( CBaseEntity *pOther )
 
 	STOP_SOUND( edict(), CHAN_VOICE, "weapons/rocket1.wav" );
 	ExplodeTouch( pOther );
+
 }
 
 //=========================================================
@@ -506,7 +507,7 @@ void CRpg::PrimaryAttack()
 
 		int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -561,7 +562,7 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 #endif
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -614,7 +615,7 @@ if (m_iClip >= 1)
 
 	int flags;
 	#ifdef CLIENT_WEAPONS
-		flags = FEV_NOTHOST;
+		flags = FEV_GLOBAL;
 	#else
 		flags = 0;
 	#endif
@@ -639,7 +640,7 @@ if (m_iClip >= 1)
 	#endif
 int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif

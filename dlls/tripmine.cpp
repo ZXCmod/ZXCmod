@@ -308,7 +308,7 @@ void CTripmineGrenade :: MakeBeam( void )
 	m_pBeam->PointEntInit( vecTmpEnd, entindex() );
 	m_pBeam->SetColor( RANDOM_LONG(128,255), RANDOM_LONG(1,255), RANDOM_LONG(1,255) );
 	m_pBeam->SetScrollRate( 128 );
-	m_pBeam->SetBrightness( RANDOM_LONG(30,60) );
+	m_pBeam->SetBrightness( RANDOM_LONG(3,60) );
 }
 
 
@@ -494,7 +494,7 @@ void CTripmine::PrimaryAttack( void )
 
 	int flags;
 #ifdef CLIENT_WEAPONS
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -561,7 +561,7 @@ void CTripmine::SecondaryAttack( void )
 
 	int flags;
 #ifdef CLIENT_WEAPONS
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif

@@ -26,19 +26,9 @@
 
 
 ////INIT CRYSTAL
-#define BLASTER_BEAM_RED                RANDOM_LONG( 1, 64 )
-#define BLASTER_BEAM_GREEN              RANDOM_LONG( 1, 64 )
-#define BLASTER_BEAM_BLUE               RANDOM_LONG( 128, 240 )
-#define BLASTER_BEAM_BRIGHTNESS 255
-#define BLASTER_BEAM_WIDTH      RANDOM_LONG( 1, 3 )
+
 #define BLASTER_BEAM_SPRITE     "sprites/smoke.spr"
-#define BLASTER_BEAM_SPEED      854
-#define BLASTER_BEAM_LENGTH     RANDOM_LONG( 2, 22 )
-#define BLASTER_BEAM_RANDOMNESS 1
-#define BLASTER_OFFSET_FORWARD  0
-#define BLASTER_OFFSET_RIGHT    7
-#define BLASTER_OFFSET_UP               0
-//int creload;
+
 
 ///class crystal
 class   CBlasterBeam4 : public CGrenade
@@ -363,7 +353,7 @@ void CSatchel::Holster( int skiplocal /* = 0 */ )
 	{
 		SendWeaponAnim( SATCHEL_DROP );
 	}
-	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "common/null.wav", 1.0, ATTN_NORM);
+	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "common/null.wav", 1.0, ATTN_NORM);
 
 	if ( !m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] && !m_chargeReady )
 	{
@@ -442,11 +432,11 @@ void CSatchel::ThirdAttack( void )
 //Invisible weapon
 //new code for 1.26
 
-	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6)
+	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 4)
 		{
 		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
 
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart1.wav", 0.9, ATTN_NORM); //play sound
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.9, ATTN_NORM); //play sound
 	
 		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
 		m_pPlayer->pev->health = 1; //invisible hurt
@@ -455,7 +445,7 @@ void CSatchel::ThirdAttack( void )
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
 		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
 		//m_iClip -= 6;
-		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 6;
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 4;
 		//invisible effect
 		m_pPlayer->pev->rendermode = kRenderTransTexture;
         m_pPlayer->pev->renderamt = 1;

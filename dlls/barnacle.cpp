@@ -112,7 +112,7 @@ void CBarnacle :: Spawn()
 	pev->takedamage		= DAMAGE_AIM;
 	m_bloodColor		= BLOOD_COLOR_RED;
 	pev->effects		= EF_INVLIGHT; // take light from the ceiling 
-	pev->health			= 25;
+	pev->health			= 95;
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
 	m_flKillVictimTime	= 0;
@@ -322,7 +322,7 @@ void CBarnacle :: Killed( entvars_t *pevAttacker, int iGib )
 {
 	CBaseMonster *pVictim;
 
-	pev->solid = SOLID_NOT;
+	//pev->solid = SOLID_NOT;
 	pev->takedamage = DAMAGE_NO;
 
 	if ( m_hEnemy != NULL )
@@ -365,7 +365,8 @@ void CBarnacle :: WaitTillDead ( void )
 	{
 		// death anim finished. 
 		StopAnimation();
-		SetThink ( NULL );
+		SUB_Remove();
+		//SetThink ( SUB_Remove );
 	}
 }
 

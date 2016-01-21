@@ -675,7 +675,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->pev->rendermode = kRenderNormal;
 		m_pPlayer->pev->renderfx = kRenderFxNone;
 		m_pPlayer->pev->renderamt = 0;
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
 	}
 	}
 	
@@ -693,6 +693,8 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		
 	
 	}
+	
+	//<< first
 	else if (!(m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
 	
@@ -704,7 +706,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->pev->rendermode = kRenderNormal;
 		m_pPlayer->pev->renderfx = kRenderFxNone;
 		m_pPlayer->pev->renderamt = 0;
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
 	}
 	}
 	
@@ -728,6 +730,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		{
 		m_pPlayer->TabulateAmmo();
 		ThirdAttack();
+		
 		}
 		
 		

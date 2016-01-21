@@ -277,6 +277,23 @@ void CEgon::SecondaryAttack(void)
 			}
 }
 
+
+
+void CEgon::ThirdAttack()
+{
+/* CBaseEntity *pSpot;
+        pSpot = UTIL_FindEntityByClassname( m_pPlayer, "weapon_frag");
+
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+		pPlayer->pev->SET_VIEW( pActivator->edict(), edict() ); 
+		if (FClassnameIs( pSpot->pev, "weapon_frag"))
+			SET_VIEW( pSpot->edict(), pSpot->edict() );
+ */
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+}		
+		
 void CEgon::Fire( const Vector &vecOrigSrc, const Vector &vecDir )
 {
 	Vector vecDest = vecOrigSrc + vecDir * 2048;
@@ -672,7 +689,6 @@ void    CBfb :: Spawn( )
 void CBfb :: Precache( void )
 {
 m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
-PRECACHE_SOUND( "weapons/gravgren.wav" );
 m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 PRECACHE_MODEL( "models/alt_nuke2.mdl" );
 m_iBalls = PRECACHE_MODEL( "sprites/gradbeam.spr" );

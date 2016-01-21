@@ -481,6 +481,7 @@ public:
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void ); // 1.27 wp
 	void GlockFire( float flSpread, float flCycleTime, BOOL fUseAutoAim );
 	void GlockFire2( float flSpread, float flCycleTime, BOOL fUseAutoAim );
 	BOOL Deploy( void );
@@ -519,6 +520,7 @@ public:
 	void Reload( void );
 	void WeaponIdle( void );
 	float m_flNextChatTime11; //delay
+	void ThirdAttack( void ); // 1.27 wp
 	int Swing( int fFirst );
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
@@ -800,10 +802,12 @@ public:
 	int AddToPlayer( CBasePlayer *pPlayer );
 
 	BOOL Deploy( void );
+	BOOL Lock( void );
 	void Holster( int skiplocal = 0  );
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void ); //3 attack
 	void Reload( void );
 	void WeaponIdle( void );
 	
@@ -815,7 +819,8 @@ public:
 	int m_iBeam;
 	int m_iSoundState; // don't save this
 	int m_flNextChatTime3;
-int m_flNextChatTime;
+	int m_flNextChatTime;
+	short BSpr;
 
 
 	// was this weapon just fired primary or secondary?
@@ -865,6 +870,7 @@ public:
 	void SpawnCrab( void );
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void ); // 1.27 wp
 
 	void WeaponIdle( void );
 

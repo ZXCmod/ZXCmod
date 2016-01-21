@@ -163,7 +163,7 @@ void CHgun::PrimaryAttack()
 
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -318,7 +318,7 @@ switch(RANDOM_LONG(1,2))
 #endif
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif

@@ -40,7 +40,7 @@ LINK_ENTITY_TO_CLASS( spark_shower, CShower );
 
 void CShower::Spawn( void )
 {
-	pev->velocity = RANDOM_FLOAT( 100, 400 ) * pev->angles;
+	pev->velocity = RANDOM_FLOAT( 200, 300 ) * pev->angles;
 	pev->velocity.x += RANDOM_FLOAT(-100.f,100.f);
 	pev->velocity.y += RANDOM_FLOAT(-100.f,100.f);
 	if ( pev->velocity.z >= 0 )
@@ -48,13 +48,13 @@ void CShower::Spawn( void )
 	else
 		pev->velocity.z -= 200;
 	pev->movetype = MOVETYPE_BOUNCE;
-	pev->gravity = 0.2;
+	pev->gravity = 0.5;
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->solid = SOLID_NOT;
 	SET_MODEL( edict(), "models/grenade.mdl");	// Need a model, just use the grenade, we don't draw it anyway
 	UTIL_SetSize(pev, g_vecZero, g_vecZero );
 	pev->effects |= EF_NODRAW;
-	pev->speed = RANDOM_FLOAT( 0.5, 2.5 );
+	pev->speed = RANDOM_FLOAT( 0.5, 1.5 );
 
 	pev->angles = g_vecZero;
 }
@@ -262,7 +262,7 @@ void CEnvExplosion::Smoke( void )
 			WRITE_COORD( pev->origin.y );
 			WRITE_COORD( pev->origin.z );
 			WRITE_SHORT( g_sModelIndexSmoke );
-			WRITE_BYTE( (BYTE)m_spriteScale*25 ); // scale * 10
+			WRITE_BYTE( (BYTE)m_spriteScale ); // scale * 10
 			WRITE_BYTE( RANDOM_LONG( 1, 3 )); // framerate
 		MESSAGE_END();
 	}

@@ -22,6 +22,7 @@
 
 #include "extdll.h"
 #include "util.h"
+#include "game.h" //import cvars
 #include "cbase.h"
 #include "monsters.h"
 #include "soundent.h"
@@ -433,15 +434,18 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 	}
 
 	Remember( bits_MEMORY_KILLED );
-//feature removed from 1.26
-/* 	CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
+//feature was removed from 1.26
+//cvar mp_fragmonsters added in 1.27 
+if (allowmonsters2.value != 0)
+{
+ 	CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
 	if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
 		{
 		CBasePlayer *PK = (CBasePlayer*)pPlayer;
-		pPlayer->AddPoints(1, false);
+		pPlayer->AddPoints(allowmonsters2.value, true); //dynamic values
 
-		} */
-	
+		} 
+}
 	
 	// clear the deceased's sound channels.(may have been firing or reloading when killed)
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "common/null.wav", 1, ATTN_NORM);

@@ -1263,12 +1263,12 @@ void CBasePlayer::WaterMove()
 	if (pev->watertype == CONTENT_LAVA)		// do damage
 	{
 		if (pev->dmgtime < gpGlobals->time)
-			TakeDamage(VARS(eoNullEntity), VARS(eoNullEntity), 10 * pev->waterlevel, DMG_BURN);
+			TakeDamage(VARS(eoNullEntity), VARS(eoNullEntity), 9, DMG_BURN);
 	}
 	else if (pev->watertype == CONTENT_SLIME)		// do damage
 	{
 		pev->dmgtime = gpGlobals->time + 1;
-		TakeDamage(VARS(eoNullEntity), VARS(eoNullEntity), 4 * pev->waterlevel, DMG_ACID);
+		TakeDamage(VARS(eoNullEntity), VARS(eoNullEntity), 3, DMG_ACID);
 	}
 	
 	if (!FBitSet(pev->flags, FL_INWATER))
@@ -1892,7 +1892,7 @@ if (FTime2 > 0)
 //if ( pl->m_pActiveItem->m_iId == WEAPON_CROWBAR
 
 if (pev->rendermode == kRenderTransTexture)
-	pev->renderamt = pev->health*2;
+	pev->renderamt = pev->health; //dynamic transparency
 
 
 	
@@ -2937,9 +2937,9 @@ void CBasePlayer::Spawn( void )
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "debris/beamstart8b.wav", 1.0, ATTN_NORM);
 	//EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/sprayer.wav", 1, ATTN_NORM);
 	//client cmd
-	CLIENT_COMMAND(edict(), "rate 15000\n");
-	CLIENT_COMMAND(edict(), "cl_resend 3\n");
-	CLIENT_COMMAND(edict(), "cl_lw 1\n");
+	//CLIENT_COMMAND(edict(), "rate 15000\n");
+	//CLIENT_COMMAND(edict(), "cl_resend 3\n");
+	//CLIENT_COMMAND(edict(), "cl_lw 1\n");
 	//CLIENT_COMMAND(edict(), "cl_updaterate 20\n");
 	//CLIENT_COMMAND(edict(), "cl_cmdrate 20\n");
 	

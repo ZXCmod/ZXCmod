@@ -54,6 +54,8 @@ public:
 	void	TrackTarget( void );
 
 	virtual void Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
+	virtual void Fire2( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker ); // 1.27 feature
+	virtual void Fire3( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker ); // 1.27 feature
 	virtual Vector UpdateTargetPosition( CBaseEntity *pTarget )
 	{
 		return pTarget->BodyTarget( pev->origin );
@@ -413,6 +415,40 @@ void CFuncTank :: ControllerPostFrame( void )
 
 		m_flNextAttack = gpGlobals->time + (1/m_fireRate);
 	}
+	
+	//second attack
+	if ( (m_pController->pev->button & IN_ATTACK2) && !(m_pController->pev->button & (IN_ATTACK | IN_RELOAD)) )
+	{
+		Vector vecForward;
+		UTIL_MakeVectorsPrivate( pev->angles, vecForward, NULL, NULL );
+
+		m_fireLast = gpGlobals->time - (1/m_fireRate) - 0.01;  // to make sure the gun doesn't fire too many bullets
+
+		Fire2( BarrelPosition(), vecForward, m_pController->pev );
+		
+		// HACKHACK -- make some noise (that the AI can hear)
+		if ( m_pController && m_pController->IsPlayer() )
+			((CBasePlayer *)m_pController)->m_iWeaponVolume = LOUD_GUN_VOLUME;
+
+		m_flNextAttack = gpGlobals->time + (1/m_fireRate);
+
+	}
+	//reload
+	if ( (m_pController->pev->button & IN_RELOAD) && !(m_pController->pev->button & (IN_ATTACK | IN_ATTACK2)) )
+	{
+		Vector vecForward;
+		UTIL_MakeVectorsPrivate( pev->angles, vecForward, NULL, NULL );
+
+		m_fireLast = gpGlobals->time - (1/m_fireRate) - 0.01;  // to make sure the gun doesn't fire too many bullets
+
+		Fire3( BarrelPosition(), vecForward, m_pController->pev );
+		
+		// HACKHACK -- make some noise (that the AI can hear)
+		if ( m_pController && m_pController->IsPlayer() )
+			((CBasePlayer *)m_pController)->m_iWeaponVolume = LOUD_GUN_VOLUME;
+
+		m_flNextAttack = gpGlobals->time + (0.25/m_fireRate);
+	}
 }
 ////////////// END NEW STUFF //////////////
 
@@ -680,7 +716,30 @@ void CFuncTank::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t 
 	m_fireLast = gpGlobals->time;
 }
 
+void CFuncTank::Fire2( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
+{
+	if ( m_fireLast != 0 )
+	{
+		SUB_UseTargets( this, USE_TOGGLE, 0 );
+	}
+	m_fireLast = gpGlobals->time;
+}
+////////
 
+void CFuncTank::Fire3( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
+{
+	if ( m_fireLast != 0 )
+	{
+		SUB_UseTargets( this, USE_TOGGLE, 0 );
+	}
+	m_fireLast = gpGlobals->time;
+}
+
+
+
+
+
+////////
 void CFuncTank::TankTrace( const Vector &vecStart, const Vector &vecForward, const Vector &vecSpread, TraceResult &tr )
 {
 	// get circular gaussian spread
@@ -705,7 +764,7 @@ void CFuncTank::StartRotSound( void )
 	if ( !pev->noise || (pev->spawnflags & SF_TANK_SOUNDON) )
 		return;
 	pev->spawnflags |= SF_TANK_SOUNDON;
-	EMIT_SOUND( edict(), CHAN_STATIC, (char*)STRING(pev->noise), 0.85, ATTN_NORM);
+	EMIT_SOUND( edict(), CHAN_STATIC, (char*)STRING(pev->noise), 0.75, ATTN_NORM);
 }
 
 
@@ -910,7 +969,7 @@ void CFuncTankRocket::Fire( const Vector &barrelEnd, const Vector &forward, entv
 		{
 			for ( i = 0; i < bulletCount; i++ )
 			{
-				CBaseEntity *pRocket = CBaseEntity::Create( "rpg_rocket", barrelEnd, pev->angles, edict() );
+				CBaseEntity *pRocket = CBaseEntity::Create( "rpg_rocket", barrelEnd + forward * 64, pev->angles, ENT( pevAttacker ) );
 			}
 			CFuncTank::Fire( barrelEnd, forward, pevAttacker );
 		}
@@ -925,6 +984,8 @@ class CFuncTankMortar : public CFuncTank
 public:
 	void KeyValue( KeyValueData *pkvd );
 	void Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
+	void Fire2( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
+	void Fire3( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
 };
 LINK_ENTITY_TO_CLASS( func_tankmortar, CFuncTankMortar );
 
@@ -940,7 +1001,7 @@ void CFuncTankMortar::KeyValue( KeyValueData *pkvd )
 		CFuncTank::KeyValue( pkvd );
 }
 
-
+/////////////////
 void CFuncTankMortar::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
 	if ( m_fireLast != 0 )
@@ -1005,8 +1066,80 @@ void CFuncTankMortar::Fire( const Vector &barrelEnd, const Vector &forward, entv
 		CFuncTank::Fire( barrelEnd, forward, pevAttacker );
 }
 
+/////
+/////
+/////
+void CFuncTankMortar::Fire2( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
+{
+
+ 	int i;
+
+	if ( m_fireLast != 0 )
+	{
+		int bulletCount = (gpGlobals->time - m_fireLast) * m_fireRate;
+		if ( bulletCount > 0 )
+		{
+			for ( i = 0; i < bulletCount; i++ )
+			{
+				CBaseEntity *pRocket = CBaseEntity::Create( "weapon_minigun", barrelEnd + forward * 64, pev->angles, ENT( pevAttacker ) );
+				pRocket->pev->velocity = gpGlobals->v_forward * 840;
+				pRocket->pev->dmg = pev->impulse; // can been *2 ?
+			}
+			CFuncTank::Fire( barrelEnd, forward, pevAttacker );
+		}
+	}
+
+		
+/* 	int i;
+
+	if ( m_fireLast != 0 )
+	{
+		// FireBullets needs gpGlobals->v_up, etc.
+		UTIL_MakeAimVectors(pev->angles);
+
+		int bulletCount = (gpGlobals->time - m_fireLast) * m_fireRate;
+		if ( bulletCount > 0 )
+		{
+			for ( i = 0; i < bulletCount; i++ )
+			{
+
+					FireBullets( 1, barrelEnd, forward, gTankSpread[m_spread], 4096, BULLET_MONSTER_12MM, 1, 64, pevAttacker );
+
+			}
+			CFuncTank::Fire2( barrelEnd, forward, pevAttacker );
+		}
+	}
+	else
+		CFuncTank::Fire2( barrelEnd, forward, pevAttacker ); */
+}
+
+void CFuncTankMortar::Fire3( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
+{
 
 
+		
+int i;
+
+	if ( m_fireLast != 0 )
+	{
+		// FireBullets needs gpGlobals->v_up, etc.
+		UTIL_MakeAimVectors(pev->angles);
+
+		int bulletCount = (gpGlobals->time - m_fireLast) * m_fireRate;
+		if ( bulletCount > 0 )
+		{
+			for ( i = 0; i < bulletCount; i++ )
+			{
+
+					FireBullets( 1, barrelEnd, forward, gTankSpread[m_spread], 4096, BULLET_MONSTER_12MM, 1, pev->impulse, pevAttacker );
+
+			}
+			CFuncTank::Fire2( barrelEnd, forward, pevAttacker );
+		}
+	}
+	else
+		CFuncTank::Fire2( barrelEnd, forward, pevAttacker );
+}
 //============================================================================
 // FUNC TANK CONTROLS
 //============================================================================

@@ -58,6 +58,13 @@ LINK_ENTITY_TO_CLASS(info_null,CNullEntity);
 
 class CBaseDMStart : public CPointEntity
 {
+    //1.27
+	//set targetname for crowbar third attack
+	void Spawn( void )
+	{ 
+	pev->targetname=5;
+	}
+
 public:
 	void		KeyValue( KeyValueData *pkvd );
 	BOOL		IsTriggered( CBaseEntity *pEntity );

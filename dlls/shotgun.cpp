@@ -61,6 +61,7 @@ enum shotgun_e {
         void    Spawn           ( );
         void    Motion       ( );
 		void    IgniteThink       ( );
+		short		m_LaserSprite;
 		int m_flDie;
 		
 
@@ -182,7 +183,7 @@ void CShotgun::PrimaryAttack()
 
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -258,7 +259,7 @@ void CShotgun::SecondaryAttack( void )
 
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -368,39 +369,15 @@ void CShotgun::ThirdAttack( void )
             WRITE_BYTE( 70 ); // scroll speed
     MESSAGE_END();
 		
-		
-		
-		
-		
-		//CBaseEntity *pEntity = NULL;
-/* 		
-			edict_t *pFind; 
-			pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "Gravity_flare" ); */
-					//if (tr.pHit == edict())
-		
-
-/* 			if (tr.pHit->v.modelindex == pev->modelindex)
-			{
-			} */
 
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, tr.vecEndPos, 30 )) != NULL)
 	{
-/* 		if (pEntity != NULL && pEntity->IsPlayer() && !pev->owner) //check all, except owner
-		{
-		//CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-		//pEntity->pev->SUB_Remove();
-		pEntity->pev->health -= 1000;
-		return;
-		} */
 		
 		if (FClassnameIs( pEntity->pev, "weapon_shotgun"))
 		{
-		
-			//if ( !FBitSet( pEntity->pev->flags, FL_MONSTER ))
-			//{
 			pEntity->pev->ltime+=345; //increase flare energy
+			//pEntity->SUB_Remove();
 			//return;
-			//}
 		}
 		}
 		}
@@ -575,7 +552,7 @@ void CPhase::Spawn( )
         pev->classname = MAKE_STRING( "weapon_shotgun" );
         pev->nextthink = gpGlobals->time + 0.35;
         pev->dmg = 1;
-		pev->health = 50;
+		pev->health = 100;
 		//effects
 		pev->rendermode = kRenderTransTexture;
         pev->renderfx = kRenderFxGlowShell;
@@ -588,7 +565,16 @@ void CPhase::Spawn( )
 		m_flDie = gpGlobals->time + 10;
 		pev->ltime = 80;
 
-		
+	//destroy new clusters, if not in radius
+	CBaseEntity *pEntity = NULL;
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 30 )) != NULL)
+       	{
+		if (FClassnameIs( pEntity->pev, "weapon_shotgun") && (pEntity->edict() != edict()))
+		{
+			SUB_Remove();
+			return;
+		}
+		}
 		
 		SetThink( IgniteThink );
 }
@@ -615,7 +601,7 @@ TraceResult tr, beam_tr;
 			WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*3 );
 			WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*3  );
 			WRITE_SHORT( m_iBalls );		// model
-			WRITE_BYTE( 20  );				// count
+			WRITE_BYTE( 10  );				// count
 			WRITE_BYTE( 9 );				// life * 10
 			WRITE_BYTE( RANDOM_LONG( 1, 2 ) );				// size * 10
 			WRITE_BYTE( 90 );				// amplitude * 0.1
@@ -638,15 +624,11 @@ void CPhase::Motion( void )
 
 void CPhase::IgniteThink( void )
 {
-	// CBaseEntity *pEntity = NULL;
-	// Vector	vecDir;
-	// vecDir = Vector( 0, 0, 0 );
+
 	
 	
 	if (pev->ltime >= 2500) //limit of enegry, when create great beam. Self-destroy too with beam
 	{
-	//CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-		//explode ef
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
 			WRITE_COORD( pev->origin.x);
@@ -659,11 +641,7 @@ void CPhase::IgniteThink( void )
 		MESSAGE_END();	
 	CBaseEntity *pFlare = Create( "item_artifact_super_damage", pev->origin, Vector( 0, 0, 0 ), pev->owner );
 	pev->health = -1000;
-	//::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10000, 16, CLASS_NONE, DMG_BURN  );
-	//pPlayer->pev->m_flNextChatTime12 = gpGlobals->time + 60; //set timer
 	SUB_Remove();
-
-	//SUB_Remove();
 	}
 
 
@@ -679,19 +657,9 @@ void CPhase::IgniteThink( void )
 				pSprite->SetThink( SUB_Remove );
 				pSprite->SetTransparency( kRenderTransAdd, 255, 255, 255, 100, kRenderFxFadeFast );
 				if (pSprite->pev->scale > 40)
-				pSprite->pev->scale = 40;
+					pSprite->pev->scale = 40;
 			}
 
-/* 			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, pev->ltime/100 )) != NULL)
-       		 	{
-					if (pEntity->pev->takedamage)
-					{
-					vecDir = ( pEntity->Center() - Vector ( 0, 0, 10 ) - Center() ).Normalize(); ///NOW WORKED! CONGRATULATIONS!
-					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->ltime/10);
-					if (pev->movetype != MOVETYPE_NONE)
-					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(77,110), DMG_BURN); //destroy all near thinks
-					}
-				} */
 
 
 if (gpGlobals->time >= m_flDie || pev->health <= 0 && pev->ltime < 2500) //Simple self destroy without beam
@@ -702,7 +670,7 @@ if (gpGlobals->time >= m_flDie || pev->health <= 0 && pev->ltime < 2500) //Simpl
 			WRITE_COORD( pev->origin.y);
 			WRITE_COORD( pev->origin.z);
 			WRITE_SHORT( g_sModelIndexFireball );
-			WRITE_BYTE( 10  ); // scale * 10
+			WRITE_BYTE( 15  ); // scale * 10
 			WRITE_BYTE( 16  ); // framerate
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
@@ -728,6 +696,7 @@ void CPhase2::Spawn( )
 		CBaseEntity *pEntity = NULL;
 		
         SET_MODEL( ENT(pev), "models/clustergrenade.mdl" );
+		m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 		//
         pev->movetype = MOVETYPE_NONE;
         pev->solid = SOLID_BBOX;
@@ -771,13 +740,48 @@ void CPhase2::IgniteThink( void )
 	Vector	vecDir;
 	vecDir = Vector( 0, 0, 0 );
 
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 2048 )) != NULL)
+	// Make a lightning strike
+	Vector vecEnd;
+	TraceResult tr;
+	vecEnd.x = RANDOM_FLOAT(-128,128);;	// Pick a random direction
+	vecEnd.y = RANDOM_FLOAT(-128,128);;
+	vecEnd.z = RANDOM_FLOAT(-128,128);
+	// vecEnd = vecEnd.Normalize();
+	vecEnd = pev->origin + vecEnd.Normalize() * 2048;
+	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
+	
+//lightings
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+                WRITE_BYTE( TE_BEAMPOINTS );
+                WRITE_COORD(pev->origin.x);
+                WRITE_COORD(pev->origin.y);
+                WRITE_COORD(pev->origin.z);
+                WRITE_COORD( tr.vecEndPos.x );
+                WRITE_COORD( tr.vecEndPos.y );
+                WRITE_COORD( tr.vecEndPos.z );
+                WRITE_SHORT( m_LaserSprite );
+                WRITE_BYTE( 0 ); // Starting frame
+                WRITE_BYTE( 16  ); // framerate * 0.1
+                WRITE_BYTE( 1 ); // life * 0.1
+                WRITE_BYTE( 20 ); // width
+                WRITE_BYTE( 64 ); // noise
+                WRITE_BYTE( 200 ); // color r,g,b
+                WRITE_BYTE( 200 ); // color r,g,b
+                WRITE_BYTE( 255 ); // color r,g,b
+                WRITE_BYTE( 175 ); // brightness
+                WRITE_BYTE( 8 ); // scroll speed
+        MESSAGE_END();
+	
+	
+	
+	
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 1600 )) != NULL)
        		 {
 				
-				if (pEntity->pev->takedamage)
+				if (pEntity->pev->takedamage && !(pEntity->pev->health <= 5))
 					{
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 40 ) - Center() ).Normalize();
-					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -640;
+					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -600;
 					//UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 90.5, 154.7, 1 );
 					//if (pev->movetype != MOVETYPE_NONE)
 					//pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(77,110), DMG_BURN); //destroy all near thinks

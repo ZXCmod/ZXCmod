@@ -277,7 +277,7 @@ void CPython::PrimaryAttack()
 
     int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -428,7 +428,6 @@ void    CU :: Spawn( )
 void    CU :: Precache( )
 {
         BeamSprite = PRECACHE_MODEL( "sprites/smoke.spr" );
-        PRECACHE_MODEL( "models/rpgrocket.mdl" );
 		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
 		iSquidSpitSprite = PRECACHE_MODEL("sprites/wallpuff.spr");// client side spittle.
 		m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );

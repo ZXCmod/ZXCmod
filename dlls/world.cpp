@@ -68,8 +68,7 @@
 #define ZOMBIE_CRAB26 "monster_barnacle"
 
 */
-#define ZOMBIE_CRAB27 "monster_sentry"
-#define ZOMBIE_CRAB26 "monster_turret"
+
 extern CGraph WorldGraph;
 extern CSoundEnt *pSoundEnt;
 
@@ -517,57 +516,22 @@ void CWorld :: Spawn( void )
 	g_fGameOver = FALSE;
 	Precache( );
 	g_flWeaponCheat = CVAR_GET_FLOAT( "sv_cheats" );  // Is the impulse 101 command allowed?
+
 }
 
 void CWorld :: Precache( void )
 {
-/*
-	UTIL_PrecacheOther( ZOMBIE_CRAB );
-	UTIL_PrecacheOther( ZOMBIE_CRAB2 );
-	
-	UTIL_PrecacheOther( ZOMBIE_CRAB3 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB4 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB5 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB6 );
-
-	UTIL_PrecacheOther( ZOMBIE_CRAB8 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB9 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB10 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB11 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB12 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB13 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB14 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB15 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB16 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB17 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB18 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB19 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB20 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB21 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB22 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB23 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB24 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB25 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB26 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB27 );
-*/
-	UTIL_PrecacheOther( ZOMBIE_CRAB27 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB26 ); //new weapon: turret
-UTIL_PrecacheOther( "monster_gman" );
-
-
-
-
-
-
+	UTIL_PrecacheOther( "monster_sentry" );
+	UTIL_PrecacheOther( "monster_turret" ); //new weapon: turret
+	UTIL_PrecacheOther( "monster_gman" );
 
 	g_pLastSpawn = NULL;
 	
 #if 1
 //pev->sv_gravity=1;
-	CVAR_SET_STRING("sv_gravity", "725"); // 65ft/sec
+	CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	CVAR_SET_STRING("sv_stepsize", "18");
-	CVAR_SET_STRING("sv_maxspeed", "330");
+	CVAR_SET_STRING("sv_maxspeed", "350");
 	CVAR_SET_STRING("pausable", "0");
 	//::nreload = 0;
 

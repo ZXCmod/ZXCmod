@@ -37,9 +37,9 @@ extern int gmsgServerName;
 
 extern int g_teamplay;
 
-#define ITEM_RESPAWN_TIME	RANDOM_LONG(1,60)
-#define WEAPON_RESPAWN_TIME	RANDOM_LONG(30,60)
-#define AMMO_RESPAWN_TIME	RANDOM_LONG(30,60)
+#define ITEM_RESPAWN_TIME	30
+#define WEAPON_RESPAWN_TIME	20
+#define AMMO_RESPAWN_TIME	20
 
 float g_flIntermissionStartTime = 0;
 
@@ -200,7 +200,7 @@ void CHalfLifeMultiplay :: Think ( void )
 		// bounds check
 		int time = (int)CVAR_GET_FLOAT( "mp_chattime" );
 		if ( time < 1 )
-			CVAR_SET_STRING( "mp_chattime", "40" );
+			CVAR_SET_STRING( "mp_chattime", "10" );
 		else if ( time > MAX_INTERMISSION_TIME )
 			CVAR_SET_STRING( "mp_chattime", UTIL_dtos1( MAX_INTERMISSION_TIME ) );
 

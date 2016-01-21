@@ -388,7 +388,7 @@ void CCrossbow::FireSniperBolt()
 
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -399,9 +399,9 @@ void CCrossbow::FireSniperBolt()
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	
 	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors( anglesAim );
+	UTIL_MakeVectors( anglesAim ); //Vector( 0.03268, 0.13716, 0.13134 )
 	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
-	Vector vecDir = gpGlobals->v_forward;
+	Vector vecDir = gpGlobals->v_forward ; // + Vector( RANDOM_FLOAT( -0.005, 0.005 ), RANDOM_FLOAT( -0.005, 0.005 ),RANDOM_FLOAT( -0.005, 0.005 )
 
 	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
 
@@ -458,7 +458,7 @@ void CCrossbow::FireBolt()
 
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif

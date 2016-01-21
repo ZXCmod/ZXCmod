@@ -88,8 +88,8 @@ BOOL ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddres
 		if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
 		{
 
-	CLIENT_COMMAND(pPlayer->edict(), "rate 8500\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_resend 4\n");
+	CLIENT_COMMAND(pPlayer->edict(), "rate 10000\n");
+	CLIENT_COMMAND(pPlayer->edict(), "cl_resend 3\n");
 	CLIENT_COMMAND(pPlayer->edict(), "cl_lw 1\n");
 	}
 	return g_pGameRules->ClientConnected( pEntity, pszName, pszAddress, szRejectReason );
@@ -809,7 +809,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.26";
+		return "Half-Life zxc mod 1.27";
 }
 
 /*
@@ -1563,7 +1563,7 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 
 
 
-#if defined( CLIENT_WEAPONS )
+/* #if defined( CLIENT_WEAPONS )
 	if ( sendweapons )
 	{
 		entvars_t *pev = (entvars_t *)&ent->v;
@@ -1601,17 +1601,17 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 					cd->vuser4.y	= pl->m_rgAmmo[gun->m_iPrimaryAmmoType];
 					cd->vuser4.z	= pl->m_rgAmmo[gun->m_iSecondaryAmmoType];
 					
-					if ( pl->m_pActiveItem->m_iId == WEAPON_RPG )
-					{
-						cd->vuser2.y = ( ( CRpg * )pl->m_pActiveItem)->m_fSpotActive;
-						cd->vuser2.z = ( ( CRpg * )pl->m_pActiveItem)->m_cActiveRockets;
-					}
+					// if ( pl->m_pActiveItem->m_iId == WEAPON_RPG )
+					// {
+						// cd->vuser2.y = ( ( CRpg * )pl->m_pActiveItem)->m_fSpotActive;
+						// cd->vuser2.z = ( ( CRpg * )pl->m_pActiveItem)->m_cActiveRockets;
+					// }
 
 				}
 			} //////
 		}
 	}
-#endif
+#endif */
 }
 
 /*

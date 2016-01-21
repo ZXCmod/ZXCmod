@@ -171,7 +171,7 @@ float speed = m_pPlayer->pev->velocity.Length();
 	
   int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
@@ -224,7 +224,7 @@ void CMP5::SecondaryAttack( void )
 
 	int flags;
 #if defined( CLIENT_WEAPONS )
-	flags = FEV_NOTHOST;
+	flags = FEV_GLOBAL;
 #else
 	flags = 0;
 #endif
