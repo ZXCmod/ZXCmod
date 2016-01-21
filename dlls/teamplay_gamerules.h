@@ -36,7 +36,7 @@ public:
 	virtual int IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled );
 	virtual void InitHUD( CBasePlayer *pl );
 	virtual void DeathNotice( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pevInflictor );
-	virtual const char *GetGameDescription( void ) { return "HL Teamplay zxc 1.33"; }  // this is the game name that gets seen in the server browser
+	virtual const char *GetGameDescription( void ) { return "HL Teamplay zxc 1.34"; }  // this is the game name that gets seen in the server browser
 	virtual void UpdateGameMode( CBasePlayer *pPlayer );  // the client needs to be informed of the current game mode
 	virtual void PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor );
 	virtual void Think ( void );
@@ -45,13 +45,14 @@ public:
 	virtual BOOL IsValidTeam( const char *pTeamName );
 	const char *SetDefaultPlayerTeam( CBasePlayer *pPlayer );
 	virtual void ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, BOOL bKill, BOOL bGib );
+	BOOL m_DisableDeathPenalty;
 
 private:
 	void RecountTeams( bool bResendInfo = FALSE );
 	const char *TeamWithFewestPlayers( void );
 
 	BOOL m_DisableDeathMessages;
-	BOOL m_DisableDeathPenalty;
+	
 	BOOL m_teamLimit;				// This means the server set only some teams as valid
 	char m_szTeamList[TEAMPLAY_TEAMLISTLENGTH];
 };

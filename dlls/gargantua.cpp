@@ -46,7 +46,7 @@ const float GARG_ATTACKDIST = 80.0;
 
 
 // Gargantua is immune to any damage but this
-#define GARG_DAMAGE					(DMG_ENERGYBEAM|DMG_CRUSH|DMG_MORTAR|DMG_BLAST)
+#define GARG_DAMAGE					(DMG_ENERGYBEAM|DMG_CRUSH|DMG_MORTAR|DMG_BLAST|DMG_BURN)
 #define GARG_EYE_SPRITE_NAME		"sprites/gargeye1.spr"
 #define GARG_BEAM_SPRITE_NAME		"sprites/xbeam3.spr"
 #define GARG_BEAM_SPRITE2			"sprites/xbeam3.spr"
@@ -140,7 +140,7 @@ void CStomp::Think( void )
 			pevOwner = VARS(pev->owner);
 
 		if ( pEntity )
-			pEntity->TakeDamage( pev, pevOwner, gSkillData.gargantuaDmgStomp, DMG_SONIC );
+			pEntity->TakeDamage( pev, pevOwner, gSkillData.gargantuaDmgStomp, DMG_BLAST );
 	}
 	
 	// Accelerate the effect
@@ -206,7 +206,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed( void );
-	int  Classify ( void );
+	int  Classify (   );
 	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
 	void TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
@@ -711,7 +711,7 @@ void CGargantua :: PrescheduleThink( void )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CGargantua :: Classify ( void )
+int	CGargantua :: Classify (   )
 {
 	return	CLASS_ALIEN_MONSTER;
 }
@@ -755,12 +755,13 @@ void CGargantua :: Spawn()
 	Precache( );
 
 	SET_MODEL(ENT(pev), "models/garg.mdl");
-	UTIL_SetSize( pev, Vector( -32, -32, 0 ), Vector( 32, 32, 64 ) );
+	UTIL_SetSize( pev, VEC_HUMAN_HULL_MIN, VEC_HULL_MAX );
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_GREEN;
-	pev->health			= 1250;
+	pev->health			= 1000;
+	//pev->armorvalue		= 100;
 	//pev->view_ofs		= Vector ( 0, 0, 96 );// taken from mdl file
 	m_flFieldOfView		= -0.2;// width of forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
@@ -849,17 +850,15 @@ void CGargantua::TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vec
 
 	bitsDamageType &= GARG_DAMAGE;
 
-	if ( bitsDamageType == 0)
-	{
-		if ( pev->dmgtime != gpGlobals->time || (RANDOM_LONG(0,100) < 20) )
-		{
-			UTIL_Ricochet( ptr->vecEndPos, RANDOM_FLOAT(0.5,1.5) );
-			pev->dmgtime = gpGlobals->time;
-//			if ( RANDOM_LONG(0,100) < 25 )
-//				EMIT_SOUND_DYN( ENT(pev), CHAN_BODY, pRicSounds[ RANDOM_LONG(0,ARRAYSIZE(pRicSounds)-1) ], 1.0, ATTN_NORM, 0, PITCH_NORM );
-		}
-		flDamage = 0;
-	}
+	// if ( bitsDamageType == 0)
+	// {
+		// if ( pev->dmgtime != gpGlobals->time || (RANDOM_LONG(0,100) < 20) )
+		// {
+			// UTIL_Ricochet( ptr->vecEndPos, RANDOM_FLOAT(0.5,1.5) );
+			// pev->dmgtime = gpGlobals->time;
+		// }
+		// flDamage = 0;
+	// }
 
 	CBaseMonster::TraceAttack( pevAttacker, flDamage, vecDir, ptr, bitsDamageType );
 
@@ -873,8 +872,8 @@ int CGargantua::TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, flo
 
 	if ( IsAlive() )
 	{
-		if ( !(bitsDamageType & GARG_DAMAGE) )
-			flDamage *= 0.01;
+		//if ( !(bitsDamageType & GARG_DAMAGE) )
+		flDamage *= 0.75;
 		if ( bitsDamageType & DMG_BLAST )
 			SetConditions( bits_COND_LIGHT_DAMAGE );
 	}
@@ -888,7 +887,7 @@ void CGargantua::DeathEffect( void )
 	int i;
 	UTIL_MakeVectors(pev->angles);
 	Vector deathPos = pev->origin + gpGlobals->v_forward * 100;
-
+	UTIL_Remove( this );
 	// Create a spiral of streaks
 	CSpiral::Create( deathPos, (pev->absmax.z - pev->absmin.z) * 0.6, 125, 1.5 );
 
@@ -896,10 +895,11 @@ void CGargantua::DeathEffect( void )
 	position.z += 32;
 	for ( i = 0; i < 7; i+=2 )
 	{
+		
 		SpawnExplosion( position, 70, (i * 0.3), 60 + (i*20) );
 		position.z += 15;
 	}
-
+	
 	CBaseEntity *pSmoker = CBaseEntity::Create( "env_smoker", pev->origin, g_vecZero, NULL );
 	pSmoker->pev->health = 3;	// 1 smoke balls
 	pSmoker->pev->scale = 46;	// 4.6X normal size
@@ -913,6 +913,7 @@ void CGargantua::Killed( entvars_t *pevAttacker, int iGib )
 	EyeOff();
 	UTIL_Remove( m_pEyeGlow );
 	m_pEyeGlow = NULL;
+	
 	CBaseMonster::Killed( pevAttacker, GIB_NEVER );
 }
 
@@ -986,7 +987,7 @@ void CGargantua::HandleAnimEvent(MonsterEvent_t *pEvent)
 	case GARG_AE_SLASH_LEFT:
 		{
 			// HACKHACK!!!
-			CBaseEntity *pHurt = GargantuaCheckTraceHullAttack( GARG_ATTACKDIST + 10.0, gSkillData.gargantuaDmgSlash, DMG_SLASH );
+			CBaseEntity *pHurt = GargantuaCheckTraceHullAttack( GARG_ATTACKDIST + 10.0, gSkillData.gargantuaDmgSlash, DMG_BLAST );
 			if (pHurt)
 			{
 				if ( pHurt->pev->flags & (FL_MONSTER|FL_CLIENT) )

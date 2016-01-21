@@ -24,6 +24,8 @@
 #include "gamerules.h"
 #include "decals.h"
 
+extern float g_flWeaponCheat;
+
 
 // UNDONE: Save/restore this?  Don't forget to set classname and LINK_ENTITY_TO_CLASS()
 // 
@@ -34,7 +36,7 @@ class CCrossbowBolt : public CBaseEntity
 {
 	void Spawn( void );
 	void Precache( void );
-	int  Classify ( void );
+	int  Classify (   );
 
 
 public:
@@ -82,7 +84,7 @@ void CCrossbowBolt::Precache( )
 }
 
 
-int	CCrossbowBolt :: Classify ( void )
+int	CCrossbowBolt :: Classify (   )
 {
 	return	CLASS_NONE;
 }
@@ -262,7 +264,7 @@ void CCrossbowBolt2::Update( )
 		if (pev->ltime >= 5.0)
 		{
 			pev->takedamage = DAMAGE_NO;
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 50, 128, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 50, 128, CLASS_NONE, DMG_MORTAR  ); //DMG
 			
 			//explode
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
@@ -349,7 +351,7 @@ void    CCrossbowBolt2 :: Hit( CBaseEntity* pOther )
 		
 
 		pev->velocity = g_vecZero; //try
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10, 512, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10, 512, CLASS_NONE, DMG_MORTAR  ); //DMG
 		
 		if ( tr.pHit && Instance( tr.pHit )->pev->solid != SOLID_BSP) 
 		{
@@ -497,32 +499,31 @@ void CCrossbow::Holster( int skiplocal /* = 0 */ )
 
 void CCrossbow::PrimaryAttack( void )
 {
-	//low accuracy
-	//if (!(m_pPlayer->pev->button & IN_DUCK))
-	if ( !FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) //the true sensor
+	if (g_flWeaponCheat == INT(2))
 	{
-		m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(-0.5,0.5);
-		m_pPlayer->pev->punchangle.y -= RANDOM_FLOAT(-0.75,0.75);
+		//lowest accuracy
+		if ( !FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) //the true sensor
+			{
+				m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(-0.5,0.5);
+				m_pPlayer->pev->punchangle.y -= RANDOM_FLOAT(-0.75,0.75);
+			}
+		else
+			m_pPlayer->pev->punchangle.y += RANDOM_LONG(-1,2);
 	}
-	
-#ifdef CLIENT_DLL
-	if ( m_fInZoom && bIsMultiplayer() )
-#else
-	if ( m_fInZoom && g_pGameRules->IsMultiplayer() )
-#endif
-	{
-		FireSniperBolt();
-		m_pPlayer->pev->punchangle.y += RANDOM_LONG(-1,2);
-		return;
-	}
-	//FireBolt(); 1.30
 	FireSniperBolt();
+	
 }
 
-// this function only gets called in multiplayer
+// Edited in v1.34
 void CCrossbow::FireSniperBolt()
 {
 
+	if (m_iClip == 0)
+	{
+		PlayEmptySound( );
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5; // 0.75
+		return;
+	}
 
 
 	TraceResult	tr;	
@@ -530,6 +531,21 @@ void CCrossbow::FireSniperBolt()
 	int nFrames;
 	CBasePlayer *pPlayer;
 	pPlayer = (CBasePlayer *)GET_PRIVATE(pev->owner);
+	Vector Temp = m_pPlayer->pev->origin;
+	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+	UTIL_MakeVectors( anglesAim ); //Vector( 0.03268, 0.13716, 0.13134 )
+	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
+	Vector vecDir = gpGlobals->v_forward ; // + Vector( RANDOM_FLOAT( -0.005, 0.005 ), RANDOM_FLOAT( -0.005, 0.005 ),RANDOM_FLOAT( -0.005, 0.005 )
+	if (g_flWeaponCheat != INT(2))
+		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, ignore_monsters, m_pPlayer->edict(), &tr);
+	else
+		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+	
+
+	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
+
+	CBaseEntity *pSatchel = Create( "crossbow_bolt", tr.vecEndPos, m_pPlayer->pev->angles, m_pPlayer->edict() ); //Vector(0,0,0)
+
 
 	if (pPlayer)
 		nFrames = pPlayer->GetCustomDecalFrames();
@@ -538,16 +554,9 @@ void CCrossbow::FireSniperBolt()
 
 	playernum = ENTINDEX(pev->owner);
 
-	UTIL_MakeVectors(pev->angles);
-
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
-
-	if (m_iClip == 0)
-	{
-		PlayEmptySound( );
-		return;
-	}
-
+	
+	
+	UTIL_PlayerDecalTrace( &tr, playernum, pev->frame, TRUE );
 
 	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
 	m_iClip--;
@@ -557,16 +566,45 @@ void CCrossbow::FireSniperBolt()
 	// player "shoot" animation
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors( anglesAim ); //Vector( 0.03268, 0.13716, 0.13134 )
-	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
-	Vector vecDir = gpGlobals->v_forward ; // + Vector( RANDOM_FLOAT( -0.005, 0.005 ), RANDOM_FLOAT( -0.005, 0.005 ),RANDOM_FLOAT( -0.005, 0.005 )
-	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
-	UTIL_PlayerDecalTrace( &tr, playernum, pev->frame, TRUE );
 
+	//for ( int i = 0; i < 3; i++ )
+	if (g_flWeaponCheat != INT(2)) // only not for sv_cheats 2
+	{
+		
+		if (!m_pPlayer->IsInWorld() && (UTIL_PointContents(tr.vecEndPos ) == CONTENTS_SKY)) // && (Instance( tr.pHit )->IsBSPModel())
+		{
+			return;
+		}
+		TraceResult	tr2;
+		//UTIL_MakeVectors(pev->angles);
+	
+		UTIL_TraceHull(  tr.vecEndPos + (tr.vecPlaneNormal * 40), m_pPlayer->Center(), dont_ignore_monsters, human_hull, m_pPlayer->edict(), &tr2 );
+		
+		if ( tr2.fStartSolid )
+		{
+			// GetClassPtr( (CBasePlayer *)m_pPlayer->pev)->Reset( ); // reset position without stuck
+			UTIL_SetOrigin( m_pPlayer->pev, Temp );
+			MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(m_pPlayer->pev) );
+				WRITE_STRING( "Teleport destination is wrong." );
+			MESSAGE_END();
+		}
+		else
+		{
+			m_pPlayer->pev->origin = tr.vecEndPos + (tr.vecPlaneNormal * 40); // teleport
+			
+			// vis effects #1
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				WRITE_BYTE( TE_TELEPORT );
+				WRITE_COORD( m_pPlayer->pev->origin.x );
+				WRITE_COORD( m_pPlayer->pev->origin.y );
+				WRITE_COORD( m_pPlayer->pev->origin.z );
+			MESSAGE_END();
+			
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 1.0, ATTN_NORM); //play sound 1st
 
-
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		}
+		
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		 WRITE_BYTE( TE_BEAMPOINTS );
 		 WRITE_COORD( vecSrc.x);
 		 WRITE_COORD( vecSrc.y);
@@ -577,47 +615,72 @@ void CCrossbow::FireSniperBolt()
 		 WRITE_SHORT(g_sModelIndexLaser ); // model
 		 WRITE_BYTE( 0 ); // framestart?
 		 WRITE_BYTE( 0 ); // framerate?
-		 WRITE_BYTE( 7 ); // life
-		 WRITE_BYTE( RANDOM_LONG(1,2) ); // width
+		 WRITE_BYTE( 20 ); // life
+		 WRITE_BYTE( 10 ); // width
 		 WRITE_BYTE( 0 ); // noise
-		 WRITE_BYTE( RANDOM_LONG(200,255)); // r, g, b
-		 WRITE_BYTE( RANDOM_LONG(10,100)); // r, g, b
+		 WRITE_BYTE( 200 ); // r, g, b
+		 WRITE_BYTE( 100 ); // r, g, b
 		 WRITE_BYTE( 0 ); // r, g, b
-		 WRITE_BYTE( RANDOM_LONG(1,64) ); // brightness
+		 WRITE_BYTE( 64 ); // brightness
 		 WRITE_BYTE( 0 ); // speed?
-	MESSAGE_END(); 
-
-	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
-
-	CBaseEntity *pSatchel = Create( "crossbow_bolt", tr.vecEndPos, m_pPlayer->pev->angles, m_pPlayer->edict() ); //Vector(0,0,0)
-	
-			
-#ifndef CLIENT_DLL
-	if ( tr.pHit->v.takedamage )
-	{
-		ClearMultiDamage( );
-		CBaseEntity::Instance(tr.pHit)->TraceAttack(m_pPlayer->pev, 100, vecDir, &tr, DMG_NEVERGIB ); 
-		ApplyMultiDamage( pev, m_pPlayer->pev );
+		MESSAGE_END(); 
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		 WRITE_BYTE( TE_BEAMPOINTS );
+		 WRITE_COORD( vecSrc.x);
+		 WRITE_COORD( vecSrc.y);
+		 WRITE_COORD( vecSrc.z);
+		 WRITE_COORD( tr.vecEndPos.x);
+		 WRITE_COORD( tr.vecEndPos.y);
+		 WRITE_COORD( tr.vecEndPos.z);
+		 WRITE_SHORT(g_sModelIndexLaser ); // model
+		 WRITE_BYTE( 0 ); // framestart?
+		 WRITE_BYTE( 0 ); // framerate?
+		 WRITE_BYTE( 26 ); // life
+		 WRITE_BYTE( 16 ); // width
+		 WRITE_BYTE( 0 ); // noise
+		 WRITE_BYTE( 200 ); // r, g, b
+		 WRITE_BYTE( 100 ); // r, g, b
+		 WRITE_BYTE( 0 ); // r, g, b
+		 WRITE_BYTE( 64 ); // brightness
+		 WRITE_BYTE( 0 ); // speed?
+		MESSAGE_END(); 
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	}
-/* 	else
+	else
 	{
-	::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 50, 128, CLASS_NONE, DMG_MORTAR  ); //DMG
 		
-	UTIL_DecalTrace( &tr, DECAL_SCORCH2 );
-		
-	// explode
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
-		WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
-		WRITE_COORD( tr.vecEndPos.x);
-		WRITE_COORD( tr.vecEndPos.y);
-		WRITE_COORD( tr.vecEndPos.z);
-		WRITE_SHORT( g_sModelIndexFireball );
-		WRITE_BYTE( 16  ); // scale * 10
-		WRITE_BYTE( 16  ); // framerate
-		WRITE_BYTE( TE_EXPLFLAG_NONE );
-	MESSAGE_END();
-	} */
-#endif
+		#ifndef CLIENT_DLL
+		if ( tr.pHit->v.takedamage )
+		{
+			ClearMultiDamage( );
+			CBaseEntity::Instance(tr.pHit)->TraceAttack(m_pPlayer->pev, 100, vecDir, &tr, DMG_NEVERGIB ); 
+			ApplyMultiDamage( pev, m_pPlayer->pev );
+		}
+		#endif
+			
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+			 WRITE_BYTE( TE_BEAMPOINTS );
+			 WRITE_COORD( vecSrc.x);
+			 WRITE_COORD( vecSrc.y);
+			 WRITE_COORD( vecSrc.z);
+			 WRITE_COORD( tr.vecEndPos.x);
+			 WRITE_COORD( tr.vecEndPos.y);
+			 WRITE_COORD( tr.vecEndPos.z);
+			 WRITE_SHORT(g_sModelIndexLaser ); // model
+			 WRITE_BYTE( 0 ); // framestart?
+			 WRITE_BYTE( 0 ); // framerate?
+			 WRITE_BYTE( 7 ); // life
+			 WRITE_BYTE( 1 ); // width
+			 WRITE_BYTE( 0 ); // noise
+			 WRITE_BYTE( 200 ); // r, g, b
+			 WRITE_BYTE( 100 ); // r, g, b
+			 WRITE_BYTE( 0 ); // r, g, b
+			 WRITE_BYTE( 50 ); // brightness
+			 WRITE_BYTE( 0 ); // speed?
+		MESSAGE_END(); 
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	}
+
 }
 
 void CCrossbow::FireBolt()
@@ -650,6 +713,8 @@ void CCrossbow::SecondaryAttack()
 void CCrossbow::ThirdAttack()
 {
 
+	if (allowmonsters9.value == 0)
+		return;
 
 
 	TraceResult	tr;	
@@ -735,6 +800,8 @@ void CCrossbow::ThirdAttack()
 void CCrossbow::FourthAttack()
 {
 
+	if (allowmonsters9.value == 0)
+		return;
 
 
 	Vector vecThrow = gpGlobals->v_forward * 2048; //1600

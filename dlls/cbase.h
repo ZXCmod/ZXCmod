@@ -140,6 +140,7 @@ public:
 	float				FTime2; //monsters freeze
 	short m_LaserSprite2;
 	short m_iSpriteTexture_s;
+	int infected; // parasite snark bool
 	
 	void	TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
 	
@@ -153,6 +154,9 @@ public:
 
 	// initialization functions
 	virtual void	Spawn( void ) { return; }
+	virtual void 	Reset(void) { return; }
+	virtual void 	PlaySound(void) { return; }
+	virtual void 	DrawHud(void) { return; }
 	virtual void	Precache( void ) { return; }
 	virtual void	KeyValue( KeyValueData* pkvd) { pkvd->fHandled = FALSE; }
 	virtual int		Save( CSave &save );
@@ -165,7 +169,9 @@ public:
 
 // Classify - returns the type of group (i.e, "houndeye", or "human military" so that monsters with different classnames
 // still realize that they are teammates. (overridden for monsters that form groups)
-	virtual int Classify ( void ) { return CLASS_NONE; };
+	virtual int Classify ( ) { return CLASS_NONE; };
+	int Classify2; // used for tripmine
+	
 	virtual void DeathNotice ( entvars_t *pevChild ) {}// monster maker children use this to tell the monster maker that they have died.
 
 
@@ -208,12 +214,19 @@ public:
 
 	inline void SetAttachment2( edict_t *pEntity, int attachment )
 	{
-		if ( pEntity )
+		if ( pEntity != pev->owner )
 		{
+			if (pev->movetype == MOVETYPE_FOLLOW)
+				return;
 			pev->skin = ENTINDEX(pEntity);
 			pev->body = attachment;
 			pev->aiment = pEntity;
 			pev->movetype = MOVETYPE_FOLLOW;
+			
+			// if (pev->movetype == MOVETYPE_FOLLOW)
+			// {
+				// UTIL_Remove( this );
+			// }
 		}
 	}
 
@@ -379,10 +392,26 @@ public:
 
 	int     m_type; //two types of think's: freeze|explode
 	
-
+	edict_t		*pevCreateTemp;
 };
 
 
+static BOOL IsFacing2( entvars_t *pevTest, const Vector &reference )
+{
+	Vector vecDir = (reference - pevTest->origin);
+	vecDir.z = 0;
+	vecDir = vecDir.Normalize();
+	Vector forward, angle;
+	angle = pevTest->v_angle;
+	angle.x = 0;
+	UTIL_MakeVectorsPrivate( angle, forward, NULL, NULL );
+	// He's facing me, he meant it
+	if ( DotProduct( forward, vecDir ) > 0.96 )	// +/- 15 degrees or so
+	{
+		return TRUE;
+	}
+	return FALSE;
+}
 
 // Ugly technique to override base member functions
 // Normally it's illegal to cast a pointer to a member function of a derived class to a pointer to a 

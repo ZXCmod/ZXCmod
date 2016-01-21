@@ -157,9 +157,6 @@ void CMP5::PrimaryAttack()
 
 	Vector i;
 	
-	
-	
-	
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
@@ -262,6 +259,10 @@ void CMP5::FourthAttack( void )
 
 void CMP5::ThirdAttack( void )
 {
+
+	if (allowmonsters9.value == 0)
+		return;
+
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel >= 2)
 	{
@@ -270,6 +271,8 @@ void CMP5::ThirdAttack( void )
 		return;
 	}
 
+if (allowmonsters10.value == 1)
+	return;
 
 	TraceResult	tr;	
 	Vector vecSrc;
@@ -377,6 +380,9 @@ void CMP5::ThirdAttack( void )
 
 void CMP5::SecondaryAttack( void )
 {
+	if (allowmonsters9.value == 0)
+		return;
+
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel >= 2)
 	{
@@ -385,7 +391,8 @@ void CMP5::SecondaryAttack( void )
 		return;
 	}
 
-
+if (allowmonsters10.value == 0)
+{
 	if (m_iClip >= 1)
 	{
 			Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
@@ -420,7 +427,50 @@ void CMP5::SecondaryAttack( void )
 				break;
 				}
 	}
+}
+else
+	if (m_iClip >= 1)
+	{
+			Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
+			Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+			UTIL_MakeVectors( anglesAim );
+			
+			#ifndef CLIENT_DLL
+			m_pPlayer->pev->punchangle.x += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
+			m_pPlayer->pev->punchangle.y += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
+			m_spread += 0.150;
+			m_iClip--;
+			
+			CBaseEntity *pPlasma = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+			CBaseEntity *pPlasma2 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle-45, m_pPlayer->edict() );
+			CBaseEntity *pPlasma3 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle+45, m_pPlayer->edict() );
+			pPlasma->pev->velocity = vecThrow;
+			pPlasma2->pev->dmg = RANDOM_LONG(21,30);
+			pPlasma2->pev->velocity = vecThrow-Vector(105,0,RANDOM_LONG(-45,45));
+			pPlasma2->pev->dmg = RANDOM_LONG(7,11);
+			pPlasma3->pev->velocity = vecThrow+Vector(105,0,RANDOM_LONG(-45,45));
+			pPlasma3->pev->dmg = RANDOM_LONG(7,11);
+			SendWeaponAnim( 5 );
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.16; //0.08
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.16;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.16;
+			#endif
 
+			//play sounds
+			switch(RANDOM_LONG(0,2))
+				{
+				case 0: 
+					EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); //play sound
+				break;
+				case 1: 
+					EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM); //play sound
+				break;
+				case 2: 
+					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM); //play sound
+				break;
+				}
+	}
 
 }
 
@@ -559,36 +609,41 @@ void CZap::Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmAR" );
 	CBaseEntity *pEntity = NULL;
+	pev->dmg = RANDOM_LONG(6,10);
 
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 80 )) != NULL)
+	if ((UTIL_PointContents(pev->origin) == CONTENTS_WATER))
+	{	pev->ltime = 512; pev->dmg *= 0.5;}// water electro splash & half damage
+	else
+		pev->ltime = 80;
+
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, pev->ltime )) != NULL)
        	{
-		if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+		if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()) &&  FVisible( pEntity )) //!(pEntity->pev->movetype == MOVETYPE_FLY)
 			{
-			/////shock ray
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-				WRITE_BYTE( TE_BEAMPOINTS );
-				WRITE_COORD(pev->origin.x);
-				WRITE_COORD(pev->origin.y);
-				WRITE_COORD(pev->origin.z);
-				WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
-				WRITE_COORD( pEntity->pev->origin.y );
-				WRITE_COORD( pEntity->pev->origin.z );
-				WRITE_SHORT( m_LaserSprite ); //sprite
-				WRITE_BYTE( 1 ); // Starting frame
-				WRITE_BYTE( 0  ); // framerate * 0.1
-				WRITE_BYTE( 1 ); // life * 0.1
-				WRITE_BYTE( 25 ); // width
-				WRITE_BYTE( 10 ); // noise
-				WRITE_BYTE( 20 ); // color r,g,b
-				WRITE_BYTE( 200 ); // color r,g,b
-				WRITE_BYTE( 255 ); // color r,g,b
-				WRITE_BYTE( 255 ); // brightness
-				WRITE_BYTE( 0 ); // scroll speed
-			MESSAGE_END();
-		
-			pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(3,14), DMG_GENERIC);		
-			} 
-		}
+				//shock ray
+				MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+					WRITE_BYTE( TE_BEAMPOINTS );
+					WRITE_COORD(pev->origin.x);
+					WRITE_COORD(pev->origin.y);
+					WRITE_COORD(pev->origin.z);
+					WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+					WRITE_COORD( pEntity->pev->origin.y );
+					WRITE_COORD( pEntity->pev->origin.z );
+					WRITE_SHORT( m_LaserSprite ); //sprite
+					WRITE_BYTE( 1 ); // Starting frame
+					WRITE_BYTE( 0  ); // framerate * 0.1
+					WRITE_BYTE( 1 ); // life * 0.1
+					WRITE_BYTE( 25 ); // width
+					WRITE_BYTE( 10 ); // noise
+					WRITE_BYTE( 20 ); // color r,g,b
+					WRITE_BYTE( 200 ); // color r,g,b
+					WRITE_BYTE( 255 ); // color r,g,b
+					WRITE_BYTE( 255 ); // brightness
+					WRITE_BYTE( 0 ); // scroll speed
+				MESSAGE_END();
+				pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_ENERGYBEAM);	
+			}
+		} 
 	UTIL_Remove( this );
 }
 
@@ -611,6 +666,7 @@ class   CPlasma : public CBaseEntity
         void    Spawn           ( );
 		void 	Precache 		( );
         void    MoveThink       ( );
+		void    Explode	        ( );
 		static CPlasma* Create( Vector, Vector, CBaseEntity* );
 		void EXPORT Hit   ( CBaseEntity* );
 		
@@ -638,7 +694,7 @@ void    CPlasma :: Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmAR" );
 	m_flDie = gpGlobals->time + 3;
-	pev->dmg = RANDOM_LONG(19,24); //dynamyc value
+	pev->dmg = RANDOM_LONG(30,38); //dynamyc value
 	pev->nextthink = gpGlobals->time + 0.1;
 	
 	pev->gravity = 0.0;
@@ -668,7 +724,7 @@ CPlasma* CPlasma :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 	UTIL_SetOrigin( Beam->pev, Pos );
 	Beam->pev->angles = Aim;
 	Beam->Spawn( );
-	Beam->SetTouch( CPlasma :: Hit );
+	Beam->SetTouch( Hit );
 	Beam->pev->owner = Owner->edict( );
 	return Beam;
 }
@@ -679,7 +735,8 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 	Vector      StartPosition;
 	pev->enemy = Target->edict( );
 	StartPosition = pev->origin - pev->velocity.Normalize() * 32;
-
+	if ((UTIL_PointContents(pev->origin) == CONTENTS_WATER))
+		Explode();
 	//play hit sounds
 	switch(RANDOM_LONG(0,8))
 	{
@@ -690,11 +747,12 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 	}
 	
 
+	
 	//check only thinks
 	if (Target->pev->takedamage)
 	{
 		//Target->TraceAttack(pev, RANDOM_LONG(19,24), gpGlobals->v_forward, &TResult, DMG_BULLET ); 
-		Target->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(30,38), DMG_FALL);
+		Target->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_ENERGYBEAM);
 		Target->pev->velocity = Target->pev->velocity*0.25;
 		
 		// animated sprite by entity hit
@@ -710,6 +768,19 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 	}
 	else
 	{
+		//lights
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(pev->origin.x);	// X
+			WRITE_COORD(pev->origin.y);	// Y
+			WRITE_COORD(pev->origin.z);	// Z
+			WRITE_BYTE( 16 );		// radius * 0.1
+			WRITE_BYTE( 0 );		// r
+			WRITE_BYTE( 0 );		// g
+			WRITE_BYTE( 112 );		// b
+			WRITE_BYTE( 12 );		// life * 10
+			WRITE_BYTE( 32 );		// decay * 0.1
+		MESSAGE_END( );
 		// animated sprite by wall hit
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_SPRITE );
@@ -722,25 +793,54 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 		MESSAGE_END();
 	}
 
-	//delete this
+	//delete this REMOVE_ENTITY( ENT(pev) );
 	UTIL_Remove( this );
 }
 
 void    CPlasma :: MoveThink( )
 {
 
+	
 	if (gpGlobals->time >= m_flDie) //full explode and self destroy
-		{
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 200, CLASS_NONE, DMG_MORTAR  ); //end blast
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
-			UTIL_Remove( this );
-		}
-		
+		Explode();
+			
 	pev->nextthink = gpGlobals->time + 0.3;
 }
 
 
+void    CPlasma :: Explode( )
+{
+	// animated  sprite
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_SPRITE );
+		WRITE_COORD( pev->origin.x );
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_SHORT( m_Sprite2 );
+		WRITE_BYTE( pev->dmg ); // scale
+		WRITE_BYTE( 128 ); // brightness
+	MESSAGE_END();
+	
+	//lights
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(pev->origin.x);	// X
+		WRITE_COORD(pev->origin.y);	// Y
+		WRITE_COORD(pev->origin.z);	// Z
+		WRITE_BYTE( 64 );		// radius * 0.1
+		WRITE_BYTE( 0 );		// r
+		WRITE_BYTE( 0 );		// g
+		WRITE_BYTE( 128 );		// b
+		WRITE_BYTE( 24 );		// life * 10
+		WRITE_BYTE( 32 );		// decay * 0.1
+	MESSAGE_END( );
 
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 640, CLASS_NONE, DMG_SHOCK  ); //end blast
+	EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/LsrExpl2.wav", 1.0, ATTN_STATIC);
+	UTIL_Remove( this );
+
+
+}
 
 
 

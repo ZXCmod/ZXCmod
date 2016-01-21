@@ -722,18 +722,14 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 			FourthAttack();
 		}
 		
-		//reset values when invisibled
-		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-		{
 			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
 			{
 				m_pPlayer->pev->rendermode = kRenderNormal;
 				m_pPlayer->pev->renderfx = kRenderFxNone;
 				m_pPlayer->pev->renderamt = 0;
 				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-				
+				m_pPlayer->pev->health+=50;
 			}
-		}
 	} 
 	
 	//secondary
@@ -742,8 +738,8 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	
 		//work here with reset invisible
 		//reset values when invisibled
-		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-		{
+		//if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+		//{
 			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
 			{
 				m_pPlayer->pev->rendermode = kRenderNormal;
@@ -751,8 +747,9 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 				m_pPlayer->pev->renderamt = 0;
 				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
 				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+				m_pPlayer->pev->health+=50;
 			}
-		}
+		//}
 
 		//!(m_pPlayer->pev->button & IN_USE) && //cuted
 		if ( pszAmmo2() && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
@@ -769,18 +766,18 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	else if (!(m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
 	
-	//reset values when invisibled
-	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-	{
-		if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+		//reset values when invisibled
+		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR )
 		{
-			m_pPlayer->pev->rendermode = kRenderNormal;
-			m_pPlayer->pev->renderfx = kRenderFxNone;
-			m_pPlayer->pev->renderamt = 0;
-			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
-			UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+			{
+				m_pPlayer->pev->rendermode = kRenderNormal;
+				m_pPlayer->pev->renderfx = kRenderFxNone;
+				m_pPlayer->pev->renderamt = 0;
+				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+				m_pPlayer->pev->health+=50;
+			}
 		}
-	}
 	
 	
 		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
@@ -814,7 +811,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 				m_pPlayer->pev->renderfx = kRenderFxNone;
 				m_pPlayer->pev->renderamt = 0;
 				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-				
+				m_pPlayer->pev->health+=50;
 			}
 		}
 	} 
@@ -825,6 +822,15 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	{
 		// reload when reload is pressed, or if no buttons are down and weapon is empty.
 		Reload();
+		if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+		{
+			m_pPlayer->pev->rendermode = kRenderNormal;
+			m_pPlayer->pev->renderfx = kRenderFxNone;
+			m_pPlayer->pev->renderamt = 0;
+			m_pPlayer->pev->health+=50;
+			UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+			
+		}
 	}
 	else if ( !(m_pPlayer->pev->button & (IN_ATTACK|IN_ATTACK2) ) )
 	{
@@ -1363,6 +1369,11 @@ IMPLEMENT_SAVERESTORE( CWeaponBox, CBaseEntity );
 //=========================================================
 void CWeaponBox::Precache( void )
 {
+	PRECACHE_MODEL ("models/w_battery.mdl");
+	PRECACHE_MODEL ("models/w_battery2.mdl");
+	PRECACHE_MODEL ("models/w_battery2t.mdl");
+	PRECACHE_MODEL ("models/w_battery3.mdl");
+	PRECACHE_MODEL ("models/w_battery3t.mdl");
 	PRECACHE_MODEL("models/w_weaponbox.mdl");
 }
 

@@ -244,7 +244,7 @@ void CGib :: SpawnRandomGibs( entvars_t *pevVictim, int cGibs, int human )
 
 BOOL CBaseMonster :: HasHumanGibs( void )
 {
-	int myClass = Classify();
+	int myClass = Classify( );
 
 	if ( myClass == CLASS_HUMAN_MILITARY ||
 		 myClass == CLASS_PLAYER_ALLY	||
@@ -580,13 +580,13 @@ Killed
 */
 void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 {
-		//reset glow
-		pev->rendermode = kRenderNormal;
-		pev->renderfx = kRenderFxNone;
-		pev->renderamt = 0;
-		FTime2 = 0;
+	//reset glow
+	pev->rendermode = kRenderNormal;
+	pev->renderfx = kRenderFxNone;
+	pev->renderamt = 0;
+	FTime2 = 0.0;
 
-		pev->takedamage = DAMAGE_NO;
+	pev->takedamage = DAMAGE_NO;
 
 	unsigned int	cCount = 0;
 	BOOL			fDone = FALSE;
@@ -597,6 +597,12 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 			CallGibMonster();
 		return;
 	}
+	
+	// fix respawnable on monster maps
+	// Classify2 = Classify();
+	// pev->owner = edict();
+	if (pevCreateTemp!=NULL)
+		pev->owner = pevCreateTemp;
 
 	Remember( bits_MEMORY_KILLED );
 	//feature was removed from 1.26
@@ -842,10 +848,19 @@ When a monster is poisoned via an arrow etc it takes all the poison damage at on
 GLOBALS ASSUMED SET:  g_iSkillLevel
 ============
 */
+#define ARMOR_RATIO	 0.5	// Armor Takes 50% of the damage
+#define ARMOR_BONUS  0.5	// Each Point of Armor is work 1/x points of health
 int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType )
 {
 	float	flTake;
 	Vector	vecDir;
+	int ffound = TRUE;
+	float flRatio;
+	float flBonus;
+	float flHealthPrev = pev->health;
+
+	flBonus = ARMOR_BONUS;
+	flRatio = ARMOR_RATIO;
 
 	if (!pev->takedamage)
 		return 0;
@@ -860,6 +875,118 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 		// no pain sound during death animation.
 		PainSound();// "Ouch!"
 	}
+	
+	
+											// ARMORS!!!!! \\
+	// DMG_BLAST is armor sawer
+	if ( bitsDamageType & DMG_BLAST )
+	{
+		// blasts damage armor more.
+		flBonus *= 2.75;
+	}
+	// v1.33 (97hp - 98ar after damage crowbar rocket with DMG_BURN type for testing [without will be 94hp - 87ar ])
+	if ( ( pev->armorvalue >= 1 && (bitsDamageType & DMG_BULLET )) )
+	{
+		// armor so hard for bullets
+		flBonus *= 0.25; 
+		flDamage *= 0.5; // take half dmg hp
+	}
+
+	m_lastDamageAmount = flDamage;
+
+	float flNew = flDamage * flRatio;
+	float flArmor;
+	
+	// Armor 1 kinetic. 
+	if (pev->armorvalue && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_NERVEGAS|DMG_POISON)) )// armor doesn't protect against fall or drown damage!
+	{
+		
+
+		flArmor = (flDamage - flNew) * flBonus;
+
+		// Does this use more armor than we have?
+		if (flArmor > pev->armorvalue)
+		{
+			flArmor = pev->armorvalue;
+			flArmor *= (1/flBonus);
+			flNew = flDamage - flArmor;
+			pev->armorvalue = 0;
+			
+		}
+		else
+			pev->armorvalue -= flArmor;
+			
+		
+		flDamage = flNew*1.15;
+	}
+	// Armor 2. 
+	if (pev->fuser1 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_CRUSH|DMG_MORTAR|DMG_BLAST|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM)) )// armor doesn't protect against fall or drown damage!
+	{
+		flArmor = (flDamage - flNew) * flBonus;
+
+		// Does this use more armor than we have?
+		if (flArmor > pev->fuser1)
+		{
+			flArmor = pev->fuser1;
+			flArmor *= (1/flBonus);
+			flNew = flDamage - flArmor;
+			pev->fuser1 = 0;
+			
+		}
+		else
+			pev->fuser1 -= flArmor;
+		
+		flDamage = flNew*1.15;
+	}
+	// Armor 3. 
+	if (pev->fuser2 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_NERVEGAS|DMG_CRUSH|DMG_MORTAR|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_POISON)) )// armor doesn't protect against fall or drown damage!
+	{
+		flArmor = (flDamage - flNew) * flBonus;
+
+		// Does this use more armor than we have?
+		if (flArmor > pev->fuser2)
+		{
+			flArmor = pev->fuser2;
+			flArmor *= (1/flBonus);
+			flNew = flDamage - flArmor;
+			pev->fuser2 = 0;
+			
+		}
+		else
+			pev->fuser2 -= flArmor;
+		
+		flDamage = flNew*1.15;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	//!!!LATER - make armor consideration here!
 	flTake = flDamage;
@@ -1095,6 +1222,18 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 	float		flAdjustedDamage, falloff;
 	Vector		vecSpot;
 	m_LaserSprite = PRECACHE_MODEL( "sprites/bolt1.spr" ); //1.29
+	float m_damage;
+	
+	if (allowmonsters10.value == 0)
+		m_damage = 1;
+	else
+		m_damage = 3.25;
+	
+	if (allowmonsters10.value == 1)
+		{
+			flDamage*=1.07;
+			flRadius*=1.93;
+		}
 	
 	if ( flRadius )
 		falloff = flDamage / flRadius;
@@ -1184,7 +1323,7 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 				if ( pEntity->edict() == pEntity->pev->owner )
 					pEntity->TakeDamage ( pevInflictor, pevAttacker, flAdjustedDamage, bitsDamageType );
 				else
-					pEntity->TakeDamage ( pevInflictor, pevAttacker, flAdjustedDamage/2, bitsDamageType ); //less self dmg
+					pEntity->TakeDamage ( pevInflictor, pevAttacker, (flAdjustedDamage/(2.5*m_damage)), bitsDamageType ); //less self dmg
 				}
 			}
 		}
@@ -1515,7 +1654,9 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 		vecEnd = vecSrc + vecDir * flDistance;
 		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev)/*pentIgnore*/, &tr);
 
-		UTIL_ParticleEffect ( tr.vecEndPos, g_vecZero, 64, 25 );
+		UTIL_ParticleEffect ( tr.vecEndPos, g_vecZero, 64, 25 ); ////
+		
+
 		
 		tracer = 0;
 		if (iTracerFreq != 0 && (tracerCount++ % iTracerFreq) == 0)
@@ -1651,6 +1792,28 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 		vecEnd = vecSrc + vecDir * flDistance;
 		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev)/*pentIgnore*/, &tr);
 
+		
+		if (allowmonsters10.value == 1)
+		{
+			UTIL_Sparks( tr.vecEndPos );
+			::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 5, 32, CLASS_NONE, DMG_BULLET  ); //end blast
+			//TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, BULLET_MONSTER_12MM);
+			UTIL_DecalTrace( &tr, DECAL_SMALLSCORCH1 + RANDOM_LONG(0,2) );
+			
+			
+/* 			// random explosions
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+				WRITE_COORD( tr.vecEndPos.x);
+				WRITE_COORD( tr.vecEndPos.y);
+				WRITE_COORD( tr.vecEndPos.z);
+				WRITE_SHORT( g_sModelIndexFireball );
+				WRITE_BYTE( pev->dmg  ); // scale * 10
+				WRITE_BYTE( 20  ); // framerate
+				WRITE_BYTE( TE_EXPLFLAG_NONE );
+			MESSAGE_END(); */
+		}
+		
 
 		// lots of smoke fast_wallpuff1.spr
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );

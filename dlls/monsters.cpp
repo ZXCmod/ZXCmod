@@ -33,6 +33,7 @@
 #include "decals.h"
 #include "soundent.h"
 #include "gamerules.h"
+#include "player.h"
 
 #define MONSTER_CUT_CORNER_DIST		8 // 8 means the monster's bounding box is contained without the box of the node in WC
 
@@ -312,29 +313,31 @@ void CBaseMonster :: Look ( int iDistance )
 	m_pLink = NULL;
 
 	CBaseEntity	*pSightEnt = NULL;// the current visible entity that we're dealing with
+	CBaseEntity *pPlayer1 = CBaseEntity::Instance(pev->owner);
+	//CBasePlayer *pPlayer1 = (CBasePlayer *)pEntity1;
 
-	// See no evil if prisoner is set
-	if ( !FBitSet( pev->spawnflags, SF_MONSTER_PRISONER ) )
-	{
-		CBaseEntity *pList[100];
+		CBaseEntity *pList[20];
 
 		Vector delta = Vector( iDistance, iDistance, iDistance );
-
+	// if (edict() == pev->owner)
+		// return pReturn;
 		// Find only monsters/clients in box, NOT limited to PVS
-		int count = UTIL_EntitiesInBox( pList, 100, pev->origin - delta, pev->origin + delta, FL_CLIENT|FL_MONSTER );
+		int count = UTIL_EntitiesInBox( pList, 20, pev->origin - delta, pev->origin + delta, FL_CLIENT|FL_MONSTER );
 		for ( int i = 0; i < count; i++ )
 		{
 			pSightEnt = pList[i];
 			// !!!temporarily only considering other monsters and clients, don't see prisoners
-			if ( pSightEnt != this												&& 
-				 !FBitSet( pSightEnt->pev->spawnflags, SF_MONSTER_PRISONER )	&& 
-				 pSightEnt->pev->health > 0 )
+			if   (pPlayer1 != NULL && pSightEnt != this &&  
+				 pSightEnt->pev->health > 0 && (pSightEnt->edict() != pPlayer1->edict() ) &&
+				 (g_pGameRules->PlayerRelationship( pPlayer1, pSightEnt ) != GR_TEAMMATE)
+				 ) // is fixed (v1.34), turrets ignore a allies and owner
 			{
-				// the looker will want to consider this entity
+				// the looker will want to consider this entity  && (edict() == pSightEnt->pev->owner)
 				// don't check anything else about an entity that can't be seen, or an entity that you don't care about.
-				if ( IRelationship( pSightEnt ) != R_NO && FInViewCone( pSightEnt ) && !FBitSet( pSightEnt->pev->flags, FL_NOTARGET ) && FVisible( pSightEnt ) )
+				if ( IRelationship( pSightEnt ) != R_NO  && FInViewCone( pSightEnt ) && !FBitSet( pSightEnt->pev->flags, FL_NOTARGET ) && FVisible( pSightEnt ) )
 				{
-					if ( pSightEnt->IsPlayer() )
+				
+					if ( pSightEnt->IsPlayer()  )
 					{
 						if ( pev->spawnflags & SF_MONSTER_WAIT_TILL_SEEN )
 						{
@@ -392,7 +395,7 @@ void CBaseMonster :: Look ( int iDistance )
 				}
 			}
 		}
-	}
+	
 	
 	SetConditions( iSighted );
 }
@@ -2016,11 +2019,24 @@ void CBaseMonster :: MonsterInit ( void )
 
 	// Set fields common to all monsters
 	pev->effects		= 0;
-	pev->takedamage		= DAMAGE_AIM;
+	pev->takedamage		= DAMAGE_YES;
 	pev->ideal_yaw		= pev->angles.y;
 	pev->max_health		= pev->health;
+	pev->armorvalue		= 0;
+	//pev->fuser1			= 30;
+	//pev->fuser2			= 30;
 	pev->deadflag		= DEAD_NO;
 	m_IdealMonsterState	= MONSTERSTATE_IDLE;// Assume monster will be idle, until proven otherwise
+	
+	pev->sequence = 1; // reset sequence for some objects
+	
+	// corrent owner data
+	if (pev->owner == NULL)
+		{pev->owner = edict(); }
+	
+	pevCreateTemp		= edict(); // remember yourself edict state
+	if (Classify() != NULL) // check object classify() exist
+		Classify2		= Classify(); // set classify
 
 	m_IdealActivity = ACT_IDLE;
 
@@ -2216,7 +2232,7 @@ int CBaseMonster::IRelationship ( CBaseEntity *pTarget )
 	/*ABIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_AL	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO	,R_DL,	R_DL,	R_NO	}
 	};
 
-	return iEnemy[ Classify() ][ pTarget->Classify() ];
+	return iEnemy[ Classify2 /* self */ ][ pTarget->Classify2 /* anothers */ ];
 }
 
 //=========================================================
@@ -2437,6 +2453,9 @@ CBaseEntity *CBaseMonster :: BestVisibleEnemy ( void )
 	pNextEnt = m_pLink;
 	pReturn = NULL;
 	iBestRelationship = R_NO;
+	
+	// if (edict() == pev->owner)
+		// return pReturn;
 
 	while ( pNextEnt != NULL )
 	{
@@ -2451,7 +2470,7 @@ CBaseEntity *CBaseMonster :: BestVisibleEnemy ( void )
 				iNearest = ( pNextEnt->pev->origin - pev->origin ).Length();
 				pReturn = pNextEnt;
 			}
-			else if ( IRelationship( pNextEnt) == iBestRelationship )
+			else if ( IRelationship( pNextEnt) == iBestRelationship  )
 			{
 				// this entity is disliked just as much as the entity that
 				// we currently think is the best visible enemy, so we only
@@ -3279,6 +3298,11 @@ void CBaseMonster :: MonsterInitDead( void )
 	pev->frame = 0;
 	ResetSequenceInfo( );
 	pev->framerate = 0;
+	
+	if (pevCreateTemp != NULL)
+		pev->owner = pevCreateTemp;
+	
+	
 	
 	// Copy health
 	pev->max_health		= pev->health;

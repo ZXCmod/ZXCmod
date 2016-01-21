@@ -1,0 +1,136 @@
+
+[b]UPDATED 08.11.2010[/b]
+
+ <tr>
+  <th>Weapon</th>
+  <th>Description</th>
+  <th>First attack</th>
+  <th>Second</th>
+  <th>Third</th>
+  <th>Reload</th>
+  <th>Fourth</th>
+ </tr>
+ <tr>
+  <th>Crowbar</th>
+  <td>The best universal killing tool</td>
+  <td>Original hit [20-30] (*2 when mp_crowbar is 0)</td>
+  <td>Linear rocket [90]</td>
+  <td>Teleportation [None]</td>
+  <td>Random-motion rocket [120] antiarmor</td>
+  <td>Power hit [20-30]</td>
+ </tr>
+ <tr>
+  <th>Glock</th>
+  <td>9mm handgun</td>
+  <td>Dot shot [12-20]</td>
+  <td>Fast shot [12-20]</td>
+  <td>GravBullet [26-72] antiarmor</td>
+  <td>Reload</td>
+  <td>Zoom</td>
+ </tr>
+ <tr>
+  <th>Python</th>
+  <td>Magnum</td>
+  <td>Shot [47-87]</td>
+  <td>Zoom or strong slow capsule [150]</td>
+  <td>Inferno capsule [256 direct hit & 100 per reaction]</td>
+  <td>Reload</td>
+  <td>HECapsule [16 motion hit & 100 explode] antiarmor</td>
+ </tr>
+ <tr>
+  <th>Mp5; better accuracy, if player still duck</th>
+  <td>Assault gun</td>
+  <td>Shot [12-20]</td>
+  <td>Plasma [30-38]</td>
+  <td>Static electro shock [3-14]</td>
+  <td>Reload</td>
+  <td>203 grenade [105]</td>
+ </tr>
+ <tr>
+  <th>Shotgun</th>
+  <td>The best short-range gun</td>
+  <td>15 buck shot [5; total 75]</td>
+  <td>30 buck shot [5; total 150]</td>
+  <td>SPECIAL! Gravity clusters [8000 + sparks]</td>
+  <td>Reload</td>
+  <td>Shotgun cannon [150]</td>
+ </tr>
+ <tr>
+  <th>Crossbow</th>
+  <td>Sniper gun; better accuracy, if player still duck</td>
+  <td>Shot [100] antiarmor</td>
+  <td>5 shots [35 per hit]</td>
+  <td>Reload</td>
+  <td>Grapple bow [0.5/average]</td>
+ </tr>
+<tr>
+  <th>RPG</th>
+  <td>Missile launcher with lazer targeting</td>
+  <td>One rocket [120] antiarmor</td>
+  <td>Sentry turret [average]</td>
+  <td>Dual shot [88-89] antiarmor</td>
+  <td>Big gun turret [average]</td>
+  <td>Sensor mine [325] antiarmor</td>
+ </tr>
+<tr>
+  <th>Gauss</th>
+  <td>Experemental gun</td>
+  <td>Fire [10-20]</td>
+  <td>Charge fire [150]</td>
+  <td>Magnet Ray[ 3, +3 hp to attacker ]</td>
+  <td>Gauss Cannon [150]  antiarmor </td>
+  <td>SPECIAL! Nuke bomb [500, bullet dmg type]</td>
+ </tr>
+<tr>
+  <th>Egon</th>
+  <td>Experemental gun #2</td>
+  <td>Fire [12, bullet dmg type]</td>
+  <td>Fly [NONE]</td>
+  <td>SPECIAL! Tesla, mass destroyer [100+ average]</td>
+  <td>Egon BFBomb [100-500, bullet dmg type]</td>
+  <td>SPECIAL! Storm-light [average]</td>
+ </tr>
+<tr>
+  <th>Hornetgun</th>
+  <td>Xen bio gun</td>
+  <td>Fire [10]</td>
+  <td>Freeze ray on 1.75 sec [NONE]</td>
+  <td>Freeze bag on 3.25 sec [NONE]</td>
+  <td>Flash grenade [25]</td>
+ </tr>
+<tr>
+  <th>Hang grenade</th>
+  <td>The grenades</td>
+  <td>Long throw [100-110]</td>
+  <td>Fast throw [100-110]</td>
+  <td>Smoke [NONE]</td>
+  <td>Gravity grenade [100]</td>
+  <td>Grenade #2[average]</td>
+ </tr>
+  <th>Satchels</th>
+  <td>High explode radio satchels, damage 135 </td>
+  <td>Throw [NONE]</td>
+  <td>Second throw [NONE]</td>
+  <td>Invisibility(stals) mode, dont shot by guns [NONE]</td>
+  <td>Heal crystal [+7 hp, +1 armor per sec]</td>
+  <td>Bug-jumper [206]</td>
+ </tr>
+<tr>
+  <th>Tripmines</th>
+  <td>High explode mines with direct laser</td>
+  <td>Standart mine [120]</td>
+  <td>Laser mine [85, bullet dmg type]</td>
+  <td>Ice friction effect [50, -10% MaxHp]</td>
+  <td>NONE</td>
+ </tr>
+<tr>
+  <th>Snarks (squeakgrenade) </th>
+  <td>Xen bio weapon, predators</td>
+  <td>Standart snarks [30]</td>
+  <td>Evil snarks [97, 114]</td>
+  <td>Stomp, shortrange [45-55]</td>
+  <td>NONE</td>
+ </tr>
+
+
+</table></center>

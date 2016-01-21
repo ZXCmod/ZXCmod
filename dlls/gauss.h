@@ -42,6 +42,8 @@ class   CRadiation : public CBaseEntity
 		private:
 		int m_flDie10;
 		int m_iSpriteTexture2;
+		int m_iSpriteTexture22;
+		int		m_iBodyGibs;
 };
 LINK_ENTITY_TO_CLASS( trigger_killmonster, CRadiation );
 

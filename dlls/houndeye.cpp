@@ -78,7 +78,7 @@ class CHoundeye : public CSquadMonster
 public:
 	void Spawn( void );
 	void Precache( void );
-	int  Classify ( void );
+	int  Classify ( );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void SetYawSpeed ( void );
 	void WarmUpSound ( void );
@@ -126,7 +126,7 @@ IMPLEMENT_SAVERESTORE( CHoundeye, CSquadMonster );
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CHoundeye :: Classify ( void )
+int	CHoundeye :: Classify (  )
 {
 	return	CLASS_ALIEN_MONSTER;
 }

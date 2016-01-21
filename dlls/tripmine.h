@@ -15,6 +15,8 @@ class CTripmineGrenade : public CGrenade
 
 	void MakeBeam( void );
 	void KillBeam( void );
+	
+	private:
 
 	float		m_flPowerUp;
 	Vector		m_vecDir;
@@ -55,10 +57,13 @@ class CTripmineGrenade2 : public CGrenade
 	int m_flNextChatTime5;
 	void MakeBeam( void );
 	void KillBeam( void );
+	
+	private:
 
 	float		m_flPowerUp;
 	Vector		m_vecDir;
 	Vector		m_vecEnd;
+	Vector		vec_tmp;
 	float		m_flBeamLength;
 
 	EHANDLE		m_hOwner;
@@ -86,15 +91,19 @@ class CTripmineGrenade3 : public CGrenade
 	void EXPORT PowerupThink( void );
 	void EXPORT BeamBreakThink( void );
 	void EXPORT DelayDeathThink( void );
+	void EXPORT HealThink( void );
 	void Killed( entvars_t *pevAttacker, int iGib );
 
 	void MakeBeam( void );
 	void KillBeam( void );
+	
+	private:
 
 	float		m_flPowerUp;
 	Vector		m_vecDir;
 	Vector		m_vecEnd;
 	float		m_flBeamLength;
+	short 		m_LaserSprite;
 
 	EHANDLE		m_hOwner;
 	CBeam		*m_pBeam;

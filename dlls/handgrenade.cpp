@@ -50,7 +50,7 @@ void CHandGrenade::Spawn( )
 	m_iId = WEAPON_HANDGRENADE;
 	SET_MODEL(ENT(pev), "models/w_grenade.mdl");
 	m_flNextChatTime6 = gpGlobals->time;
-	pev->dmg = RANDOM_LONG(100,110);
+	pev->dmg = 105;
 	m_iDefaultAmmo = HANDGRENADE_DEFAULT_GIVE;
 	FallInit();// get ready to fall down.
 	m_type = 0; //zero is standart grenade
@@ -161,31 +161,37 @@ void CHandGrenade::SecondaryAttack()
 
 void CHandGrenade::ThirdAttack()
 {
-if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
-	{
-	int iAnim;
-	Vector vecSrc = m_pPlayer->pev->origin;
-	Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
+	if (allowmonsters9.value == 0)
+		return;
 
-	#ifndef CLIENT_DLL
-	CBaseEntity *hGren = Create( "weapon_canister", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-	hGren->pev->velocity = vecThrow;
-	//hGren->pev->avelocity.y = 500;
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-	iAnim = HANDGRENADE_THROW1;
-	SendWeaponAnim( iAnim );
-	#endif
+	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
+		{
+		int iAnim;
+		Vector vecSrc = m_pPlayer->pev->origin;
+		Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
 
-	m_fInAttack = 0;
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10;
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.25;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.95;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
-	}
+		#ifndef CLIENT_DLL
+		CBaseEntity *hGren = Create( "weapon_canister", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+		hGren->pev->velocity = vecThrow;
+		//hGren->pev->avelocity.y = 500;
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		iAnim = HANDGRENADE_THROW1;
+		SendWeaponAnim( iAnim );
+		#endif
+
+		m_fInAttack = 0;
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.25;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.95;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+		}
 }
 
 void CHandGrenade::FourthAttack()
 {
+	if (allowmonsters9.value == 0)
+		return;
+
 	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 5 )
 	{
 		m_flStartThrow2 = gpGlobals->time;
@@ -201,10 +207,14 @@ void CHandGrenade::FourthAttack()
 
 void CHandGrenade::WeaponIdle( void )
 {
+
 	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
 	{
 		if (  m_pPlayer->m_flNextChatTime6 < gpGlobals->time ) //need delay
 			{
+				if (allowmonsters9.value == 0)
+					return;
+
 				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 				Reload();
 				m_pPlayer->m_flNextChatTime6 = gpGlobals->time + 3;
@@ -458,7 +468,7 @@ void    CGrav1 :: Spawn( void )
 	UTIL_SetSize( pev, Vector( -4, -4, -1), Vector(4, 4, 8) );
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_grenade" ); // GravGrenade
-	m_flDie = gpGlobals->time + 10; //10
+	m_flDie = gpGlobals->time + 11.5; //10
 	pev->dmg = 0;
 	pev->takedamage = DAMAGE_YES;
 	pev->nextthink = gpGlobals->time + 5.0;//10 times a second
@@ -510,7 +520,7 @@ void    CGrav1 :: MoveThink( void )
 	TraceResult tr;
 	vecEnd.x = 0;	// Pick a random direction
 	vecEnd.y = 0;
-	vecEnd.z = RANDOM_LONG(128,255);
+	vecEnd.z = 150;
 	vecEnd = pev->origin + vecEnd.Normalize() * 512;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
 	//pev->velocity.z = -35; //jump
@@ -595,7 +605,10 @@ void    CGrav1 :: MoveThink( void )
 						pev->velocity.z = 200; //jump
 						break;
 					}
-					pEntity->TakeDamage(pev, VARS( pev->owner ), 2, DMG_SHOCK);	
+					if (allowmonsters10.value == 0)
+						pEntity->TakeDamage(pev, VARS( pev->owner ), 2, DMG_SHOCK);	
+					else
+						pEntity->TakeDamage(pev, VARS( pev->owner ), 9, DMG_SHOCK);	
 					//UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 1.5, 1 );
 				
 					//shock ray
@@ -680,7 +693,7 @@ void    CGrav1 :: MoveThink( void )
 				{
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 10 ) - Center() ).Normalize(); ///NOW WORKED! CONGRATULATIONS!
 					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * 512;
-					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 8, 512, CLASS_NONE, DMG_FREEZE|DMG_MORTAR  );
+					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 8, 512, CLASS_NONE, DMG_CRUSH  );
 					UTIL_ScreenShake( pEntity->pev->origin, 12.0, 120, 0.9, 1 );
 
 					//spark effects
@@ -714,8 +727,8 @@ void    CGrav1 :: MoveThink( void )
 						WRITE_BYTE( RANDOM_LONG(30,70) );  // width
 						WRITE_BYTE( 0 );   // noise
 						WRITE_BYTE( 0 );   // r, g, b
-						WRITE_BYTE( RANDOM_LONG(103,255) );   // r, g, b
-						WRITE_BYTE( RANDOM_LONG(103,255) );   // r, g, b
+						WRITE_BYTE( 150 );   // r, g, b
+						WRITE_BYTE( 150 );   // r, g, b
 						WRITE_BYTE( 128 ); // brightness
 						WRITE_BYTE( 0 );		// speed
 					MESSAGE_END();
@@ -727,8 +740,8 @@ void    CGrav1 :: MoveThink( void )
 						WRITE_COORD( pev->origin.y);
 						WRITE_COORD( pev->origin.z);
 						WRITE_SHORT( g_sModelIndexFireball );
-						WRITE_BYTE( RANDOM_LONG(8,16) + 7  ); // scale * 10
-						WRITE_BYTE( RANDOM_LONG(8,10)  ); // framerate
+						WRITE_BYTE( 150  ); // scale * 10
+						WRITE_BYTE( 9  ); // framerate
 						WRITE_BYTE( TE_EXPLFLAG_NONE );
 					MESSAGE_END();
 					
@@ -747,8 +760,8 @@ void    CGrav1 :: MoveThink( void )
 			WRITE_COORD( pev->origin.y);
 			WRITE_COORD( pev->origin.z);
 			WRITE_SHORT( g_sModelIndexFireball );
-			WRITE_BYTE( RANDOM_LONG(8,16) + 7  ); // scale * 10
-			WRITE_BYTE( RANDOM_LONG(8,10)  ); // framerate
+			WRITE_BYTE( 15  ); // scale * 10
+			WRITE_BYTE( 9  ); // framerate
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
 		
@@ -792,8 +805,8 @@ void    CSmoke :: MoveThink( void )
 	// lots of smoke
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_SMOKE );
-		WRITE_COORD( pev->origin.x + RANDOM_FLOAT( -150, 150 ) );
-		WRITE_COORD( pev->origin.y + RANDOM_FLOAT( -150, 150 ) );
+		WRITE_COORD( pev->origin.x + RANDOM_LONG(-150,150) );
+		WRITE_COORD( pev->origin.y + RANDOM_LONG(-150,150) );
 		WRITE_COORD( pev->origin.z - 8 );
 		WRITE_SHORT( m_Sprite );
 		WRITE_BYTE( 64 ); // scale * 10

@@ -25,7 +25,6 @@
 #include "shake.h"
 #include "func_break.h"
 #include "decals.h"
-#include "game.h"
 #include "crowbar.h"
 
 
@@ -92,7 +91,14 @@ int CCrowbar::GetItemInfo(ItemInfo *p)
 
 BOOL CCrowbar::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 316 ); //304
+	if (allowmonsters10.value == 1)
+		{
+			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 386 ); //304
+		}
+	else
+		{
+			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 317 ); //304
+		}
 	return DefaultDeploy( "models/v_crowbar.mdl", "models/p_crowbar.mdl", CROWBAR_DRAW, "crowbar" );
 }
 
@@ -170,38 +176,92 @@ void CCrowbar::SecondaryAttack()
 { 
 	if (allowmonsters3.value != 1)
 		return;
+	if (allowmonsters9.value == 0)
+		return;
 		
 	if (m_touch != 0)
 		m_touch = 0;
-	
-	#ifndef CLIENT_DLL
-	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
-	{
-		if (! Swing( 1 ))
+		
+	if (allowmonsters10.value == 0)
 		{
-			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-			Vector GunPosition = m_pPlayer->GetGunPosition( );
-			GunPosition = GunPosition + gpGlobals->v_forward * 0;
-			GunPosition = GunPosition + gpGlobals->v_right   * 7;
-			GunPosition = GunPosition + gpGlobals->v_up      * 0;
-			CRC* Beam = CRC :: Create( GunPosition,
-													 m_pPlayer->pev->v_angle,
-													 m_pPlayer );
+		#ifndef CLIENT_DLL
+		if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+		{
+			if (! Swing( 1 ))
+			{
+				UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+				Vector GunPosition = m_pPlayer->GetGunPosition( );
+				GunPosition = GunPosition + gpGlobals->v_forward * 0;
+				GunPosition = GunPosition + gpGlobals->v_right   * 7;
+				GunPosition = GunPosition + gpGlobals->v_up      * 0;
+				CRC* Beam = CRC :: Create( GunPosition,
+														 m_pPlayer->pev->v_angle,
+														 m_pPlayer );
 
 
-			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right;
-			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up;
-			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
-			
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0; 
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
-			SetThink( SwingAgain );
-			
+				Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right;
+				Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up;
+				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
+				
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0; 
+				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+				SetThink( SwingAgain );
+				
+			}
 		}
+		#endif
 	}
-	#endif
-	
+	else
+	{
+
+			if (  m_pPlayer->m_flNextChatTime11 < gpGlobals->time ) //need delay
+			{
+				//UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+				Vector GunPosition = m_pPlayer->GetGunPosition( );
+				GunPosition = GunPosition + gpGlobals->v_forward * 0;
+				GunPosition = GunPosition + gpGlobals->v_right   * 7;
+				GunPosition = GunPosition + gpGlobals->v_up      * 0;
+
+			
+			
+				int flags;
+				#ifdef CLIENT_WEAPONS
+					flags = FEV_GLOBAL;
+				#else
+					flags = 0;
+				#endif
+
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+				m_pPlayer->m_flNextChatTime11 = gpGlobals->time + 2;
+				m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+				m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+				#ifndef CLIENT_DLL
+				// player "shoot" animation
+				m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+				UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+				Vector vecThrow = gpGlobals->v_forward;
+				CBaseEntity *pHornet = CBaseEntity::Create( "weapon_rocketlauncher", GunPosition, vecThrow, m_pPlayer->edict() );
+				#endif
+
+				//m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 6;
+				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.75; //1.5
+				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.75; //1.5
+				
+				switch( RANDOM_LONG(0,2) )
+				{
+				case 0:
+					SendWeaponAnim( CROWBAR_ATTACK1HIT ); break;
+				case 1:
+					SendWeaponAnim( CROWBAR_ATTACK2HIT ); break;
+				case 2:
+					SendWeaponAnim( CROWBAR_ATTACK3HIT ); break;
+				}
+				return;
+			}
+		
+		//reload completed
+	}
 }
 
 
@@ -361,6 +421,7 @@ int CCrowbar::Swing( int fFirst )
 				}
 
 				vecEnd = tr.vecEndPos;	// This is the point on the actual surface (the hull could have hit space)
+				UTIL_Ricochet( tr.vecEndPos, 7 ); // FX
 		}
 	}
 #endif
@@ -405,16 +466,18 @@ int CCrowbar::Swing( int fFirst )
 		CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
 
 		ClearMultiDamage( );
+		
+		pev->dmg = RANDOM_LONG(20,30);
 
 		if ( (m_flNextPrimaryAttack = m_flNextSecondaryAttack + 1 < UTIL_WeaponTimeBase() ) || g_pGameRules->IsMultiplayer() && allowmonsters3.value != 1 )
 		{
 			// first swing does full damage
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar*2, gpGlobals->v_forward, &tr, DMG_CRUSH|DMG_MORTAR ); 
+			pEntity->TraceAttack(m_pPlayer->pev, pev->dmg*2, gpGlobals->v_forward, &tr, DMG_CRUSH ); 
 		}
 		else
 		{
 			// subsequent swings do half
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar, gpGlobals->v_forward, &tr, DMG_CRUSH|DMG_MORTAR ); 
+			pEntity->TraceAttack(m_pPlayer->pev, pev->dmg, gpGlobals->v_forward, &tr, DMG_CRUSH ); 
 		}	
 		ApplyMultiDamage( m_pPlayer->pev, m_pPlayer->pev );
 
@@ -424,7 +487,7 @@ int CCrowbar::Swing( int fFirst )
 
 		if (pEntity)
 		{
-			if ( pEntity->Classify() != CLASS_NONE && pEntity->Classify() != CLASS_MACHINE )
+			if ( pEntity->Classify( ) != CLASS_NONE && pEntity->Classify( ) != CLASS_MACHINE )
 			{
 
 				// play thwack or smack sound
@@ -498,8 +561,12 @@ void CCrowbar::WeaponIdle( void )
 
 if (allowmonsters3.value != 1)
 	return;
+if (allowmonsters10.value == 1)
+	return;
+if (allowmonsters9.value == 0)
+	return;
 //
-if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6) 
+	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6) 
 	{
 		if (  m_pPlayer->m_flNextChatTime11 < gpGlobals->time ) //need delay
 		{
@@ -528,6 +595,13 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 			UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 			Vector vecThrow = gpGlobals->v_forward;
 			CBaseEntity *pHornet = CBaseEntity::Create( "weapon_rocketlauncher", GunPosition, vecThrow, m_pPlayer->edict() );
+			// its fun prerelease 0.34
+			if (allowmonsters15.value != 0)
+			{
+				CBaseEntity::Create( "weapon_rocketlauncher", GunPosition+Vector(-20,0,0), vecThrow, m_pPlayer->edict() );
+				CBaseEntity::Create( "weapon_rocketlauncher", GunPosition+Vector(20,0,0), vecThrow, m_pPlayer->edict() );
+			}
+			
 			#endif
 
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 6;
@@ -568,6 +642,42 @@ void    CRC :: Spawn( )
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->dmg = 90; //90 old
 	pev->effects = EF_MUZZLEFLASH;
+	
+	MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE      ( TE_BEAMFOLLOW );
+			WRITE_SHORT     ( entindex() );
+			WRITE_SHORT     ( BeamSprite );
+			WRITE_BYTE      ( 8 );
+			WRITE_BYTE      ( 3 );
+			WRITE_BYTE      ( 30 );
+			WRITE_BYTE      ( 30 );
+			WRITE_BYTE      ( 255 );
+			WRITE_BYTE      ( 100 );
+	MESSAGE_END    			( );
+	
+	MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE      ( TE_BEAMFOLLOW );
+			WRITE_SHORT     ( entindex() );
+			WRITE_SHORT     ( BeamSprite );
+			WRITE_BYTE      ( 4 );
+			WRITE_BYTE      ( 2 );
+			WRITE_BYTE      ( 10 );
+			WRITE_BYTE      ( 30 );
+			WRITE_BYTE      ( 255 );
+			WRITE_BYTE      ( 100 );
+	MESSAGE_END    			( );
+	
+	MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE      ( TE_BEAMFOLLOW );
+			WRITE_SHORT     ( entindex() );
+			WRITE_SHORT     ( BeamSprite );
+			WRITE_BYTE      ( 3 );
+			WRITE_BYTE      ( 1 );
+			WRITE_BYTE      ( 250 );
+			WRITE_BYTE      ( 210 );
+			WRITE_BYTE      ( 0 );
+			WRITE_BYTE      ( 200 );
+	MESSAGE_END    			( );
 
 }
 
@@ -593,7 +703,7 @@ void    CRC :: Hit( CBaseEntity* Target )
 					ENT( pev ),
 					&TResult );
 					
-	Explode( &TResult, DMG_BURN );
+	Explode( &TResult, DMG_CRUSH );
 }
 
 void    CRC :: Explode( TraceResult* TResult, int DamageType )
@@ -632,7 +742,7 @@ void    CRC :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_COORD( pev->origin.z); 
 		WRITE_COORD( pev->origin.x);
 		WRITE_COORD( pev->origin.y);
-		WRITE_COORD( pev->origin.z + 350 ); // reach damage radius over .2 seconds
+		WRITE_COORD( pev->origin.z + 800 ); // reach damage radius over .2 seconds
 		WRITE_SHORT( m_iSpriteTexture );
 		WRITE_BYTE( 0 ); // startframe
 		WRITE_BYTE( 0 ); // framerate
@@ -640,13 +750,13 @@ void    CRC :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_BYTE( 3 );  // width
 		WRITE_BYTE( 0 );   // noise
 		WRITE_BYTE( 255 );   // r, g, b
-		WRITE_BYTE( RANDOM_LONG(3,255) );   // r, g, b
-		WRITE_BYTE( RANDOM_LONG(3,64) );   // r, g, b
-		WRITE_BYTE( 40 ); // brightness
+		WRITE_BYTE( 255 );   // r, g, b
+		WRITE_BYTE( 200 );   // r, g, b
+		WRITE_BYTE( 64 ); // brightness
 		WRITE_BYTE( 0 );		// speed
 	MESSAGE_END();
 
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 128, CLASS_NONE, DMG_MORTAR|DMG_BLAST  ); //DMG
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 200, CLASS_NONE, DMG_CRUSH  ); //DMG
 
 	UTIL_Remove( this );
 }
@@ -665,17 +775,7 @@ CRC* CRC :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 
 void    CRC :: MoveThink( )
 {
-	MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE      ( TE_BEAMFOLLOW );
-			WRITE_SHORT     ( entindex() );
-			WRITE_SHORT     ( BeamSprite );
-			WRITE_BYTE      ( BLASTER_BEAM_LENGTH );
-			WRITE_BYTE      ( BLASTER_BEAM_WIDTH );
-			WRITE_BYTE      ( 30 );
-			WRITE_BYTE      ( 30 );
-			WRITE_BYTE      ( 255 );
-			WRITE_BYTE      ( 200 );
-	MESSAGE_END    			( );
+
 	
 	//delete object after 2.5 sec
 	pev->nextthink = gpGlobals->time + 2.5;
@@ -702,26 +802,26 @@ void    CRc2 :: Spawn( )
 	pev->angles.x = -(pev->angles.x);
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->effects = EF_MUZZLEFLASH;
-	m_flDie = gpGlobals->time + 10;
+	m_flDie = gpGlobals->time + 15;
 	
 	// make rocket sound
-	EMIT_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav", 1, 0.4 );
+	EMIT_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav", 0.3, 0.4 );
 	
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT(entindex());	// entity
 		WRITE_SHORT(m_iSpriteTexture );	// model
-		WRITE_BYTE( RANDOM_LONG(30,46) ); // life
-		WRITE_BYTE( 5 );  // width
-		WRITE_BYTE( RANDOM_LONG(100,255 ));   // r, g, b
-		WRITE_BYTE( RANDOM_LONG(100,255 ));   // r, g, b
-		WRITE_BYTE( RANDOM_LONG(100,255 ));   // r, g, b
-		WRITE_BYTE( RANDOM_LONG(200,255) );	// brightness
+		WRITE_BYTE( 50 ); // life
+		WRITE_BYTE( 2 );  // width
+		WRITE_BYTE( 255 );   // r, g, b
+		WRITE_BYTE( 255 );   // r, g, b
+		WRITE_BYTE( 128 );   // r, g, b
+		WRITE_BYTE( 200 );	// brightness
 	MESSAGE_END();  // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 	
 	pev->rendermode = kRenderNormal;
 	pev->renderfx = kRenderFxGlowShell;
-	pev->rendercolor.x = RANDOM_LONG(100,255 );  // red
+	pev->rendercolor.x = 255;  // red
 	pev->rendercolor.y = 255;  // green
 	pev->rendercolor.z = 255; // blue
 	pev->renderamt = 100;
@@ -749,7 +849,7 @@ void    CRc2 :: Hit( CBaseEntity* Target )
 					ENT( pev ),
 					&TResult );
 					
-	Explode( &TResult, DMG_CRUSH|DMG_MORTAR );
+	Explode( &TResult, DMG_CRUSH );
 		
 }
 
@@ -802,8 +902,8 @@ void    CRc2 :: Explode( TraceResult* TResult, int DamageType )
 	MESSAGE_END();
 	
 	//dmg 100 old
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 120, 160, CLASS_NONE, DMG_MORTAR  ); //DMG
-
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 120, 220, CLASS_NONE, DMG_CRUSH  ); //explDMG
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 300, 36, CLASS_NONE, DMG_BULLET  ); //directalDMG
 	UTIL_Remove( this );
 }
 
@@ -821,7 +921,95 @@ CRc2* CRc2 :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 
 void    CRc2 :: MoveThink( )
 {
-	if (gpGlobals->time >= m_flDie) //time out 10 s
+	Vector	vecSpitOffset; 
+	Vector	vecSpitDir;
+	vecSpitOffset = ( pev->origin ); 
+	Vector vecTarget;
+	vecTarget = gpGlobals->v_forward;
+	Vector vecDir;
+	//static m_moving;
+	CBaseEntity *pEntity = NULL;
+	pEntity = CBaseEntity::Instance(pev->owner); // init player owner
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pEntity->pev );
+	
+	// player have lost
+	if (!pl->IsAlive() && pev->renderamt == 100)
+	{
+		m_flDie=3000; // add more live to rocket
+		pev->renderamt = 45;
+		pev->rendercolor.y = 75;  // green
+		pev->rendercolor.z = 75;  // blue
+		STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
+
+	}
+	// 4fun
+	if ( (pl->pev->button & IN_JUMP) && (  pl->m_flNextChatTime3 < gpGlobals->time ) && (allowmonsters10.value == 1)) // lol !!  ! EEEEE
+		{
+			pl->m_flNextChatTime3 = gpGlobals->time + 1; //1 sec reload
+
+			CBaseEntity *pEntity = NULL;
+			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 112 )) != NULL)
+				{
+				if (pEntity->pev->friction != 1.0) //1.30a antifriction
+					pEntity->pev->friction = 1.0;
+				
+				if ((pEntity->pev->takedamage==DAMAGE_YES || pEntity->pev->movetype==MOVETYPE_WALK) && (FVisible( pEntity ))) ///check only players
+					{
+						if (pEntity->edict() != pev->owner)
+						{
+							pEntity->TakeHealth(25, DMG_GENERIC);
+							pEntity->pev->armorvalue += 3; 
+						}
+						else
+						{
+							pEntity->TakeHealth(1, DMG_GENERIC);
+							pEntity->pev->armorvalue += 1;
+						}
+					}
+				}
+				
+			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_BEAMCYLINDER );
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z);
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z + 250 ); // reach damage radius over .2 seconds
+				WRITE_SHORT( m_iSpriteTexture );
+				WRITE_BYTE( 0 ); // startframe
+				WRITE_BYTE( 0 ); // framerate
+				WRITE_BYTE( 2 ); // life
+				WRITE_BYTE( 30 );  // width
+				WRITE_BYTE( 0 );   // noise
+				WRITE_BYTE( 0 );   // r, g, b
+				WRITE_BYTE( 200 );   // r, g, b
+				WRITE_BYTE( 200 );   // r, g, b
+				WRITE_BYTE( 100 ); // brightness
+				WRITE_BYTE( 0 );		// speed
+			MESSAGE_END();
+			
+			// EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.8, ATTN_NORM); //play sound
+			EMIT_SOUND_DYN(ENT(pl->pev), CHAN_WEAPON, "zxc/crystal_heal.wav", 0.8, ATTN_NORM, 0, 80 + RANDOM_LONG(128,0x4f));
+
+			
+		}
+	
+	if (allowmonsters10.value == 1)
+	{
+		if ( (pl != NULL) && (pEntity->edict() == pev->owner) && (pev->renderamt == 100) && (pl->pev->button & IN_RELOAD))
+		{
+			if ( (pl->m_pActiveItem->m_iId == WEAPON_CROWBAR)) // once crash reason, moved to this position
+				m_flDie = -1;
+		}
+		else if ((pev->renderamt == 45) && (pEntity->edict() == pev->owner) && (pl->pev->button & IN_RELOAD))
+		{
+			m_flDie = -1; // destroy that after respawn
+		}
+	}
+	
+	
+	if (gpGlobals->time >= m_flDie) //time out 15 s
 		{
 			//explode
 			STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
@@ -831,26 +1019,58 @@ void    CRc2 :: MoveThink( )
 				WRITE_COORD( pev->origin.y);
 				WRITE_COORD( pev->origin.z);
 				WRITE_SHORT( g_sModelIndexFireball );
-				WRITE_BYTE( 10 + 3  ); // scale * 10
+				WRITE_BYTE( 40 ); // scale * 10
 				WRITE_BYTE( 16  ); // framerate
 				WRITE_BYTE( TE_EXPLFLAG_NONE );
 			MESSAGE_END();
 			
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 400, CLASS_NONE, DMG_BLAST  ); //DMG
+			//explode
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_EXPLOSION );		// This just makes a dynamic light now
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y + 16);
+				WRITE_COORD( pev->origin.z);
+				WRITE_SHORT( m_iSpriteTexture2 );
+				WRITE_BYTE( 48  ); // scale
+				WRITE_BYTE( 24  ); // framerate
+				WRITE_BYTE( TE_EXPLFLAG_NONE );
+			MESSAGE_END();
+			
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 200, 200, CLASS_NONE, DMG_CRUSH  ); //DMG
 			UTIL_Remove( this );
 		}
-
-	Vector	vecSpitOffset;
-	Vector	vecSpitDir;
-	vecSpitOffset = ( pev->origin );
+		
+	if (allowmonsters10.value == 1)
+		{
+		if (m_moving == 0 && (gpGlobals->time >= m_flDie-12.5))
+		{
+			switch ( RANDOM_LONG( 0, 15 ) )
+			{
+				case 5:	m_moving = 1;
+			}
+		}
+	}
 	
-	vecSpitDir = ( pev->angles );
-	vecSpitDir.x = 0;
-	vecSpitDir.y = 0;
-	vecSpitDir.z = 0;
 
-	pev->velocity.x = (pev->velocity.x + RANDOM_LONG(-100,100));
-	pev->velocity.z = (pev->velocity.z + RANDOM_LONG(-30,30));
+
+	if (m_moving == 0)
+	{
+		vecSpitDir = ( pev->angles );
+		vecSpitDir.x = 0;
+		vecSpitDir.y = 0;
+		vecSpitDir.z = 0;
+		pev->velocity.x = (pev->velocity.x + RANDOM_LONG(-100,100));
+		pev->velocity.z = (pev->velocity.z + RANDOM_LONG(-30,30));
+	}
+	else if (pEntity != NULL)
+	{
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+		vecDir = pPlayer->pev->origin - pev->origin;
+		vecDir = vecDir.Normalize( );
+		vecTarget = vecDir;
+		pev->velocity = pev->velocity * 0.2 + vecTarget * 390 * 0.798; // fly to owner
+	}
+	
 	pev->angles = UTIL_VecToAngles (pev->velocity);
 	
 	UTIL_Sparks( pev->origin );

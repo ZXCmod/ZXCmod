@@ -16,6 +16,7 @@
 #define WEAPONS_H
 
 #include "effects.h"
+#include "game.h"
 
 class CBasePlayer;
 extern int gmsgWeapPickup;
@@ -90,6 +91,8 @@ public:
 
 
 #define MAX_NORMAL_BATTERY	100
+#define MAX_NORMAL_BATTERY2	100
+#define MAX_NORMAL_BATTERY3	100
 
 
 // weapon weight factors (for auto-switching)   (-1 = noswitch)
@@ -111,14 +114,14 @@ public:
 
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY		200
-#define	_9MM_MAX_CARRY			400
+#define	_9MM_MAX_CARRY			800
 #define _357_MAX_CARRY			64
 #define BUCKSHOT_MAX_CARRY		32
 #define BOLT_MAX_CARRY			20
 #define ROCKET_MAX_CARRY		10
 #define HANDGRENADE_MAX_CARRY	20
 #define SATCHEL_MAX_CARRY		10
-#define TRIPMINE_MAX_CARRY		10
+#define TRIPMINE_MAX_CARRY		20
 #define SNARK_MAX_CARRY			30
 #define HORNET_MAX_CARRY		16
 #define M203_GRENADE_MAX_CARRY	20
@@ -982,6 +985,12 @@ public:
 	void Reload( void );
 	void WeaponIdle( void );
 	float m_flNextAnimTime;
+	
+	void StartFire( void );
+	void Fire( Vector vecOrigSrc, Vector vecDirShooting, float flDamage, TraceResult tr );
+	private:
+	float GetFullChargeTime( void );
+	int m_iSoundState; // don't save this
 
 
 
@@ -1129,10 +1138,12 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void ); // 1.29 wp
+	void FourthAttack( void ); // 1.34 wp
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 	int m_fJustThrown;
+	int m_flNextChatTime16;
 	
 
 	virtual BOOL UseDecrement( void )

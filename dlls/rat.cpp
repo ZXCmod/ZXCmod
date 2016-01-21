@@ -32,7 +32,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed( void );
-	int  Classify ( void );
+	int  Classify (  );
 };
 LINK_ENTITY_TO_CLASS( monster_rat, CRat );
 
@@ -40,7 +40,7 @@ LINK_ENTITY_TO_CLASS( monster_rat, CRat );
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CRat :: Classify ( void )
+int	CRat :: Classify (  )
 {
 	return	CLASS_INSECT;
 }

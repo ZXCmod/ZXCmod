@@ -24,12 +24,13 @@
 #include	"soundent.h"
 #include	"hornet.h"
 #include	"gamerules.h"
+#include "game.h"
 
 
 int iHornetTrail;
 int iHornetPuff;
 
-#define HORNET_DETONATE_DELAY	1.0
+#define HORNET_DETONATE_DELAY	5.0
 
 LINK_ENTITY_TO_CLASS( hornet, CHornet );
 
@@ -86,17 +87,11 @@ void CHornet :: Spawn( void )
 	edict_t *pSoundEnt = pev->owner;
 	if ( !pSoundEnt )
 		pSoundEnt = edict();
-	if ( !FNullEnt(pev->owner) && (pev->owner->v.flags & FL_CLIENT) )
-	{
-		pev->dmg = RANDOM_LONG(7,11);
-	}
-	else
-	{
-		// no real owner, or owner isn't a client. 
-		pev->dmg = RANDOM_LONG(7,11);
-	}
+	pev->dmg = 20;
 	pev->nextthink = 5;
 	ResetSequenceInfo( );
+	
+	Classify2 = Classify();
 	
 	m_flDie = gpGlobals->time + HORNET_DETONATE_DELAY;
 }
@@ -138,7 +133,7 @@ int CHornet::IRelationship ( CBaseEntity *pTarget )
 //=========================================================
 // ID's Hornet as their owner
 //=========================================================
-int CHornet::Classify ( void )
+int CHornet::Classify ( )
 {
 
 	if ( pev->owner && pev->owner->v.flags & FL_CLIENT)
@@ -179,39 +174,14 @@ void CHornet :: StartDart ( void )
 
 void CHornet::IgniteTrail( void )
 {
-/*
-
-  ted's suggested trail colors:
-
-r161
-g25
-b97
-
-r173
-g39
-b14
-
-old colors
-		case HORNET_TYPE_RED:
-			WRITE_BYTE( 255 );   // r, g, b
-			WRITE_BYTE( 128 );   // r, g, b
-			WRITE_BYTE( 0 );   // r, g, b
-			break;
-		case HORNET_TYPE_ORANGE:
-			WRITE_BYTE( 0   );   // r, g, b
-			WRITE_BYTE( 100 );   // r, g, b
-			WRITE_BYTE( 255 );   // r, g, b
-			break;
-	
-*/
 
 	// trail
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE(  TE_BEAMFOLLOW );
 		WRITE_SHORT( entindex() );	// entity
 		WRITE_SHORT( iHornetTrail );	// model
-		WRITE_BYTE( RANDOM_LONG(8,16) ); // life
-		WRITE_BYTE( RANDOM_LONG(1,2) );  // width
+		WRITE_BYTE( 12 ); // life
+		WRITE_BYTE( 1 );  // width
 		
 		switch ( m_iHornetType )
 		{
@@ -246,12 +216,46 @@ void CHornet :: TrackTarget ( void )
 	// explode when ready
 	if (gpGlobals->time >= m_flDie)
 	{
+	if (allowmonsters10.value == 1)
+		{
+		//explode
+		STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 10 + 3  ); // scale * 10
+			WRITE_BYTE( 16  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+		
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10, 100, CLASS_NONE, DMG_CRUSH  ); //DMG
+		}
 		UTIL_Remove( this );
 		return;
 	}
 
 	if (gpGlobals->time > m_flStopAttack)
 	{
+	if (allowmonsters10.value == 1)
+		{
+		//explode
+		STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 10 + 3  ); // scale * 10
+			WRITE_BYTE( 16  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+		
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 5, 100, CLASS_NONE, DMG_CRUSH  ); //DMG
+		}
 		SetTouch( NULL );
 		UTIL_Remove( this );
 		return;
@@ -310,7 +314,7 @@ void CHornet :: TrackTarget ( void )
 	{
 		case HORNET_TYPE_RED:
 			pev->velocity = pev->velocity * ( m_flFlySpeed * flDelta );// scale the dir by the ( speed * width of turn )
-			pev->nextthink = gpGlobals->time + RANDOM_FLOAT( 0.1, 0.3 );
+			pev->nextthink = gpGlobals->time + 0.1;
 			break;
 		case HORNET_TYPE_ORANGE:
 			pev->velocity = pev->velocity * m_flFlySpeed;// do not have to slow down to turn.
@@ -358,35 +362,15 @@ void CHornet :: TrackTarget ( void )
 //=========================================================
 void CHornet :: TrackTouch ( CBaseEntity *pOther )
 {
-	if ( pOther->edict() == pev->owner || pOther->pev->modelindex == pev->modelindex )
-	{// bumped into the guy that shot it.
-		pev->solid = SOLID_NOT;
-		return;
-	}
-	
 
-
-	if ( IRelationship( pOther ) <= R_NO )
-	{
-		// hit something we don't want to hurt, so turn around.
-
-		pev->velocity = pev->velocity.Normalize();
-
-		pev->velocity.x *= -1;
-		pev->velocity.y *= -1;
-
-		pev->origin = pev->origin + pev->velocity * 4; // bounce the hornet off a bit.
-		pev->velocity = pev->velocity * m_flFlySpeed;
-
-		return;
-	}
-
+	UTIL_BloodDrips( pev->origin, g_vecZero, RANDOM_LONG(25,75), 60 );
 	DieTouch( pOther );
 }
 
 void CHornet::DartTouch( CBaseEntity *pOther )
 {
 	DieTouch( pOther );
+	
 }
 
 void CHornet::DieTouch ( CBaseEntity *pOther )
@@ -401,7 +385,24 @@ void CHornet::DieTouch ( CBaseEntity *pOther )
 			case 2:	EMIT_SOUND( ENT(pev), CHAN_VOICE, "hornet/ag_hornethit3.wav", 1, ATTN_NORM);	break;
 		}
 			
-		pOther->TakeDamage( pev, VARS( pev->owner ), 10, DMG_BULLET );
+		pOther->TakeDamage( pev, VARS( pev->owner ), 9+RANDOM_LONG(1,5), DMG_PARALYZE );
+			if (allowmonsters10.value == 1)
+				{
+				//explode
+				STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
+				MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+					WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+					WRITE_COORD( pev->origin.x);
+					WRITE_COORD( pev->origin.y);
+					WRITE_COORD( pev->origin.z);
+					WRITE_SHORT( g_sModelIndexFireball );
+					WRITE_BYTE( 10 + 3  ); // scale * 10
+					WRITE_BYTE( 16  ); // framerate
+					WRITE_BYTE( TE_EXPLFLAG_NONE );
+				MESSAGE_END();
+				
+				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 37, 100, CLASS_NONE, DMG_PARALYZE ); //DMG
+				}
 	}
 
 	pev->modelindex = 0;// so will disappear for the 0.1 secs we wait until NEXTTHINK gets rid

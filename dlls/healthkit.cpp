@@ -62,7 +62,7 @@ BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 		return FALSE;
 	}
 
-	if ( pPlayer->TakeHealth( RANDOM_LONG(10,30), DMG_SHOCK ) )
+	if ( pPlayer->TakeHealth( 25, DMG_SHOCK ) ) //RANDOM_LONG(10,30)
 	{
 		MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
 			WRITE_STRING( STRING(pev->classname) );
@@ -157,7 +157,10 @@ void CWallHealth::Spawn()
 	UTIL_SetOrigin(pev, pev->origin);		// set size and link into world
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	SET_MODEL(ENT(pev), STRING(pev->model) );
-	m_iJuice = 100;
+	if (allowmonsters10.value == 0)
+		m_iJuice = 100;
+	else
+		m_iJuice = 1000;
 	pev->frame = 0;			
 	multiple = 0.0;
 	
@@ -240,7 +243,11 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 void CWallHealth::Recharge(void)
 {
 		EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/medshot4.wav", 1.0, ATTN_NORM );
-	m_iJuice = 100;
+		
+	if (allowmonsters10.value == 0)
+		m_iJuice = 100;
+	else
+		m_iJuice = 1000;
 	pev->frame = 0;			
 	SetThink( SUB_DoNothing );
 }

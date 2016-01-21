@@ -209,13 +209,21 @@ void CMonsterMaker::MakeMonster( void )
 	pevCreate->origin = pev->origin;
 	pevCreate->angles = pev->angles;
 	SetBits( pevCreate->spawnflags, SF_MONSTER_FALL_TO_GROUND );
+	
+	
 
 	// Children hit monsterclip brushes
 	if ( pev->spawnflags & SF_MONSTERMAKER_MONSTERCLIP )
 		SetBits( pevCreate->spawnflags, SF_MONSTER_HITMONSTERCLIP );
+		
+	// Fix the monstermaker spawn-events (<1.34)
+		
+	CBaseEntity *pEntity = CBaseEntity::Instance(pevCreate);
 
 	DispatchSpawn( ENT( pevCreate ) );
 	pevCreate->owner = edict();
+	if (pEntity!=NULL)
+		pEntity->pevCreateTemp = pevCreate->owner;
 
 	if ( !FStringNull( pev->netname ) )
 	{

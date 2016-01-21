@@ -453,53 +453,64 @@ void CRpg::Holster( int skiplocal /* = 0 */ )
 
 void CRpg::PrimaryAttack()
 {
-	if ( m_iClip )
+if (allowmonsters10.value == 0)
 	{
-		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+		if ( m_iClip )
+		{
+			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 
-#ifndef CLIENT_DLL
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+	#ifndef CLIENT_DLL
+			// player "shoot" animation
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
-		
-		CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
+			UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+			Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
+			
+			CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
 
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
-		pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
-#endif
+			UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
+			pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
+	#endif
 
-		// firing RPG no longer turns on the designator. ALT fire is a toggle switch for the LTD.
-		// Ken signed up for this as a global change (sjb)
+			// firing RPG no longer turns on the designator. ALT fire is a toggle switch for the LTD.
+			// Ken signed up for this as a global change (sjb)
 
-		int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_GLOBAL;
-#else
-	flags = 0;
-#endif
+			int flags;
+	#if defined( CLIENT_WEAPONS )
+		flags = FEV_GLOBAL;
+	#else
+		flags = 0;
+	#endif
 
-		PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
+			PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
 
-		m_iClip--; 
-				
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+			m_iClip--; 
+					
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+		}
+		else
+		{
+			PlayEmptySound( );
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		}
+		UpdateSpot( );
 	}
 	else
 	{
-		PlayEmptySound( );
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		FourthAttack();
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.3;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.3;
 	}
-	UpdateSpot( );
 }
 
 
 void CRpg::SecondaryAttack()
 {
 //do not create the sentry in wall (< 1.26)
+	if (allowmonsters9.value == 0)
+		return;
 
 if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	{
@@ -572,6 +583,11 @@ else
 
 void CRpg::ThirdAttack()
 {
+	if (allowmonsters10.value == 1)
+		return;
+	if (allowmonsters9.value == 0)
+		return;
+
 if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 
 	{
@@ -612,8 +628,19 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 
 void CRpg::FourthAttack()
 {
-if (m_pPlayer->m_flNextChatTime14 > 2)
-	return;
+	if (allowmonsters9.value == 0)
+		return;
+
+	if (allowmonsters10.value == 1)
+		{
+		if (m_pPlayer->m_flNextChatTime14 > 12)
+			return;
+		}
+	else
+		{
+		if (m_pPlayer->m_flNextChatTime14 > 2)
+			return;
+		}
 
 
 	if (m_iClip)
@@ -642,17 +669,17 @@ if (m_pPlayer->m_flNextChatTime14 > 2)
 		Vector vecThrow = gpGlobals->v_forward * 430;
 
 		#ifndef CLIENT_DLL
-		CBaseEntity *pSatchel = Create( "player_freeze", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward + gpGlobals->v_right * 4 + gpGlobals->v_up * -8, Vector(0,0,0), m_pPlayer->edict() );
+		CBaseEntity *pMine = Create( "player_freeze", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward + gpGlobals->v_right * 4 + gpGlobals->v_up * -8, Vector(0,0,0), m_pPlayer->edict() );
 			
 			//export properties
 			//*
-			pSatchel->pev->velocity = vecThrow;
-			pSatchel->pev->skin = 1;
-			//pSatchel->pev->gravity = 0.5;
-			pSatchel->pev->friction = 1.0;
-			pSatchel->pev->movetype = MOVETYPE_TOSS;
-			SET_MODEL( ENT(pSatchel->pev), "models/fungus(small).mdl" );
-			UTIL_SetSize( pSatchel->pev, Vector( -8, -8, 0), Vector( 8, 8, 26 ) );
+			pMine->pev->velocity = vecThrow;
+			pMine->pev->skin = 1;
+			//pMine->pev->gravity = 0.5;
+			pMine->pev->friction = 1.0;
+			pMine->pev->movetype = MOVETYPE_TOSS;
+			SET_MODEL( ENT(pMine->pev), "models/fungus(small).mdl" );
+			UTIL_SetSize( pMine->pev, Vector( -8, -8, 0), Vector( 8, 8, 26 ) );
 			//*
 			
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
@@ -694,6 +721,9 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 	{
 		//do not create in wall
 		{
+			if (allowmonsters9.value == 0)
+				return;
+
 			UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 			TraceResult tr;
 			Vector trace_origin;

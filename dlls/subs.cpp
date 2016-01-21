@@ -117,7 +117,7 @@ BOOL CBaseDMStart::IsTriggered( CBaseEntity *pEntity )
 // This updates global tables that need to know about entities being removed
 void CBaseEntity::UpdateOnRemove( void )
 {
-	int	i;
+/* 	int	i;
 
 	if ( FBitSet( pev->flags, FL_GRAPHED ) )
 	{
@@ -132,6 +132,7 @@ void CBaseEntity::UpdateOnRemove( void )
 			}
 		}
 	}
+	 */
 	if ( pev->globalname )
 		gGlobalState.EntitySetState( pev->globalname, GLOBAL_DEAD );
 }
@@ -144,7 +145,7 @@ void CBaseEntity :: SUB_Remove( void )
 	{
 		// this situation can screw up monsters who can't tell their entity pointers are invalid.
 		pev->health = 0;
-		ALERT( at_aiconsole, "SUB_Remove called on entity with health > 0\n");
+		// ALERT( at_aiconsole, "SUB_Remove called on entity with health > 0\n");
 	}
 
 	REMOVE_ENTITY(ENT(pev));

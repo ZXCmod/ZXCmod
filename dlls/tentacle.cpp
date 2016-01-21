@@ -254,13 +254,13 @@ void CTentacle :: Spawn( )
 	pev->solid			= SOLID_BBOX;
 	pev->movetype		= MOVETYPE_FLY;
 	pev->effects		= 0;
-	pev->health			= 75;
+	pev->health			= 2750;
 	pev->sequence		= 0;
 
 	SET_MODEL(ENT(pev), "models/tentacle2.mdl");
 	UTIL_SetSize( pev, Vector( -32, -32, 0 ), Vector( 32, 32, 64 ) );
 
-	pev->takedamage		= DAMAGE_AIM;
+	pev->takedamage		= DAMAGE_YES;
 	pev->flags			|= FL_MONSTER;
 	
 	m_bloodColor		= BLOOD_COLOR_GREEN;
@@ -558,11 +558,14 @@ void CTentacle :: Cycle( void )
 		// ALERT( at_console, "%s done %d %d\n", STRING( pev->targetname ), pev->sequence, m_iGoalAnim );
 		if (pev->health <= 1)
 		{
-			m_iGoalAnim = TENTACLE_ANIM_Pit_Idle;
-			if (pev->sequence == TENTACLE_ANIM_Pit_Idle)
-			{
-				pev->health = 75;
-			}
+			// m_iGoalAnim = TENTACLE_ANIM_Pit_Idle;
+			// if (pev->sequence == TENTACLE_ANIM_Pit_Idle)
+			// {
+				// pev->health = 75;
+			// }
+			pev->takedamage = DAMAGE_NO;
+			SetThink( DieThink );
+			m_iGoalAnim = TENTACLE_ANIM_Engine_Death1;
 		}
 		else if ( m_flSoundTime > gpGlobals->time )
 		{
@@ -956,18 +959,33 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 	if (m_flHitTime > gpGlobals->time)
 		return;
 
+/* 	::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 128, 256, CLASS_NONE, DMG_BLAST );
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+		WRITE_COORD( tr.vecEndPos.x);
+		WRITE_COORD( tr.vecEndPos.y);
+		WRITE_COORD( tr.vecEndPos.z);
+		WRITE_SHORT( g_sModelIndexFireball );
+		WRITE_BYTE( 128  ); // scale * 10
+		WRITE_BYTE( 8  ); // framerate
+		WRITE_BYTE( TE_EXPLFLAG_NONE );
+	MESSAGE_END(); */
+		
 	// only look at the ones where the player hit me
 	if (tr.pHit == NULL || tr.pHit->v.modelindex != pev->modelindex)
 		return;
+		
+
 
 	if (tr.iHitgroup >= 3)
 	{
-		pOther->TakeDamage( pev, pev, m_iHitDmg, DMG_CRUSH );
-		// ALERT( at_console, "wack %3d : ", m_iHitDmg );
+		//pOther->TakeDamage( pev, pev, m_iHitDmg*10, DMG_CRUSH );
+
+		
 	}
 	else if (tr.iHitgroup != 0)
 	{
-		pOther->TakeDamage( pev, pev, 20, DMG_CRUSH );
+		pOther->TakeDamage( pev, pev, 17, DMG_CRUSH );
 		// ALERT( at_console, "tap  %3d : ", 20 );
 	}
 	else
@@ -985,14 +1003,9 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 
 int CTentacle::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType )
 {
-	if (flDamage > pev->health)
-	{
-		pev->health = 1;
-	}
-	else
-	{
-		pev->health -= flDamage;
-	}
+
+	pev->health -= flDamage;
+
 	return 1;
 }
 
@@ -1028,7 +1041,7 @@ void CTentacleMaw :: Spawn( )
 	pev->solid			= SOLID_NOT;
 	pev->movetype		= MOVETYPE_STEP;
 	pev->effects		= 0;
-	pev->health			= 75;
+	pev->health			= 1075;
 	pev->yaw_speed		= 8;
 	pev->sequence		= 0;
 	

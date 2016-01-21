@@ -192,7 +192,7 @@ public:
 	BOOL ShouldGoToNode( void );
 
 	void SetYawSpeed( void );
-	int  Classify ( void );
+	int  Classify (  );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void LayHeadcrab( void );
 
@@ -404,7 +404,7 @@ void CBigMomma :: KeyValue( KeyValueData *pkvd )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CBigMomma :: Classify ( void )
+int	CBigMomma :: Classify (  )
 {
 	return	CLASS_ALIEN_MONSTER;
 }
@@ -665,10 +665,11 @@ void CBigMomma :: Spawn()
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_GREEN;
-	pev->health			= 150 * gSkillData.bigmommaHealthFactor;
+	pev->health			= 250;
 	pev->view_ofs		= Vector ( 0, 0, 128 );// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= 0.3;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
+	//Classify2			= Classify();
 
 	MonsterInit();
 }

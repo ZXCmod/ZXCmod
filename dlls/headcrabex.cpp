@@ -86,7 +86,7 @@ public:
 	void IdleSound( void );
 	void AlertSound( void );
 	void PrescheduleThink( void );
-	int  Classify ( void );
+	int  Classify ( );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	BOOL CheckRangeAttack1 ( float flDot, float flDist );
 	BOOL CheckRangeAttack2 ( float flDot, float flDist );
@@ -154,7 +154,7 @@ const char *CHeadCrabex::pBiteSounds[] =
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CHeadCrabex :: Classify ( void )
+int	CHeadCrabex :: Classify ( )
 {
 	return	CLASS_ALIEN_PREY;
 }

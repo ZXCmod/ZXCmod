@@ -20,6 +20,7 @@
 #include "weapons.h"
 #include "nodes.h"
 #include "player.h"
+#include "game.h"
 
 enum glock_e {
 	GLOCK_IDLE1 = 0,
@@ -93,7 +94,7 @@ void CGlock::Precache( void )
 	PRECACHE_SOUND("items/9mmclip2.wav");
 	PRECACHE_MODEL("sprites/blflare.spr");
 	PRECACHE_MODEL("sprites/blueflare2.spr");
-	
+	PRECACHE_MODEL( "sprites/xspark3.spr" );
 	
 
 	PRECACHE_SOUND ("weapons/pl_gun1.wav");//silenced handgun
@@ -154,25 +155,53 @@ void CGlock::Reload( void )
 
 BOOL CGlock::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 );
-
+	if (allowmonsters10.value == 1)
+		{
+			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 346 ); //304
+		}
+	else
+		{
+			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 ); //304
+		}
 	// pev->body = 1;
 	return DefaultDeploy( "models/v_9mmhandgun.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded", /*UseDecrement() ? 1 : 0*/ 0 );
 }
 
 void CGlock::SecondaryAttack( void )
 {
-	GlockFire( 0.07, 0.2 );
+	if (allowmonsters10.value == 0)
+		GlockFire( 0.07, 0.2 );
+	else
+	{
+		
+		m_typeG = 0;
+		ThirdAttack( );
+	}
 }
 
 void CGlock::PrimaryAttack( void )
 {
-	GlockFire( 0.035, 0.3 ); //0.25
+	if (allowmonsters10.value == 0)
+		GlockFire( 0.035, 0.3 ); //0.25
+	else
+		{
+			
+			m_typeG = 1;
+			if (m_iClip >= 20)
+				ThirdAttack( );
+			else
+				DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.25 );
+			
+		}
 }
 
 //updated in v1.33 with both types
 void CGlock::ThirdAttack( void )
 {
+	
+	if (allowmonsters9.value == 0)
+		return;
+	
 	int iResult;
 
 	if (m_iClip <= 4)
@@ -193,25 +222,47 @@ void CGlock::ThirdAttack( void )
 				#ifndef CLIENT_DLL
 					CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
 					pGlockCore->pev->velocity = vecThrow;
+					pGlockCore->pev->dmg = 64; 
 					m_iClip-=4;
-					m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-					m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
-					m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+					if (allowmonsters10.value == 0)
+					{
+						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+					}
+					else
+					{
+						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+					}
 				#endif
 				return;
 			}
-		if (  m_typeG == 1 ) //normal // typed as 1 (red trails)
+		if (  m_typeG == 1 ) // typed as 1 (red trails)
 		{
 				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); //play sound
 				Vector vecThrow = gpGlobals->v_forward * 1200; //init and start speed of core, 540
 				#ifndef CLIENT_DLL
 					CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
 					pGlockCore->pev->velocity = vecThrow;
-					pGlockCore->pev->dmg = 112; 
-					m_iClip-=5;
-					m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.1;
-					m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.1;
-					m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.1;
+					pGlockCore->pev->dmg = 96; 
+					if (allowmonsters10.value == 0)
+						m_iClip-=5;
+					else
+						m_iClip-=20;
+					if (allowmonsters10.value == 0)
+					{
+						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+					}
+					else
+					{
+						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
+						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
+					}
 				#endif
 				return;
 		}
@@ -225,6 +276,7 @@ void CGlock::ThirdAttack( void )
 
 void CGlock::FourthAttack( void )
 {
+
 	if ( m_pPlayer->pev->fov != 0 )
 	{
 		m_fInZoom = FALSE;
@@ -417,9 +469,11 @@ void    CGB :: Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmhandgun" );
 	m_flDie = gpGlobals->time + 3;
-	pev->dmg = 72; //dynamyc value, 85
+	pev->dmg = 64; //dynamyc value, 85
 	pev->takedamage = DAMAGE_YES;
 	pev->nextthink = gpGlobals->time + 0.1;
+	
+	pev->avelocity.z = -pev->dmg*3;
 	
 	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
 	pev->renderamt = 195;
@@ -427,13 +481,18 @@ void    CGB :: Spawn( )
 	SetTouch( Hit );
 	SetThink( MoveThink );
 	pev->health			= 256; 
+	if (allowmonsters10.value == 1)
+		pev->dmg*=0.5;
+
 }
 
 void CGB :: Precache( void )
 {
-	m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
+	m_iSpriteTexture = PRECACHE_MODEL( "sprites/xspark3.spr" ); // shockwave.spr
 	m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 	m_iBalls = PRECACHE_MODEL( "sprites/gradbeam.spr" );
+	//rjet1.spr
+
 }
 
 ///////////////
@@ -446,6 +505,8 @@ CGB* CGB :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 	Beam->SetTouch( CGB :: Hit );
 	Beam->pev->owner = Owner->edict( );
 	return Beam;
+	
+	
 }
 
 void    CGB :: Hit( CBaseEntity* Target )
@@ -464,7 +525,8 @@ void    CGB :: Hit( CBaseEntity* Target )
 		
 		
 	//full explode after touch with wall
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 26, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
+	//if (allowmonsters10.value == 0)
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 26, 128, CLASS_NONE, DMG_SHOCK  ); //end blast
 
 	//sprite 
 	pev->model = MAKE_STRING("sprites/blueflare2.spr");
@@ -472,7 +534,7 @@ void    CGB :: Hit( CBaseEntity* Target )
 	if ( pSprite )
 		{
 			pSprite->pev->nextthink = gpGlobals->time + 2.4;
-			pSprite->pev->scale = pev->dmg/40; /// 85 / 40 = 2.125
+			pSprite->pev->scale = pev->dmg/50; /// 85 / 40 = 2.125
 			pSprite->SetThink( SUB_Remove );
 			pSprite->SetTransparency( kRenderTransAdd, 128, 128, 128, 200, kRenderFxGlowShell );
 		}
@@ -488,35 +550,7 @@ void    CGB :: Hit( CBaseEntity* Target )
 void    CGB :: MoveThink( )
 {
 
-	//set trails
-	if (pev->dmg <= 100)
-	{
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
-		WRITE_BYTE( 24 ); // life
-		WRITE_BYTE( 2 ); // width
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 200 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 36 ); // brightness
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-	}
-	else
-	{
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
-		WRITE_BYTE( 30 ); // life
-		WRITE_BYTE( 2 ); // width
-		WRITE_BYTE( 200 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 30 ); // brightness
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-	}
+
 
 	// Make a lightning strike
 	Vector vecEnd;
@@ -537,6 +571,64 @@ void    CGB :: MoveThink( )
 		case 8: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build4.wav", 0.7, ATTN_NORM); break;
 	}
 
+	
+		
+	//set trails
+	if (pev->dmg <= 80)
+	{
+		
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(m_LaserSprite ); // model
+		WRITE_BYTE( 14 ); // life
+		WRITE_BYTE( 2 ); // width
+		WRITE_BYTE( 30 ); // r, g, b
+		WRITE_BYTE( 45 ); // r, g, b
+		WRITE_BYTE( 30 ); // r, g, b
+		WRITE_BYTE( 46 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(m_iSpriteTexture ); // model
+		WRITE_BYTE( 31 ); // life
+		WRITE_BYTE( 1 ); // width
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 60 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 160 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	}
+	else
+	{
+		
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(m_LaserSprite ); // model
+		WRITE_BYTE( 10 ); // life
+		WRITE_BYTE( 3 ); // width
+		WRITE_BYTE( 60 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 46 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+		
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(m_iSpriteTexture ); // model
+		WRITE_BYTE( 31 ); // life
+		WRITE_BYTE( 1 ); // width
+		WRITE_BYTE( 60 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 160 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	}
+	
 	//lightings 1
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_BEAMPOINTS );
@@ -565,27 +657,28 @@ void    CGB :: MoveThink( )
 	vecDir = Vector( 0, 0, 0 );
 	
 
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, pev->dmg )) != NULL)
+
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, pev->dmg+16 )) != NULL)
 		{
 			if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()) && pEntity->pev->health >= 3) //!(pEntity->pev->movetype == MOVETYPE_FLY)
 				{
 					if ( FBitSet(pEntity->pev->flags, FL_DUCKING) && (pEntity->pev->flags & FL_ONGROUND) ) 
 					{
-					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/2, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+						::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/2, pev->dmg, CLASS_NONE, DMG_SHOCK  );
 					}
 					else
 					{
-					pEntity->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pEntity->pev->origin.x));
-					pEntity->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pEntity->pev->origin.y));
-					pEntity->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pEntity->pev->origin.z));
-					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/3, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+						pEntity->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pEntity->pev->origin.x));
+						pEntity->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pEntity->pev->origin.y));
+						pEntity->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pEntity->pev->origin.z));
+						::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/3, pev->dmg, CLASS_NONE, DMG_SHOCK  );
 					}
 				} 
 		}
 
 	if (gpGlobals->time >= m_flDie) //full explode and self destroy
 		{
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 200, CLASS_NONE, DMG_MORTAR  ); //end blast
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 200, CLASS_NONE, DMG_SHOCK  ); //end blast
 			EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
 			pev->takedamage = DAMAGE_NO;
 			SetThink( SUB_Remove );

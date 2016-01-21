@@ -27,6 +27,7 @@
 #include "soundent.h"
 #include "decals.h"
 #include "shake.h"
+#include "game.h"
 
 
 //===================grenade
@@ -45,7 +46,7 @@ void CGrenade::Explode( Vector vecSrc, Vector vecAim )
 	TraceResult tr;
 	UTIL_TraceLine ( pev->origin, pev->origin + Vector ( 0, 0, -32 ),  ignore_monsters, ENT(pev), & tr);
 
-	Explode( &tr, DMG_BLAST );
+	Explode( &tr, DMG_CRUSH );
 }
 
 // UNDONE: temporary scorching for PreAlpha - find a less sleazy permenant solution.
@@ -203,7 +204,7 @@ void CGrenade::Detonate( void )
 	vecSpot = pev->origin + Vector ( 0 , 0 , 8 );
 	UTIL_TraceLine ( vecSpot, vecSpot + Vector ( 0, 0, -40 ),  ignore_monsters, ENT(pev), & tr);
 
-	Explode( &tr, DMG_BLAST );
+	Explode( &tr, DMG_CRUSH );
 }
 
 
@@ -220,7 +221,7 @@ void CGrenade::ExplodeTouch( CBaseEntity *pOther )
 	vecSpot = pev->origin - pev->velocity.Normalize() * 32;
 	UTIL_TraceLine( vecSpot, vecSpot + pev->velocity.Normalize() * 64, ignore_monsters, ENT(pev), &tr );
 
-	Explode( &tr, DMG_BLAST );
+	Explode( &tr, DMG_CRUSH );
 }
 
 
@@ -398,8 +399,8 @@ void CGrenade :: TumbleThink2( void )
 		
 		//Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 32, pev->angles, pev->owner ); 
 		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 64, pev->angles, pev->owner ); 
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 75, 195, CLASS_NONE, DMG_BLAST  ); //end blast
-		//Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 96, pev->angles, pev->owner ); 
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 75, 225, CLASS_NONE, DMG_CRUSH  ); //end blast
+		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 96, pev->angles, pev->owner ); 
 
 		SetThink( Detonate );
 	}
@@ -528,7 +529,7 @@ void CGrenadeBeam::Update( void )
 					
 					UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
 					UTIL_ScreenFade( pEntity, Vector(255,255,250), 1, 0.84, 128, FFADE_IN ); //flash 
-					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(65,75), DMG_MORTAR);	
+					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(45,65), DMG_CRUSH);	
 
 				}
 			
@@ -645,7 +646,10 @@ CGrenade *CGrenade::ShootContact( entvars_t *pevOwner, Vector vecStart, Vector v
 	// Explode on contact
 	pGrenade->SetTouch( ExplodeTouch );
 
-	pGrenade->pev->dmg = gSkillData.plrDmgM203Grenade;
+	if (allowmonsters10.value == 0)
+		pGrenade->pev->dmg = gSkillData.plrDmgM203Grenade;
+	else
+		pGrenade->pev->dmg = gSkillData.plrDmgM203Grenade*0.75;
 
 	return pGrenade;
 }

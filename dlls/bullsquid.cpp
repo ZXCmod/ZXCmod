@@ -192,7 +192,7 @@ public:
 	void Precache( void );
 	void SetYawSpeed( void );
 	int  ISoundMask( void );
-	int  Classify ( void );
+	int  Classify (   );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void IdleSound( void );
 	void PainSound( void );
@@ -422,7 +422,7 @@ int CBullsquid :: ISoundMask ( void )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CBullsquid :: Classify ( void )
+int	CBullsquid :: Classify (  )
 {
 	return	CLASS_ALIEN_PREDATOR;
 }

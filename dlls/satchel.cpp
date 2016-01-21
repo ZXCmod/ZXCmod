@@ -478,6 +478,10 @@ void CSatchel::ThirdAttack( void )
 //Invisible weapon
 //new code for 1.26
 
+	if (allowmonsters9.value == 0)
+		return;
+
+
 	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 4)
 		{
 		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
@@ -503,7 +507,9 @@ void CSatchel::ThirdAttack( void )
 
 void CSatchel::FourthAttack()
 {
-		
+	if (allowmonsters9.value == 0)
+		return;
+
 	//throw
 	if ( (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 2) && m_chargeReady != 2)
 	{
@@ -583,15 +589,18 @@ void CSatchel::WeaponIdle( void )
 if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6) // && creload==0
 	
 	if (  m_pPlayer->m_flNextChatTime2 < gpGlobals->time )
-{
-
 	{
-		// reload when reload is pressed, or if no buttons are down and weapon is empty.
-		Reload();
-		m_pPlayer->m_flNextChatTime2 = gpGlobals->time + 90;
-		return;
+
+		{
+			if (allowmonsters9.value == 0)
+				return;
+
+			// reload when reload is pressed, or if no buttons are down and weapon is empty.
+			Reload();
+			m_pPlayer->m_flNextChatTime2 = gpGlobals->time + 90;
+			return;
+		}
 	}
-}
 
 else
 {
@@ -790,6 +799,8 @@ void    CBlasterBeam4:: Explode(int DamageType)
 			{
 				pEntity->TakeHealth(7, DMG_GENERIC); //give health all around
 				pEntity->pev->armorvalue += 1; //give more armor all (v 1.21)
+				pEntity->pev->fuser1 += 1; //give more armor all (v 1.34)
+				pEntity->pev->fuser2 += 1; //give more armor all (v 1.34)
 			}
 		}
 	
@@ -825,11 +836,11 @@ void    CBlasterBeam4 :: MoveThink( )
 			WRITE_BYTE( 0 ); // startframe
 			WRITE_BYTE( 0 ); // framerate
 			WRITE_BYTE( 3 ); // life
-			WRITE_BYTE( RANDOM_LONG(30,70) );  // width
+			WRITE_BYTE( 50 );  // width
 			WRITE_BYTE( 0 );   // noise
 			WRITE_BYTE( 0 );   // r, g, b
-			WRITE_BYTE( RANDOM_LONG(3,255) );   // r, g, b
-			WRITE_BYTE( RANDOM_LONG(3,255) );   // r, g, b
+			WRITE_BYTE( 50 );   // r, g, b
+			WRITE_BYTE( 50 );   // r, g, b
 			WRITE_BYTE( 128 ); // brightness
 			WRITE_BYTE( 0 );		// speed
 		MESSAGE_END();
@@ -843,8 +854,8 @@ void    CBlasterBeam4 :: MoveThink( )
 			// lots of smoke
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 				WRITE_BYTE( TE_SMOKE );
-				WRITE_COORD( pev->origin.x + RANDOM_FLOAT( -16, 16 ) );
-				WRITE_COORD( pev->origin.y + RANDOM_FLOAT( -16, 16 ) );
+				WRITE_COORD( pev->origin.x  );
+				WRITE_COORD( pev->origin.y  );
 				WRITE_COORD( pev->origin.z - 32 );
 				WRITE_SHORT( g_sModelIndexSmoke );
 				WRITE_BYTE( 55 ); // scale * 10

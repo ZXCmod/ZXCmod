@@ -66,7 +66,7 @@ public:
 	
 	virtual void TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
 	virtual int	 TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
-	virtual int	 Classify(void);
+	virtual int	 Classify( );
 
 	int BloodColor( void ) { return DONT_BLEED; }
 	void GibMonster( void ) {}	// UNDONE: Throw turret gibs?
@@ -208,6 +208,28 @@ void CBaseTurret::KeyValue( KeyValueData *pkvd )
 }
 
 
+//
+// ID as a machine
+//
+int	CBaseTurret::Classify ( )
+{
+	CBaseEntity *pEntity2 = CBaseEntity::Instance(pev->owner);
+	CBasePlayer *pPlayer = (CBasePlayer *)pEntity2;
+	int index = g_pGameRules->GetTeamIndex( pPlayer->TeamID() );
+	
+	
+	if (m_iOn || m_iAutoStart)
+	{
+		if (g_pGameRules->IsTeamplay() && index == 0)  // Blue
+			return	CLASS_MACHINE;
+		if (g_pGameRules->IsTeamplay() && index == 1)  // Red
+			return	CLASS_ALIEN_MONSTER;
+	}
+		
+	
+	return 1;
+}
+
 void CBaseTurret::Spawn()
 { 
 //CBaseEntity *pEntity = NULL;
@@ -221,6 +243,11 @@ void CBaseTurret::Spawn()
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->takedamage		= DAMAGE_AIM;
 	pev->ltime  		= 0;
+	
+	Classify2 = Classify();
+	
+	pev->max_health = pev->health;
+	
 	
 
 	SetBits (pev->flags, FL_MONSTER);
@@ -252,6 +279,8 @@ void CBaseTurret::Precache( )
 	PRECACHE_SOUND ("turret/tu_spindown.wav");
 	PRECACHE_SOUND ("turret/tu_search.wav");
 	PRECACHE_SOUND ("turret/tu_alert.wav");
+	PRECACHE_SOUND ("ambience/ffdeepamb.wav");
+	
 }
 
 //#define TURRET_GLOW_SPRITE "sprites/flare3.spr"
@@ -262,6 +291,8 @@ void CTurret::Spawn()
 	Precache( );
 	SET_MODEL(ENT(pev), "models/turret.mdl");
 	pev->health			= 100;
+	pev->fuser2			= 25;
+	//pev->max_health = pev->health;
 	m_HackedGunPos		= Vector( 0, 0, 12.75 );
 	m_flMaxSpin =		TURRET_MAXSPIN;
 	pev->view_ofs.z = 12.75;
@@ -291,7 +322,8 @@ void CMiniTurret::Spawn()
 	UTIL_Remove( this );
 	
 	SET_MODEL(ENT(pev), "models/miniturret.mdl");
-	pev->health			= gSkillData.miniturretHealth;
+	pev->health			= 100;
+	//pev->max_health = pev->health;
 	m_HackedGunPos		= Vector( 0, 0, 12.75 );
 	m_flMaxSpin = 0;
 	pev->view_ofs.z = 12.75;
@@ -323,6 +355,7 @@ void CMiniTurret::Precache()
 
 void CBaseTurret::Initialize(void)
 {
+
 	m_iOn = 0;
 	m_fBeserk = 0;
 	m_iSpin = 0;
@@ -349,7 +382,7 @@ void CBaseTurret::Initialize(void)
 	if (m_iAutoStart)
 	{
 		m_flLastSight = gpGlobals->time + m_flMaxWait;
-		SetThink(AutoSearchThink);		
+		SetThink(Deploy);		
 		pev->nextthink = gpGlobals->time + .1;
 	}
 	else
@@ -391,9 +424,42 @@ void CBaseTurret::Ping( void )
 	//1.30 select weapon
 	char *txt; // init string
 	
+	static s;
+	
+	Vector direction = Vector(0,0,1); 
+	
+	// pev->owner = NULL;
+	
+	if (pev->health < pev->max_health)
+		{
+		pev->health ++; //UTIL_Sparks( pev->origin); };
+		//spark effects
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_STREAK_SPLASH );
+			WRITE_COORD( pev->origin.x );		// origin
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_COORD( direction.x );	// direction
+			WRITE_COORD( direction.y );
+			WRITE_COORD( direction.z );
+			WRITE_BYTE( 8 );	// Streak color 6
+			WRITE_SHORT( 3 );	// count
+			WRITE_SHORT( 128 );
+			WRITE_SHORT( 128 );	// Random velocity modifier
+		MESSAGE_END();
+		s=1;
+		
+		if (s==1)
+			EMIT_SOUND(ENT(pev), CHAN_BODY, "ambience/ffdeepamb.wav", 1.0, ATTN_NORM);
+		else
+			STOP_SOUND( ENT(pev), CHAN_ITEM, "plats/train_use1.wav" );
+		}
+	else
+		s=0;
+	
 	while ((m_hEnemy = UTIL_FindEntityInSphere( m_hEnemy, pev->origin, 50 )) != NULL)
 	{
-	if ((m_hEnemy->pev->button & IN_USE) && m_hEnemy->edict() == pev->owner)
+	if ((m_hEnemy->pev->button & IN_USE) && m_hEnemy->edict() == pev->owner && IsFacing2( VARS(pev->owner), pev->origin )) // cone view
 			{
 			
 				pev->ltime ++;
@@ -404,7 +470,7 @@ void CBaseTurret::Ping( void )
 			if (pev->ltime==0)
 				txt = "Type 0: Mgun";
 			if (pev->ltime==1)
-				txt = "Type 1: EvilSnarks";
+				txt = "Type 1: Linear Rocket";
 			if (pev->ltime==2)
 				txt = "Type 2: Chaos Rocket";
 			if (pev->ltime==3)
@@ -426,9 +492,9 @@ void CBaseTurret::Ping( void )
 				hudtextparms_t hText;
 				sprintf(szText, "%s .\n", txt ); //game text
 				memset(&hText, 0, sizeof(hText));
-				hText.channel = 16;
+				hText.channel = 29;
 				hText.x = 0.90; //range by 0.0 to 1.0
-				hText.y = 0.80;
+				hText.y = 0.70;
 				hText.effect = 1; // Fade in/out
 				hText.r1 = hText.g1 = hText.b1 = 255;
 				hText.a1 = 255;
@@ -464,7 +530,7 @@ void CBaseTurret::Ping( void )
 	else if (m_flPingTime <= gpGlobals->time)
 	{
 		m_flPingTime = gpGlobals->time + 2;
-		EMIT_SOUND(ENT(pev), CHAN_ITEM, "turret/tu_ping.wav", 0.5, ATTN_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_ITEM, "turret/tu_ping.wav", 0.25, ATTN_NORM);
 		EyeOn( );
 		//visual unset
 		pev->renderfx = kRenderFxNone;
@@ -476,7 +542,6 @@ void CBaseTurret::Ping( void )
 
 void CBaseTurret::EyeOn( )
 {
-
 
 	
 }
@@ -500,11 +565,6 @@ void CBaseTurret::ActiveThink(void)
 	
 	
 
-
-	
-
-	
-	
 	int fAttack = 0;
 	Vector vecDirToEnemy;
 
@@ -518,12 +578,13 @@ void CBaseTurret::ActiveThink(void)
 		SetThink(SearchThink);
 		return;
 	}
-
+	
+	// if it's dead, look for something new
 	if ( !m_hEnemy->IsAlive() )
 	{
 		if (!m_flLastSight)
 		{
-			m_flLastSight = gpGlobals->time + 0.3; // continue-shooting timeout
+			m_flLastSight = gpGlobals->time + 0.5; // continue-shooting timeout
 		}
 		else
 		{
@@ -536,37 +597,17 @@ void CBaseTurret::ActiveThink(void)
 			}
 		}
 	}
-	
-	
+
 	Vector vecMid = pev->origin + pev->view_ofs;
 	Vector vecMidEnemy = m_hEnemy->BodyTarget( vecMid );
 
+	// Look for our current enemy
 	int fEnemyVisible = FBoxVisible(pev, m_hEnemy->pev, vecMidEnemy );	
+
 	vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
 	float flDistToEnemy = vecDirToEnemy.Length();
 
 	Vector vec = UTIL_VecToAngles(vecMidEnemy - vecMid);	
-
-
-
-
-		//ADDED IN VER 1.24
-	if (m_hEnemy->edict() == pev->owner)
-		{
-			m_hEnemy = NULL;
-			m_flLastSight = gpGlobals->time + m_flMaxWait;
-			SetThink(SearchThink);
-			return;
-		}
-	//fixed teamplay
-	CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
-	if ( g_pGameRules->PlayerRelationship( pOwner, m_hEnemy ) == GR_TEAMMATE)
-		{
-			m_hEnemy = NULL;
-			m_flLastSight = gpGlobals->time + m_flMaxWait;
-			SetThink(SearchThink);
-			return;
-		}
 
 	// Current enmey is not visible.
 	if (!fEnemyVisible || (flDistToEnemy > TURRET_RANGE))
@@ -576,8 +617,6 @@ void CBaseTurret::ActiveThink(void)
 		else
 		{
 			// Should we look for a new target?
-			
-			
 			if (gpGlobals->time > m_flLastSight)
 			{
 				m_hEnemy = NULL;
@@ -585,19 +624,14 @@ void CBaseTurret::ActiveThink(void)
 				SetThink(SearchThink);
 				return;
 			}
-			
-			
 		}
 		fEnemyVisible = 0;
 	}
 	else
 	{
-
-	
 		m_vecLastSight = vecMidEnemy;
 	}
 
-	
 	UTIL_MakeAimVectors(m_vecCurAngles);	
 
 
@@ -644,29 +678,21 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 		}
 	if (pev->ltime == 1 && F <= 0)
 		{
-		switch(RANDOM_LONG(0,5)) // evil snarks
-			{
-				case 0: 
-					Vector vecSrc, vecAng;
-					GetAttachment( 0, vecSrc, vecAng );
 					SetTurretAnim(TURRET_ANIM_FIRE);
-					CBaseEntity *pRocket = CBaseEntity::Create( "monster_larve", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
-					pRocket->pev->velocity = gpGlobals->v_forward * 950;
-					pRocket->pev->gravity = 0.1;
-					pRocket->pev->dmg = RANDOM_LONG(17,31);
-					pRocket->pev->nextthink = gpGlobals->time + 0.25;
-					pev->nextthink = gpGlobals->time + 0.35;
-				break;
-			}
+					CBaseEntity *pRocket1 = CBaseEntity::Create( "weapon_stoner", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
+					pRocket1->pev->dmg = 90;
+					pRocket1->pev->ltime = 80;
+					pRocket1->pev->velocity = gpGlobals->v_forward * 700;
+					F = 1.75;
 		}
-	if (pev->ltime == 2 && F <= 0) // small rocket
+	if (pev->ltime == 2 && F <= 0) // Random Rocket
 		{
 					SetTurretAnim(TURRET_ANIM_FIRE);
 					CBaseEntity *pRocket2 = CBaseEntity::Create( "weapon_rocketlauncher", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
 					pRocket2->pev->dmg = 48;
 					pRocket2->pev->ltime = 80;
 					pRocket2->pev->velocity = gpGlobals->v_forward * 700;
-					F = 1.25;
+					F = 2.25;
 		}
 	if (pev->ltime == 3 && F <= 0) // heavy BfBmb
 		{
@@ -694,10 +720,10 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					CBaseEntity *pRocket5 = CBaseEntity::Create( "weapon_laser_rifle", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
 					pRocket5->pev->velocity = gpGlobals->v_forward * 2048;
 					
-					if (pev->health > 75)
-						F = 0.20;
+					if (pev->health > (pev->max_health*0.5))
+						F = 0.10;
 					else
-						F = 0.40;
+						F = 0.25;
 					
 					//play sounds
 					switch(RANDOM_LONG(0,2))
@@ -735,16 +761,16 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					SetTurretAnim(TURRET_ANIM_FIRE);
 					EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/electro4.wav", 1.0, ATTN_NORM);
 					CBaseEntity *pRocket6 = CBaseEntity::Create( "virtual_hull", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
-					pRocket6->pev->velocity = gpGlobals->v_forward * 1600;
-					pRocket6->pev->dmg = 100;
-					F = 2.00;
+					pRocket6->pev->velocity = gpGlobals->v_forward * 1200;
+					pRocket6->pev->dmg = 90;
+					F = 3.00;
 		}
 	if (pev->ltime == 7 && F <= 0) // shotgun cannon
 		{
 					SetTurretAnim(TURRET_ANIM_FIRE);
 					EMIT_SOUND(ENT(pev), CHAN_VOICE, "ambience/biggun2.wav", 1.0, ATTN_NORM);
 					CBaseEntity *pRocket7 = CBaseEntity::Create( "weapon_tacgun", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
-					pRocket7->pev->velocity = gpGlobals->v_forward * 1600;
+					pRocket7->pev->velocity = gpGlobals->v_forward * 1200;
 					pRocket7->pev->gravity = 0.1;
 					F = 1.75;
 		}
@@ -754,9 +780,10 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					SetTurretAnim(TURRET_ANIM_FIRE);
 					EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/bemlsr2.wav", 1.0, ATTN_NORM);
 					CBaseEntity *pRocket8 = CBaseEntity::Create( "halo_base", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
-					pRocket8->pev->velocity = gpGlobals->v_forward * 1600;
+					pRocket8->pev->velocity = gpGlobals->v_forward * 700;
 					pRocket8->pev->gravity = 0.1;
-					F = 2.15;
+					pRocket8->pev->dmg = 90;
+					F = 2.5;
 		}
 	}
 	
@@ -1154,7 +1181,7 @@ void CBaseTurret ::	TurretDeath( void )
 	CBaseEntity *pEntity = NULL;
 	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
 
-
+	STOP_SOUND( ENT(pev), CHAN_ITEM, "plats/train_use1.wav" );
 
 
 	BOOL iActive = FALSE;
@@ -1265,7 +1292,8 @@ int CBaseTurret::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, flo
 		GetAttachment( 1, vecSrc, vecAng );
 		UTIL_Sparks( vecSrc );
 		UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_YELLOW, 16 );
-	pev->health -= flDamage;
+		pev->health -= flDamage;
+		
 	if (pev->health <= 0)
 	{
 		Vector vecSrc, vecAng;
@@ -1379,15 +1407,6 @@ int CBaseTurret::MoveTurret(void)
 	return state;
 }
 
-//
-// ID as a machine
-//
-int	CBaseTurret::Classify ( void )
-{
-	if (m_iOn || m_iAutoStart)
-		return	CLASS_MACHINE;
-	return CLASS_NONE;
-}
 
 
 
@@ -1425,6 +1444,9 @@ void CSentry::Spawn()
 
 	SET_MODEL(ENT(pev), "models/sentry.mdl");
 	pev->health			= 75;
+
+	//pev->max_health = pev->health;
+
 	UTIL_SetSize(pev, Vector( -5, -5, -1), Vector(5, 5, 3));
 	//UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 	UTIL_SetOrigin( pev, pev->origin );
@@ -1434,6 +1456,8 @@ void CSentry::Spawn()
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
+	
+	//Classify2 = 1;
 	
 	CBaseTurret::Spawn();
 	m_iRetractHeight = 64;
@@ -1445,8 +1469,8 @@ void CSentry::Spawn()
 	SetThink(Initialize);	
 	pev->nextthink = gpGlobals->time + 0.3; 
 	
-		//if ( pev->owner )
-		m_hOwner = Instance( pev->owner );
+	//if ( pev->owner )
+	m_hOwner = Instance( pev->owner );
 	pev->gravity		= 1;
 	pev->friction		= 1;
 
@@ -1554,6 +1578,8 @@ void CSentry ::	SentryDeath( void )
 	//1.28 limit reset 
 	CBaseEntity *pEntity = NULL;
 	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
+	
+	STOP_SOUND( ENT(pev), CHAN_ITEM, "plats/train_use1.wav" );
 	
 	BOOL iActive = FALSE;
 

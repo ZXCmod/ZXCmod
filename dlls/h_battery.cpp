@@ -26,6 +26,7 @@
 #include "saverestore.h"
 #include "skill.h"
 #include "gamerules.h"
+#include "game.h"
 
 class CRecharge : public CBaseToggle
 {
@@ -46,6 +47,8 @@ public:
 	float   m_flNextCharge; 
 	int		m_iReactivate ; // DeathMatch Delay until reactvated
 	int		m_iJuice;
+	int		m_iJuice2;
+	int		m_iJuice3;
 	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
 	float   m_flSoundTime;
 	float	multiple;
@@ -94,7 +97,13 @@ void CRecharge::Spawn()
 	UTIL_SetOrigin(pev, pev->origin);		// set size and link into world
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	SET_MODEL(ENT(pev), STRING(pev->model) );
+	//if (allowmonsters10.value == 0)
+		m_iJuice = gSkillData.suitchargerCapacity;
+	// else
+		// m_iJuice = gSkillData.suitchargerCapacity*10;
 	m_iJuice = gSkillData.suitchargerCapacity;
+	m_iJuice2 = gSkillData.suitchargerCapacity;
+	m_iJuice3 = gSkillData.suitchargerCapacity;
 	pev->frame = 0;			
 	multiple = 0.0;
 
@@ -117,7 +126,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		return;
 
 	// if there is no juice left, turn it off
-	if (m_iJuice <= 0)
+	if (m_iJuice <= 0 || m_iJuice2 <= 0 || m_iJuice3 <= 0)
 	{
 		pev->frame = 1;			
 		Off();
@@ -135,7 +144,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		return;
 	
 	// if the player doesn't have the suit, or there is no juice left, make the deny noise
-	if ((m_iJuice <= 0) || ( m_hActivator->pev->armorvalue >= 100 ) )
+	if ((m_iJuice <= 0) && (m_hActivator->pev->armorvalue>=100) )
 	{
 		if (m_flSoundTime <= gpGlobals->time)
 		{
@@ -144,7 +153,35 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		}
 		return;
 	}
-
+	if ((m_iJuice2 <= 0) && (m_hActivator->pev->fuser1>=100) )
+	{
+		if (m_flSoundTime <= gpGlobals->time)
+		{
+			m_flSoundTime = gpGlobals->time + 0.62;
+			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/suitchargeno1.wav", 0.85, ATTN_NORM );
+		}
+		return;
+	}
+	if ((m_iJuice3 <= 0) && (m_hActivator->pev->fuser2>=100) )
+	{
+		if (m_flSoundTime <= gpGlobals->time)
+		{
+			m_flSoundTime = gpGlobals->time + 0.62;
+			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/suitchargeno1.wav", 0.85, ATTN_NORM );
+		}
+		return;
+	}
+	// if no juice left
+	if ((m_iJuice <= 0) || (m_iJuice2 <= 0) || (m_iJuice3 <= 0) )
+	{
+		if (m_flSoundTime <= gpGlobals->time)
+		{
+			m_flSoundTime = gpGlobals->time + 0.62;
+			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/suitchargeno1.wav", 0.85, ATTN_NORM );
+		}
+		return;
+	}
+	
 	pev->nextthink = pev->ltime + 0.25;
 	SetThink(Off);
 
@@ -169,17 +206,45 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	}
 
 
-	// charge the player
-	if (m_hActivator->pev->armorvalue < 100)
+	// charge the player ||(m_hActivator->pev->fuser1<100)||(m_hActivator->pev->fuser2<100)
+	if ((m_hActivator->pev->armorvalue<100)) // 1
 	{
 		m_iJuice--;
 		m_hActivator->pev->armorvalue += 1;
 		
 		if (multiple <= 0.5)
-			multiple += 0.0075;
+			multiple += 0.0045;
 
-		if (m_hActivator->pev->armorvalue > 100)
+		if (m_hActivator->pev->armorvalue>100)
+		{
 			m_hActivator->pev->armorvalue = 100;
+		}
+	}
+	if ((m_hActivator->pev->fuser1<100)) // 2
+	{
+		m_iJuice2--;
+		m_hActivator->pev->fuser1 += 0.5;
+		
+		if (multiple <= 0.5)
+			multiple += 0.0045;
+
+		if (m_hActivator->pev->fuser1>100)
+		{
+			m_hActivator->pev->fuser1 = 100;
+		}
+	}
+	if ((m_hActivator->pev->fuser2<100)) // 3
+	{
+		m_iJuice3--;
+		m_hActivator->pev->fuser2 += 0.5;
+		
+		if (multiple <= 0.5)
+			multiple += 0.0045;
+
+		if (m_hActivator->pev->fuser2>100)
+		{
+			m_hActivator->pev->fuser2 = 100;
+		}
 	}
 
 	// govern the rate of charge
@@ -188,7 +253,11 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 
 void CRecharge::Recharge(void)
 {
+
 	m_iJuice = gSkillData.suitchargerCapacity;
+	m_iJuice2 = gSkillData.suitchargerCapacity;
+	m_iJuice3 = gSkillData.suitchargerCapacity;
+
 	pev->frame = 0;			
 	SetThink( SUB_DoNothing );
 }
@@ -202,7 +271,7 @@ void CRecharge::Off(void)
 	m_iOn = 0;
 	multiple = 0.0;
 
-	if ((!m_iJuice) &&  ( ( m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
+	if ((!m_iJuice || !m_iJuice2 || !m_iJuice3) &&  ( ( m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
 	{
 		pev->nextthink = pev->ltime + m_iReactivate;
 		SetThink(Recharge);

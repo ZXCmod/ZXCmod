@@ -97,6 +97,7 @@ void CItem::Spawn( void )
 	UTIL_SetOrigin( pev, pev->origin );
 	UTIL_SetSize(pev, Vector(-16, -16, 0), Vector(16, 16, 16));
 	SetTouch(ItemTouch);
+	pev->ltime=0;
 
 	if (DROP_TO_FLOOR(ENT(pev)) == 0)
 	{
@@ -127,12 +128,16 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 
 	if (MyTouch( pPlayer ))
 	{
+
 		SUB_UseTargets( pOther, USE_TOGGLE, 0 );
 		SetTouch( NULL );
 		
+		if (pev->ltime == 1)
+			UTIL_Remove( this );
+
 		// player grabbed the item. 
 		g_pGameRules->PlayerGotItem( pPlayer, this );
-		if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
+		if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES  )
 		{
 			Respawn(); 
 		}
@@ -141,7 +146,7 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 			UTIL_Remove( this );
 		}
 	}
-	else if (gEvilImpulse101)
+	else if (gEvilImpulse101) //  || (pev->effects & EF_DIMLIGHT)
 	{
 		UTIL_Remove( this );
 	}
@@ -149,6 +154,7 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 
 CBaseEntity* CItem::Respawn( void )
 {
+
 	SetTouch( NULL );
 	pev->effects |= EF_NODRAW;
 
@@ -161,6 +167,7 @@ CBaseEntity* CItem::Respawn( void )
 
 void CItem::Materialize( void )
 {
+
 	if ( pev->effects & EF_NODRAW )
 	{
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -210,13 +217,22 @@ class CItemSuit : public CItem
 LINK_ENTITY_TO_CLASS(item_suit, CItemSuit);
 
 
-
+// kinetic armor
 class CItemBattery : public CItem
 {
 	void Spawn( void )
 	{ 
 		if (allowmonsters4.value != 0)
 			return; //item dont spawn
+			
+		switch(RANDOM_LONG(0,3)) // spawn battery separate
+		{
+			case 0: Create( "trip_beam", pev->origin, pev->angles, edict() ); return; break;
+			case 1: Create( "tombstone", pev->origin, pev->angles, edict() ); return; break; // dual elect
+			case 2: Create( "tombstone", pev->origin, pev->angles, edict() ); return; break;
+			//case 3: continue; break;
+		
+		}
 		
 		Precache( );
 		SET_MODEL(ENT(pev), "models/w_battery.mdl");
@@ -234,13 +250,27 @@ class CItemBattery : public CItem
 			return FALSE;
 		}
 
-		if ((pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY) &&
-			(pPlayer->pev->weapons & (1<<WEAPON_SUIT)))
+		if ((pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY) )
 		{
+			/* 			
 			int pct;
-			char szcharge[64];
+			int pct2;
+			int pct3;
+			char szcharge[64]; */
 
-			pPlayer->pev->armorvalue += RANDOM_LONG(10,20);
+			/* 			
+			if ((pPlayer->pev->fuser1 < MAX_NORMAL_BATTERY2) )
+			{
+				pPlayer->pev->fuser1 += 5;
+				pPlayer->pev->fuser1 = min(pPlayer->pev->fuser1, MAX_NORMAL_BATTERY2);
+			}
+			if ((pPlayer->pev->fuser2 < MAX_NORMAL_BATTERY3) )
+			{
+				pPlayer->pev->fuser2 += 5;
+				pPlayer->pev->fuser2 = min(pPlayer->pev->fuser2, MAX_NORMAL_BATTERY3);
+			}
+			 */
+			pPlayer->pev->armorvalue += 15; // += RANDOM_LONG(10,20);
 			pPlayer->pev->armorvalue = min(pPlayer->pev->armorvalue, MAX_NORMAL_BATTERY);
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
@@ -252,22 +282,126 @@ class CItemBattery : public CItem
 			
 			// Suit reports new power level
 			// For some reason this wasn't working in release build -- round it.
-			pct = (int)( (float)(pPlayer->pev->armorvalue * 100.0) * (1.0/MAX_NORMAL_BATTERY) + 0.5);
-			pct = (pct / 5);
-			if (pct > 0)
-				pct--;
+			// pct = (int)( (float)(pPlayer->pev->armorvalue * 100.0) * (1.0/MAX_NORMAL_BATTERY) + 0.5);
+			// pct = (pct / 5);
+			// if (pct > 0)
+				// pct--;
+			// pct2 = (int)( (float)(pPlayer->pev->fuser1* 100.0) * (1.0/MAX_NORMAL_BATTERY2) + 0.5);
+			// pct2 = (pct2 / 5);
+			// if (pct2 > 0)
+				// pct2--;
+			// pct3 = (int)( (float)(pPlayer->pev->fuser2 * 100.0) * (1.0/MAX_NORMAL_BATTERY3) + 0.5);
+			// pct3 = (pct3 / 5);
+			// if (pct3 > 0)
+				// pct3--;
 		
-			sprintf( szcharge,"!HEV_%1dP", pct );
+			// sprintf( szcharge,"!HEV_%1dP", pct );
 			
 			//EMIT_SOUND_SUIT(ENT(pev), szcharge);
-			pPlayer->SetSuitUpdate(szcharge, FALSE, SUIT_NEXT_IN_30SEC);
+			// pPlayer->SetSuitUpdate(szcharge, FALSE, SUIT_NEXT_IN_30SEC);
 			return TRUE;		
 		}
 		return FALSE;
 	}
 };
-
 LINK_ENTITY_TO_CLASS(item_battery, CItemBattery);
+
+// chemical
+class CItemBattery2 : public CItem
+{
+	void Spawn( void )
+	{ 
+		if (allowmonsters4.value != 0)
+			return; //item dont spawn
+		
+		Precache( );
+		SET_MODEL(ENT(pev), "models/w_battery2.mdl");
+		CItem::Spawn( );
+	}
+	void Precache( void )
+	{
+		PRECACHE_MODEL ("models/w_battery2.mdl");
+		PRECACHE_MODEL ("models/w_battery2t.mdl");
+		PRECACHE_SOUND( "items/gunpickup2.wav" );
+	}
+	BOOL MyTouch( CBasePlayer *pPlayer )
+	{
+		if ( pPlayer->pev->deadflag != DEAD_NO )
+		{
+			return FALSE;
+		}
+
+		if ((pPlayer->pev->fuser1 < MAX_NORMAL_BATTERY2))
+		{
+
+			pPlayer->pev->fuser1 += 15;
+			pPlayer->pev->fuser1 = min(pPlayer->pev->fuser1, MAX_NORMAL_BATTERY2);
+
+			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
+
+			MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
+				WRITE_STRING( STRING(pev->classname) );
+			MESSAGE_END();
+
+			return TRUE;		
+		}
+		return FALSE;
+	}
+};
+LINK_ENTITY_TO_CLASS(trip_beam, CItemBattery2);
+
+
+// electro
+class CItemBattery3 : public CItem
+{
+	void Spawn( void )
+	{ 
+		if (allowmonsters4.value != 0)
+			return; //item dont spawn
+		
+		Precache( );
+		SET_MODEL(ENT(pev), "models/w_battery3.mdl");
+		CItem::Spawn( );
+	}
+	void Precache( void )
+	{
+		PRECACHE_MODEL ("models/w_battery3.mdl");
+		PRECACHE_MODEL ("models/w_battery3t.mdl");
+		PRECACHE_SOUND( "items/gunpickup2.wav" );
+	}
+	BOOL MyTouch( CBasePlayer *pPlayer )
+	{
+		if ( pPlayer->pev->deadflag != DEAD_NO )
+		{
+			return FALSE;
+		}
+
+		if ((pPlayer->pev->fuser2 < MAX_NORMAL_BATTERY3))
+		{
+
+			pPlayer->pev->fuser2 += 15; // += RANDOM_LONG(10,20);
+			pPlayer->pev->fuser2 = min(pPlayer->pev->fuser2, MAX_NORMAL_BATTERY3);
+
+			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
+
+			MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
+				WRITE_STRING( STRING(pev->classname) );
+			MESSAGE_END();
+			
+			return TRUE;		
+		}
+		return FALSE;
+	}
+};
+LINK_ENTITY_TO_CLASS(tombstone, CItemBattery3);
+// trip_beam
+// tombstone
+
+
+
+
+
+
 
 
 class CItemAntidote : public CItem

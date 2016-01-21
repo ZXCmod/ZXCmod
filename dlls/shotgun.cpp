@@ -211,7 +211,8 @@ void CShotgun::PrimaryAttack()
 
 
 
-
+if (allowmonsters10.value == 0)
+	{
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
@@ -250,8 +251,11 @@ void CShotgun::PrimaryAttack()
 	Vector vecDir;
 
 
-	vecDir = m_pPlayer->FireBulletsPlayer( 15, vecSrc, vecAiming, VECTOR_CONE_DM_SHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-
+	if (allowmonsters10.value == 1)
+		vecDir = m_pPlayer->FireBulletsPlayer( 5, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT*3, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	else
+		vecDir = m_pPlayer->FireBulletsPlayer( 30, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	
 
 
 	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usSingleFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
@@ -272,14 +276,20 @@ void CShotgun::PrimaryAttack()
 	else
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
 	m_fInSpecialReload = 0;
-	//}
-	//,CLIENT_WEAPONS
+	}
+	else
+	{
+		FourthAttack();
+
+	}
 }
 
 
 
 void CShotgun::SecondaryAttack( void )
 {
+if (allowmonsters10.value == 0)
+	{
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
@@ -318,8 +328,11 @@ void CShotgun::SecondaryAttack( void )
 
 	Vector vecDir;
 	
-	vecDir = m_pPlayer->FireBulletsPlayer( 30, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-
+	if (allowmonsters10.value == 1)
+		vecDir = m_pPlayer->FireBulletsPlayer( 10, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT*3, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	else
+		vecDir = m_pPlayer->FireBulletsPlayer( 30, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	
 		
 	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usDoubleFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
 
@@ -338,11 +351,16 @@ void CShotgun::SecondaryAttack( void )
 		m_flTimeWeaponIdle = 1.5;
 
 	m_fInSpecialReload = 0;
-
+	}
+	else
+		ThirdAttack();
 }
 
 void CShotgun::ThirdAttack( void )
 {
+	if (allowmonsters9.value == 0)
+		return;
+
 //phase_pulse
 //new code
 	if (m_iClip <= 0)
@@ -377,6 +395,7 @@ void CShotgun::ThirdAttack( void )
 			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
 			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
 			m_iClip--;
+			SendWeaponAnim( 1 ); // missed piece 
 			
 			/////beam ray
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -420,6 +439,9 @@ void CShotgun::ThirdAttack( void )
 
 void CShotgun::FourthAttack( void )
 {
+	if (allowmonsters9.value == 0)
+		return;
+
 	if (m_iClip <= 1)
 	{
 		Reload( );
@@ -665,7 +687,7 @@ void CPhase::Count( void  )
 		WRITE_SHORT( m_iBalls );		// model
 		WRITE_BYTE( 5  );				// count
 		WRITE_BYTE( 5 );				// life * 10
-		WRITE_BYTE( RANDOM_LONG( 1, 2 ) );				// size * 10
+		WRITE_BYTE( 1 );				// size * 10
 		WRITE_BYTE( 90 );				// amplitude * 0.1
 		WRITE_BYTE( 2 );				// speed * 100
 	MESSAGE_END();
@@ -735,7 +757,7 @@ void CPhase::Update( )
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
 
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 85, 256, CLASS_NONE, DMG_BURN  );
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 85, 256, CLASS_NONE, DMG_CRUSH  );
 		pev->takedamage = DAMAGE_NO;
 		pev->ltime = 0;
 		SUB_Remove();
@@ -764,7 +786,7 @@ void CPhase2::Spawn( )
 	pev->nextthink = gpGlobals->time + 3.6;
 	pev->dmg = 1;
 	pev->effects = EF_MUZZLEFLASH;
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 800, 128, CLASS_NONE, DMG_BURN  ); //destroy all near copyes
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 800, 128, CLASS_NONE, DMG_CRUSH  ); //destroy all near copyes
 	pev->effects |= EF_LIGHT;
 	pEntity = CBaseEntity::Instance(pev->owner);
 	m_Sprite_2 = PRECACHE_MODEL( "sprites/bldet.spr" );
@@ -778,10 +800,10 @@ void CPhase2::Spawn( )
 	{
 		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
 		
-		if (g_flWeaponCheat != 0.0)
-			pPlayer->m_flNextChatTime12 = gpGlobals->time + 240; //set reload timer x2
-		else
-			pPlayer->m_flNextChatTime12 = gpGlobals->time + 120; //set reload timer normal
+		//if (g_flWeaponCheat != 0.0)
+			//pPlayer->m_flNextChatTime12 = gpGlobals->time + 240; //set reload timer x2
+		//else
+			pPlayer->m_flNextChatTime12 = gpGlobals->time + allowmonsters14.value; //set reload timer normal
 		
 		UTIL_ShowMessageAll( "Shotgun gravity-beam created!"  );
 	}
@@ -789,8 +811,8 @@ void CPhase2::Spawn( )
 	m_value = 0;
 	m_loop = 17;
 	m_loop_2 = TRUE;
-	value = 800; //delta radius
-	m_flDie = gpGlobals->time + 22; //destroy timer
+	value = allowmonsters11.value; //delta radius
+	m_flDie = gpGlobals->time + 22 + allowmonsters12.value; //destroy timer
 	SetThink( IgniteThink );
 }
 
@@ -821,9 +843,9 @@ void CPhase2::IgniteThink( void )
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
 	
 	
-	if (gpGlobals->time <= m_flDie - 8) //14 sec 
+	if (gpGlobals->time <= (m_flDie + allowmonsters12.value) - 8) //14 sec 
 	{
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 800 )) != NULL)
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, value )) != NULL)
 		{
 			//init distance (1.28)
 			Vector vecMid = pev->origin; // get self
@@ -831,14 +853,19 @@ void CPhase2::IgniteThink( void )
 			vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
 			float flDistToEnemy = vecDirToEnemy.Length();
 			
+			//if (allowmonsters10.value == 1)
+				//flDistToEnemy*=10;
+			
 			if (pEntity->IsPlayer() && !(pEntity->pev->health <= 3))
 				{
 				
 				#ifndef CLIENT_DLL
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 40 ) - Center() ).Normalize();
 					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->dmg + 72 + value/flDistToEnemy*44); //600 700/16
+					if (allowmonsters13.value == 1) // shake toogle
+						UTIL_ScreenShake( pEntity->pev->origin, pev->dmg, pev->dmg*0.5, pev->dmg*0.05, 1 );
 				#endif
-				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 40, 40, CLASS_NONE, DMG_MORTAR  );
+				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 40, 40, CLASS_NONE, DMG_CRUSH  );
 				
 				} 
 		}
@@ -855,7 +882,7 @@ void CPhase2::IgniteThink( void )
 				WRITE_COORD( pev->origin.y );
 				WRITE_COORD( pev->origin.z );
 				WRITE_SHORT( m_Sprite_3 );
-				WRITE_BYTE( RANDOM_LONG(14,26) ); // scale * 10
+				WRITE_BYTE( 20 ); // scale * 10
 				WRITE_BYTE( 200 ); // brightness
 			MESSAGE_END();
 
@@ -867,7 +894,7 @@ void CPhase2::IgniteThink( void )
 	
 	
 	//switch type to lighting
-	if (pev->dmg >= 84)
+	if (pev->dmg >= 84 + allowmonsters12.value)
 	{
 
 		if (m_value == 0)
@@ -912,7 +939,7 @@ void CPhase2::IgniteThink( void )
 		MESSAGE_END();
 
 		UTIL_Sparks( tr.vecEndPos );
-		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 1280, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
+		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 1280, 60, CLASS_NONE, DMG_CRUSH  ); //end blast
 		//TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, BULLET_MONSTER_12MM);
 		UTIL_DecalTrace( &tr, DECAL_SMALLSCORCH1 + RANDOM_LONG(0,2) );
 		
@@ -942,17 +969,18 @@ void CPhase2::IgniteThink( void )
 			WRITE_COORD( pev->origin.z);
 			WRITE_SHORT( g_sModelIndexFireball );
 			WRITE_BYTE( 35  ); // scale * 10
-			WRITE_BYTE( RANDOM_LONG(8,10)  ); // framerate
+			WRITE_BYTE( 9  ); // framerate
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
 		
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 300, CLASS_NONE, DMG_BURN  );
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 300, CLASS_NONE, DMG_CRUSH  );
 		//SUB_Remove();
 		UTIL_Remove( this );
 		return;
 		}
 
-	pev->dmg += 1; //increase grav. power
+	if (pev->dmg <= 128)
+		pev->dmg += 1; //increase grav. power
 	m_loop += 1; //sound loop
 	pev->nextthink = gpGlobals->time + 0.1; //update rate
 	
@@ -979,7 +1007,10 @@ void CSCannon::Spawn( void )
 	pev->solid = SOLID_BBOX;
 	UTIL_SetSize( pev, Vector( -4, -4, -4), Vector(4, 4, 4) );
 	UTIL_SetOrigin( pev, pev->origin );
-	pev->dmg = 150;
+	if (allowmonsters10.value == 0)
+		pev->dmg = 150;
+	else
+		pev->dmg = 107;
 	pev->gravity = 0.75;
 	m_timer = 0;
 	
@@ -996,7 +1027,7 @@ void CSCannon::Spawn( void )
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT( entindex() );	// entity
 		WRITE_SHORT( m_iSpriteTexture );	// model
-		WRITE_BYTE( RANDOM_LONG(30,46) ); // life
+		WRITE_BYTE( 36 ); // life
 		WRITE_BYTE( 3 );  // width
 		WRITE_BYTE( 100 );   // r, g, b
 		WRITE_BYTE( 100 );   // r, g, b
@@ -1131,7 +1162,7 @@ void CSCannon::MoveTouch( CBaseEntity *pOther )
 	UTIL_DecalTrace( &TResult, DECAL_SMALLSCORCH1 + RANDOM_LONG(0,2) );
 
 	
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg, CLASS_NONE, DMG_BURN  ); 
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg, CLASS_NONE, DMG_CRUSH  ); 
 
 	SetTouch( NULL );
 	UTIL_Remove( this );

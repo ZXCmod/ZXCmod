@@ -1177,9 +1177,6 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 	if ( color == DONT_BLEED || amount == 0 )
 		return;
 
-	if ( g_Language == LANGUAGE_GERMAN && color == BLOOD_COLOR_RED )
-		color = 0;
-
 	if ( g_pGameRules->IsMultiplayer() )
 	{
 		// scale up blood effect in multiplayer for better visibility
@@ -1566,6 +1563,13 @@ void UTIL_Remove( CBaseEntity *pEntity )
 	if ( !pEntity )
 		return;
 
+	if ( pEntity->infected==1 )
+		{//pEntity->SetAttachment2( NULL, 0 ); 
+		//pEntity->SetThink( SUB_Remove ); 
+		//pEntity->pev->nextthink = gpGlobals->time + 2.0;
+		pEntity->infected=0;
+		}
+		
 	pEntity->UpdateOnRemove();
 	pEntity->pev->flags |= FL_KILLME;
 	pEntity->pev->targetname = 0;

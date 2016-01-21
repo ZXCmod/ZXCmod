@@ -133,7 +133,7 @@ int DispatchSpawn( edict_t *pent )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
 
-	if (pEntity)
+	if (pEntity != NULL)
 	{
 		// Initialize these or entities who don't link to the world won't have anything in here
 		pEntity->pev->absmin = pEntity->pev->origin - Vector(1,1,1);
@@ -156,7 +156,7 @@ int DispatchSpawn( edict_t *pent )
 
 
 		// Handle global stuff here
-		if ( pEntity && pEntity->pev->globalname ) 
+		if ( pEntity != NULL && pEntity->pev->globalname ) 
 		{
 			const globalentity_t *pGlobal = gGlobalState.EntityFromTable( pEntity->pev->globalname );
 			if ( pGlobal )
@@ -231,7 +231,7 @@ void DispatchUse( edict_t *pentUsed, edict_t *pentOther )
 void DispatchThink( edict_t *pent )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
-	if (pEntity)
+	if (pEntity != NULL)
 	{
 		pEntity->Think();
 	}
@@ -242,7 +242,7 @@ void DispatchBlocked( edict_t *pentBlocked, edict_t *pentOther )
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE( pentBlocked );
 	CBaseEntity *pOther = (CBaseEntity *)GET_PRIVATE( pentOther );
 
-	if (pEntity)
+	if (pEntity != NULL)
 		pEntity->Blocked( pOther );
 }
 
@@ -250,7 +250,7 @@ void DispatchSave( edict_t *pent, SAVERESTOREDATA *pSaveData )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
 	
-	if ( pEntity && pSaveData )
+	if ( pEntity != NULL && pSaveData )
 	{
 		ENTITYTABLE *pTable = &pSaveData->pTable[ pSaveData->currentIndex ];
 
@@ -285,7 +285,7 @@ CBaseEntity *FindGlobalEntity( string_t classname, string_t globalname )
 {
 	edict_t *pent = FIND_ENTITY_BY_STRING( NULL, "globalname", STRING(globalname) );
 	CBaseEntity *pReturn = CBaseEntity::Instance( pent );
-	if ( pReturn )
+	if ( pReturn != NULL )
 	{
 		if ( !FClassnameIs( pReturn->pev, STRING(classname) ) )
 		{
@@ -302,7 +302,7 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
 
-	if ( pEntity && pSaveData )
+	if ( pEntity != NULL && pSaveData )
 	{
 		entvars_t tmpVars;
 		Vector oldOffset;
@@ -332,7 +332,7 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 			// Compute the new global offset
 			oldOffset = pSaveData->vecLandmarkOffset;
 			CBaseEntity *pNewEntity = FindGlobalEntity( tmpVars.classname, tmpVars.globalname );
-			if ( pNewEntity )
+			if ( pNewEntity != NULL )
 			{
 //				ALERT( at_console, "Overlay %s with %s\n", STRING(pNewEntity->pev->classname), STRING(tmpVars.classname) );
 				// Tell the restore code we're overlaying a global entity from another level
@@ -374,11 +374,11 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 #endif
 
 		// Is this an overriding global entity (coming over the transition), or one restoring in a level
-		if ( globalEntity )
+		if ( globalEntity != NULL )
 		{
 //			ALERT( at_console, "After: %f %f %f %s\n", pEntity->pev->origin.x, pEntity->pev->origin.y, pEntity->pev->origin.z, STRING(pEntity->pev->model) );
 			pSaveData->vecLandmarkOffset = oldOffset;
-			if ( pEntity )
+			if ( pEntity != NULL )
 			{
 				UTIL_SetOrigin( pEntity->pev, pEntity->pev->origin );
 				pEntity->OverrideReset();
@@ -387,7 +387,7 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 		else if ( pEntity && pEntity->pev->globalname ) 
 		{
 			const globalentity_t *pGlobal = gGlobalState.EntityFromTable( pEntity->pev->globalname );
-			if ( pGlobal )
+			if ( pGlobal != NULL )
 			{
 				// Already dead? delete
 				if ( pGlobal->state == GLOBAL_DEAD )
@@ -413,7 +413,7 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 void DispatchObjectCollsionBox( edict_t *pent )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
-	if (pEntity)
+	if (pEntity != NULL)
 	{
 		pEntity->SetObjectCollisionBox();
 	}
@@ -438,7 +438,7 @@ void SaveReadFields( SAVERESTOREDATA *pSaveData, const char *pname, void *pBaseD
 
 edict_t * EHANDLE::Get( void ) 
 { 
-	if (m_pent)
+	if (m_pent != NULL)
 	{
 		if (m_pent->serialnumber == m_serialnumber) 
 			return m_pent; 
@@ -451,7 +451,7 @@ edict_t * EHANDLE::Get( void )
 edict_t * EHANDLE::Set( edict_t *pent ) 
 { 
 	m_pent = pent;  
-	if (pent) 
+	if (pent != NULL) 
 		m_serialnumber = m_pent->serialnumber; 
 	return pent; 
 };
@@ -465,7 +465,7 @@ EHANDLE :: operator CBaseEntity *()
 
 CBaseEntity * EHANDLE :: operator = (CBaseEntity *pEntity)
 {
-	if (pEntity)
+	if (pEntity != NULL)
 	{
 		m_pent = ENT( pEntity->pev );
 		if (m_pent)
@@ -545,11 +545,7 @@ int CBaseEntity :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, 
 	{
 		vecTemp = pevInflictor->origin - ( VecBModelOrigin(pev) );
 	}
-	else
-	// an actual missile was involved.
-	{
-		vecTemp = pevInflictor->origin - ( VecBModelOrigin(pev) );
-	}
+
 
 // this global is still used for glass and other non-monster killables, along with decals.
 	g_vecAttackDir = vecTemp.Normalize();
@@ -579,6 +575,8 @@ int CBaseEntity :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, 
 
 	return 1;
 }
+
+
 
 
 void CBaseEntity :: Killed( entvars_t *pevAttacker, int iGib )
@@ -784,7 +782,7 @@ CBaseEntity * CBaseEntity::Create( char *szName, const Vector &vecOrigin, const 
 	pEntity->pev->owner = pentOwner;
 	pEntity->pev->origin = vecOrigin;
 	pEntity->pev->angles = vecAngles;
-	DispatchSpawn( pEntity->edict() );
+	DispatchSpawn( pEntity->edict() ); // set pEntity->pev->owner for fun
 	return pEntity;
 }
 

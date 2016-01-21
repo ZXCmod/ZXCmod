@@ -39,6 +39,7 @@
 #include "usercmd.h"
 #include "netadr.h"
 
+#include "teamplay_gamerules.h"
 
 
 
@@ -69,6 +70,12 @@ void set_suicide_frame(entvars_t* pev)
 	pev->movetype	= MOVETYPE_TOSS;
 	pev->deadflag	= DEAD_DEAD;
 	pev->nextthink	= -1;
+	
+	// kill the player,  remove a death,  and let them start on the new team
+
+
+	//m_DisableDeathMessages = FALSE;
+	//m_DisableDeathPenalty = FALSE;
 }
 
 
@@ -120,12 +127,20 @@ void ClientDisconnect( edict_t *pEntity )
 // since the edict doesn't get deleted, fix it so it doesn't interfere.
 	pEntity->v.takedamage = DAMAGE_NO;// don't attract autoaim
 	pEntity->v.solid = SOLID_NOT;// nonsolid
+	//pEntity->v.health = NULL;// nonsolid
+	ClearBits( pEntity->v.flags, DAMAGE_NO );
 	
 	
+	
+		//edict_t *pPlayerEdict = INDEXENT( playerIndex );
+		//if ( pPlayerEdict && !pPlayerEdict->free )
+		//{
+			//pPlayer = CBaseEntity::Instance( pPlayerEdict );
+		//}
+		//pEntity->free=NULL;
 	
 
-	
-	
+	// pEntity=NULL;
 	
 	
 	
@@ -201,7 +216,24 @@ void ClientPutInServer( edict_t *pEntity )
 	pPlayer->SetCustomDecalFrames(-1); // Assume none;
 
 	// Allocate a CBasePlayer for pev, and call spawn
-	pPlayer->Spawn() ;
+	// pPlayer->Spawn() ;
+	{
+		
+		pPlayer->Spawn() ;
+		pPlayer->StartObserver(pev->origin,pev->angles);
+		
+		
+/* 		
+		pPlayer->Precache();
+		pPlayer->pev->solid			= SOLID_NOT;
+		pPlayer->pev->movetype		= MOVETYPE_NOCLIP;
+		pPlayer->pev->flags		   &= FL_PROXY;	// keep proxy flag sey by engine
+		pPlayer->pev->flags		   |= FL_CLIENT;
+		pPlayer->m_afPhysicsFlags	= 0;
+		pPlayer->StartObserver(pev->origin,pev->origin); */
+		
+		//SpectatorConnect( pEntity );
+	}
 
 	// Reset interpolation during first frame
 	pPlayer->pev->effects |= EF_NOINTERP;
@@ -402,14 +434,15 @@ void ClientCommand( edict_t *pEntity )
 		Host_Say( pEntity, 1 );
 	}
 
-	else if ( FStrEq(pcmd, "give" ) )
-	{
-		if ( g_flWeaponCheat != 0.0)
-		{
-			int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
-			GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
-		}
-	}
+	// disabled in 1.34 as bug.
+	// else if ( FStrEq(pcmd, "give" ) )
+	// {
+		// if ( g_flWeaponCheat != 0.0)
+		// {
+			// int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
+			// GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
+		// }
+	// }
 
 	else if ( FStrEq(pcmd, "drop" ) )
 	{
@@ -618,7 +651,7 @@ void PlayerPreThink( edict_t *pEntity )
 	//entvars_t *pev = &pEntity->v;  //1.32 edit (nothink here)
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
-	if (pPlayer)
+	if (pPlayer!=NULL)
 		pPlayer->PreThink( );
 }
 
@@ -634,7 +667,7 @@ void PlayerPostThink( edict_t *pEntity )
 	//entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
-	if (pPlayer)
+	if (pPlayer!=NULL)
 		pPlayer->PostThink( );
 }
 
@@ -800,7 +833,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.33";
+		return "Half-Life zxc mod 1.34";
 }
 
 /*
@@ -856,11 +889,11 @@ A spectator has joined the game
 */
 void SpectatorConnect( edict_t *pEntity )
 {
-/* 	entvars_t *pev = &pEntity->v;
+ 	entvars_t *pev = &pEntity->v;
 	CBaseSpectator *pPlayer = (CBaseSpectator *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
-		pPlayer->SpectatorConnect( ); */
+		pPlayer->SpectatorConnect( );
 }
 
 /*
@@ -872,11 +905,11 @@ A spectator has left the game
 */
 void SpectatorDisconnect( edict_t *pEntity )
 {
-/* 	entvars_t *pev = &pEntity->v;
+ 	entvars_t *pev = &pEntity->v;
 	CBaseSpectator *pPlayer = (CBaseSpectator *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
-		pPlayer->SpectatorDisconnect( ); */
+		pPlayer->SpectatorDisconnect( ); 
 }
 
 /*
@@ -888,11 +921,11 @@ A spectator has sent a usercmd
 */
 void SpectatorThink( edict_t *pEntity )
 {
-/* 	entvars_t *pev = &pEntity->v;
+ 	entvars_t *pev = &pEntity->v;
 	CBaseSpectator *pPlayer = (CBaseSpectator *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
-		pPlayer->SpectatorThink( ); */
+		pPlayer->SpectatorThink( ); 
 }
 
 ////////////////////////////////////////////////////////
@@ -1471,7 +1504,7 @@ int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 			// there's a weapon here. Should I pack it?
 			CBasePlayerItem *pPlayerItem = pl->m_rgpPlayerItems[ i ];
 
-			while ( pPlayerItem )
+			while ( pPlayerItem != NULL)
 			{
 				gun = (CBasePlayerWeapon *)pPlayerItem->GetWeaponPtr();
 				if ( gun && gun->UseDecrement() )

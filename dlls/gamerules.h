@@ -17,7 +17,7 @@
 //=========================================================
 
 //#include "weapons.h"
-//#include "items.h"
+#include "game.h"
 class CBasePlayerItem;
 class CBasePlayer;
 class CItem;
@@ -72,7 +72,7 @@ public:
 	virtual BOOL IsDeathmatch( void ) = 0;//is this a deathmatch game?
 	virtual BOOL IsTeamplay( void ) { return FALSE; };// is this deathmatch game being played with team rules?
 	virtual BOOL IsCoOp( void ) = 0;// is this a coop game?
-	virtual const char *GetGameDescription( void ) { return "Half-Life zxc 1.33"; }  // this is the game name that gets seen in the server browser
+	virtual const char *GetGameDescription( void ) { return "Half-Life zxc 1.34 test"; }  // this is the game name that gets seen in the server browser
 	
 // Client connection/disconnection
 	virtual BOOL ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] ) = 0;// a client just connected to the server (player hasn't spawned yet)
@@ -258,11 +258,22 @@ class CHalfLifeMultiplay : public CGameRules
 public:
 	CHalfLifeMultiplay();
 
+	float m_flNextSBarUpdateTime2; // teamplay timer updater
+	
+	// some player checks
+	CBaseEntity *pPlayerX;
+	CBaseEntity *pPlayer2;
+	CBaseEntity *plr;
+	CBaseEntity *pPlayerX2;
+
+	
 // GR_Think
 	virtual void Think( void );
 	virtual void RefreshSkillData( void );
 	virtual BOOL IsAllowedToSpawn( CBaseEntity *pEntity );
 	virtual BOOL FAllowFlashlight( void );
+	
+	virtual void RoundThink( CBasePlayer *pPlayer  ); // check players due process
 
 	virtual BOOL FShouldSwitchWeapon( CBasePlayer *pPlayer, CBasePlayerItem *pWeapon );
 	virtual BOOL GetNextBestWeapon( CBasePlayer *pPlayer, CBasePlayerItem *pCurrentWeapon );
@@ -279,6 +290,7 @@ public:
 	virtual BOOL ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] );
 	virtual void InitHUD( CBasePlayer *pl );		// the client dll is ready for updating
 	virtual void ClientDisconnected( edict_t *pClient );
+	void ClientDisconnected2( edict_t *pClient );
 	virtual void UpdateGameMode( CBasePlayer *pPlayer );  // the client needs to be informed of the current game mode
 
 // Client damage rules
@@ -356,6 +368,15 @@ protected:
 	float m_flIntermissionEndTime;
 	BOOL m_iEndIntermissionButtonHit;
 	void SendMOTDToClient( edict_t *client );
+private:
+	int		live;
+	int		notlive;
+	int		TeamCount;
+	int		live2;
+	int		notlive2;
+	int		index;
+	int		TeamCount2;
+	
 };
 
 extern DLL_GLOBAL CGameRules*	g_pGameRules;

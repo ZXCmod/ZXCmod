@@ -270,7 +270,8 @@ void CEgon::PrimaryAttack( void )
 
 void CEgon::SecondaryAttack(void)
 {
-	
+	if (allowmonsters9.value == 0)
+		return;
 	#ifndef CLIENT_DLL
 		m_pPlayer->pev->velocity = gpGlobals->v_forward * -260;	//fly!
 		m_fireState = FIRE_CHARGE;
@@ -294,6 +295,8 @@ void CEgon::SecondaryAttack(void)
 
 void CEgon::ThirdAttack( void )
 {
+	if (allowmonsters9.value == 0)
+		return;
 
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel >= 2)
@@ -370,6 +373,9 @@ void CEgon::ThirdAttack( void )
 
 void CEgon::FourthAttack( void )
 {
+	// if (allowmonsters9.value == 0)
+		// return;
+
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel >= 2)
 	{
@@ -387,7 +393,7 @@ void CEgon::FourthAttack( void )
 	if (  m_pPlayer->m_flNextChatTime15 > gpGlobals->time ) //need delay
 		return;
 	
-	pev->ltime += 0.75; //0.5
+	pev->ltime += 2.0; //0.5
 	
 	EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "ambience/alien_minddrill.wav", 1.0, ATTN_NORM, 1.0, pev->ltime );
 	
@@ -408,7 +414,7 @@ void CEgon::FourthAttack( void )
 	//STOP_SOUND( ENT(pev), CHAN_VOICE, "ambience/alien_minddrill.wav" );
 
 	
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.03;
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1;
 	//SendWeaponAnim( 1 );
 	
 	//the result
@@ -427,11 +433,11 @@ void CEgon::FourthAttack( void )
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 2.5;
 		m_flNextSecondaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 2.5;
 		pev->ltime = 0.1;
-		m_pPlayer->m_flNextChatTime15 = gpGlobals->time + 120.5;
+		m_pPlayer->m_flNextChatTime15 = gpGlobals->time + 180;
 		
 		char  szText[64];
 		hudtextparms_t hText;
-		sprintf(szText, "%s .\n", "Wait 2 minutes. Reloading."); //game text
+		sprintf(szText, "%s .\n", "Wait 3 minutes. Reloading."); //game text
 		memset(&hText, 0, sizeof(hText));
 		hText.channel = 12;
 		//range by 0.0 to 1.0
@@ -512,7 +518,7 @@ void CEgon::Fire( const Vector &vecOrigSrc, const Vector &vecDir )
 			ClearMultiDamage();
 			if (pEntity->pev->takedamage)
 			{
-				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgEgonNarrow, vecDir, &tr, DMG_BULLET );
+				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgEgonNarrow, vecDir, &tr, DMG_SHOCK );
 			}
 			ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 
@@ -549,14 +555,14 @@ void CEgon::Fire( const Vector &vecOrigSrc, const Vector &vecDir )
 			ClearMultiDamage();
 			if (pEntity->pev->takedamage)
 			{
-				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgEgonWide, vecDir, &tr, DMG_BULLET);
+				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgEgonWide, vecDir, &tr, DMG_SHOCK);
 			}
 			ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 
 			if ( g_pGameRules->IsMultiplayer() )
 			{
 				// radius damage a little more potent in multiplayer.
-				::RadiusDamage( tr.vecEndPos, pev, m_pPlayer->pev, gSkillData.plrDmgEgonWide/4, 128, CLASS_NONE, DMG_BULLET );
+				::RadiusDamage( tr.vecEndPos, pev, m_pPlayer->pev, gSkillData.plrDmgEgonWide/4, 128, CLASS_NONE, DMG_SHOCK );
 			}
 
 			if ( !m_pPlayer->IsAlive() )
@@ -729,6 +735,8 @@ void CEgon::WeaponIdle( void )
 	m_deployed = TRUE;
 	
 
+	if (allowmonsters9.value == 0)
+		return;
 
 	//new code - launch big bomb by pressed Reload key
 	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 25) 
@@ -902,11 +910,11 @@ void    CBfb :: Hit( CBaseEntity* Target )
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 225 )) != NULL)
 		 {
 			UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 1.5, 1 );
-			pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg * 0.5, DMG_MORTAR); //destroy all near thinks
+			pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg * 0.5, DMG_SHOCK); //destroy all near thinks
 		 }
 		
 	//full explode after touch with wall
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 750, 50, CLASS_NONE, DMG_BULLET  ); //end blast
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 750, 50, CLASS_NONE, DMG_SHOCK  ); //end blast
 
 	//lights
 	Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
@@ -987,7 +995,7 @@ void    CBfb :: MoveThink( void )
 	
 	if (gpGlobals->time >= m_flDie) //full explode and self destroy
 		{
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 50, 50, CLASS_NONE, DMG_BULLET  ); //end blast
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 50, 50, CLASS_NONE, DMG_SHOCK  ); //end blast
 			UTIL_Remove( this );
 		}
 	pev->nextthink = gpGlobals->time + 0.5;
@@ -1046,7 +1054,7 @@ void CTes::Spawn( void )
 				pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(96,102), DMG_SHOCK);	
 
 				//new function, bassed on ::RadiusDamage (<1.30, see combat.cpp)
-				pEntity->TeslaExplode(pEntity, pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(96,102), 2048, CLASS_NONE, DMG_MORTAR);
+				pEntity->TeslaExplode(pEntity, pev->origin, pev, VARS( pev->owner ), 100, 2048, CLASS_NONE, DMG_SHOCK);
 			} 
 		}
 	UTIL_Remove( this );
@@ -1081,7 +1089,7 @@ void CStorm::Spawn( void )
 	while (((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 8000 )) != NULL) && pEntity->IsPlayer())
 	{
 		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-		UTIL_ScreenFade( pPlayer, Vector(0,0,0), 30, 0.84, RANDOM_LONG(128,200), FFADE_IN ); //night fade
+		UTIL_ScreenFade( pPlayer, Vector(0,0,0), 30, 0.84, 128, FFADE_IN ); //night fade
 		UTIL_ShowMessageAll( "The Storm-light created!");
 	}
 	
@@ -1160,8 +1168,8 @@ void CStorm::Update( void )
 						if (pEntity && !(pEntity->pev->health <= 3))
 						{
 							UTIL_ScreenFade( pEntity, Vector(255,255,250), 2, 0.84, 128, FFADE_IN ); //strong flash 
-							pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(14,37), DMG_SHOCK);
-							::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(3,9), 512, CLASS_NONE, DMG_MORTAR  );
+							pEntity->TakeDamage(pev, VARS( pev->owner ), 19, DMG_SHOCK);
+							::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 7, 512, CLASS_NONE, DMG_SHOCK  );
 							//shock ray
 							MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 								WRITE_BYTE( TE_BEAMPOINTS );
@@ -1301,7 +1309,7 @@ void CStormBeam::Update( void )
 			{
 				if (pEntity && !(pEntity->pev->health <= 3))
 				{
-					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(15,49), 256, CLASS_NONE, DMG_MORTAR  );
+					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 35, 256, CLASS_NONE, DMG_SHOCK  );
 					//shock ray
 					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 						WRITE_BYTE( TE_BEAMPOINTS );
@@ -1326,7 +1334,7 @@ void CStormBeam::Update( void )
 					
 					UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
 					UTIL_ScreenFade( pEntity, Vector(255,255,250), 1, 0.84, 128, FFADE_IN ); //flash 
-					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(21,39), DMG_MORTAR);	
+					pEntity->TakeDamage(pev, VARS( pev->owner ), 25, DMG_SHOCK);	
 
 				}
 			

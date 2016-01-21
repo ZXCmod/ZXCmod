@@ -40,7 +40,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed( void );
-	int  Classify ( void );
+	int  Classify ( );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	int IgnoreConditions ( void );
 
@@ -110,7 +110,7 @@ const char *CZombie::pPainSounds[] =
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CZombie :: Classify ( void )
+int	CZombie :: Classify ( )
 {
 	return	CLASS_ALIEN_MONSTER;
 }
@@ -136,6 +136,7 @@ void CZombie :: SetYawSpeed ( void )
 
 int CZombie :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType )
 {
+/* 
 	// Take 30% damage from bullets
 	if ( bitsDamageType == DMG_BULLET )
 	{
@@ -145,7 +146,7 @@ int CZombie :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, floa
 		pev->velocity = pev->velocity + vecDir * flForce;
 		flDamage *= 0.3;
 	}
-
+ */
 	// HACK HACK -- until we fix this.
 	if ( IsAlive() )
 		PainSound();
@@ -194,7 +195,10 @@ void CZombie :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		{
 			// do stuff for this event.
 	//		ALERT( at_console, "Slash right!\n" );
-			CBaseEntity *pHurt = CheckTraceHullAttack( 70, RANDOM_LONG(3,30), DMG_SLASH );
+			// if (pev->owner == NULL)
+				// {pev->owner = edict(); }
+				
+			CBaseEntity *pHurt = CheckTraceHullAttack( 70, 0, DMG_CRUSH );
 			if ( pHurt )
 			{
 				if ( pHurt->pev->flags & (FL_MONSTER|FL_CLIENT) )
@@ -202,6 +206,7 @@ void CZombie :: HandleAnimEvent( MonsterEvent_t *pEvent )
 					pHurt->pev->punchangle.z = -18;
 					pHurt->pev->punchangle.x = 5;
 					pHurt->pev->velocity = pHurt->pev->velocity - gpGlobals->v_right * 160;
+					pHurt->TakeDamage( pev, VARS( pev->owner ), 24, DMG_CRUSH ); //VARS( pev->owner )
 				}
 				// Play a random attack hit sound
 				EMIT_SOUND_DYN ( ENT(pev), CHAN_WEAPON, pAttackHitSounds[ RANDOM_LONG(0,ARRAYSIZE(pAttackHitSounds)-1) ], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
@@ -218,7 +223,7 @@ void CZombie :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		{
 			// do stuff for this event.
 	//		ALERT( at_console, "Slash left!\n" );
-			CBaseEntity *pHurt = CheckTraceHullAttack( 70, RANDOM_LONG(3,35), DMG_SLASH );
+			CBaseEntity *pHurt = CheckTraceHullAttack( 70, 0, DMG_CRUSH );
 			if ( pHurt )
 			{
 				if ( pHurt->pev->flags & (FL_MONSTER|FL_CLIENT) )
@@ -226,6 +231,7 @@ void CZombie :: HandleAnimEvent( MonsterEvent_t *pEvent )
 					pHurt->pev->punchangle.z = 18;
 					pHurt->pev->punchangle.x = 5;
 					pHurt->pev->velocity = pHurt->pev->velocity + gpGlobals->v_right * 100;
+					pHurt->TakeDamage( pev, VARS( pev->owner ), 16, DMG_CRUSH );
 				}
 				EMIT_SOUND_DYN ( ENT(pev), CHAN_WEAPON, pAttackHitSounds[ RANDOM_LONG(0,ARRAYSIZE(pAttackHitSounds)-1) ], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
 			}
@@ -240,13 +246,14 @@ void CZombie :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case ZOMBIE_AE_ATTACK_BOTH:
 		{
 			// do stuff for this event.
-			CBaseEntity *pHurt = CheckTraceHullAttack( 70, RANDOM_LONG(3,45), DMG_SLASH );
+			CBaseEntity *pHurt = CheckTraceHullAttack( 70, 0, DMG_CRUSH );
 			if ( pHurt )
 			{
 				if ( pHurt->pev->flags & (FL_MONSTER|FL_CLIENT) )
 				{
 					pHurt->pev->punchangle.x = 5;
 					pHurt->pev->velocity = pHurt->pev->velocity + gpGlobals->v_forward * -50;
+					pHurt->TakeDamage( pev, VARS( pev->owner ), 36, DMG_CRUSH );
 				}
 				EMIT_SOUND_DYN ( ENT(pev), CHAN_WEAPON, pAttackHitSounds[ RANDOM_LONG(0,ARRAYSIZE(pAttackHitSounds)-1) ], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
 			}
@@ -277,11 +284,14 @@ void CZombie :: Spawn()
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_GREEN;
-	pev->health			= RANDOM_LONG( 4, 100 );
+	pev->health			= 100;
 	pev->view_ofs		= VEC_VIEW;// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
 	m_afCapability		= bits_CAP_DOORS_GROUP;
+	//pev->dmg			= 15;
+	
+	//Classify2 = CLASS_ALIEN_MONSTER;
 
 	MonsterInit();
 }

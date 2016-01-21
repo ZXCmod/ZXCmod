@@ -71,7 +71,7 @@ public:
 	void Precache( void );
 
 	void SetYawSpeed( void );
-	int  Classify ( void );
+	int  Classify ( );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void RunTask( Task_t *pTask );
 	void StartTask( Task_t *pTask );
@@ -587,7 +587,7 @@ void CScientist :: RunTask( Task_t *pTask )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CScientist :: Classify ( void )
+int	CScientist :: Classify ( )
 {
 	return	CLASS_HUMAN_PASSIVE;
 }
@@ -1098,7 +1098,11 @@ void CScientist::Heal( void )
 	if ( target.Length() > 100 )
 		return;
 
-	m_hTargetEnt->TakeHealth( 100, DMG_GENERIC );
+	m_hTargetEnt->TakeHealth( 200, DMG_GENERIC );
+	m_hTargetEnt->pev->max_health = 150;
+	m_hTargetEnt->pev->armorvalue += 50;
+	m_hTargetEnt->pev->fuser1 += 50;
+	m_hTargetEnt->pev->fuser2 += 50;
 	// Don't heal again for 1 minute
 	m_healTime = gpGlobals->time + 4;
 }
@@ -1119,7 +1123,7 @@ class CDeadScientist : public CBaseMonster
 {
 public:
 	void Spawn( void );
-	int	Classify ( void ) { return	CLASS_HUMAN_PASSIVE; }
+	int	Classify ( ) { return	CLASS_HUMAN_PASSIVE; }
 
 	void KeyValue( KeyValueData *pkvd );
 	int	m_iPose;// which sequence to display
@@ -1189,7 +1193,7 @@ public:
 	void  Precache( void );
 
 	void EXPORT SittingThink( void );
-	int	Classify ( void );
+	int	Classify ( );
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
 	static	TYPEDESCRIPTION m_SaveData[];
@@ -1275,7 +1279,7 @@ void CSittingScientist :: Precache( void )
 //=========================================================
 // ID as a passive human
 //=========================================================
-int	CSittingScientist :: Classify ( void )
+int	CSittingScientist :: Classify (  )
 {
 	return	CLASS_HUMAN_PASSIVE;
 }

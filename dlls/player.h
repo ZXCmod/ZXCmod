@@ -80,6 +80,8 @@ enum sbar_data
 	SBAR_ID_TARGETNAME = 1,
 	SBAR_ID_TARGETHEALTH,
 	SBAR_ID_TARGETARMOR,
+	SBAR_ID_TARGETARMOR2,
+	SBAR_ID_TARGETARMOR3,
 	SBAR_END,
 };
 
@@ -184,13 +186,16 @@ public:
 	float				m_iRespawnFrames;	// used in PlayerDeathThink() to make sure players can always respawn
 
 	int m_lastx, m_lasty;  // These are the previous update's crosshair angles, DON"T SAVE/RESTORE
-
+	
 	int m_nCustomSprayFrames;// Custom clan logo frames for this player
 	float	m_flNextDecalTime;// next time this player can spray a decal
 
 	char m_szTeamName[TEAM_NAME_LENGTH];
 
 	virtual void Spawn( void );
+	virtual void Reset(void);
+	virtual void PlaySound(void);
+	virtual void DrawHud(void);
 	void Pain( void );
 
 //	virtual void Think( void );
@@ -215,10 +220,10 @@ public:
 															// Spectators should return TRUE for this
 	virtual const char *TeamID( void );
 
+
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
 	void RenewItems(void);
-	void Puto(void);
 	void PackDeadPlayerItems( void );
 	void RemoveAllItems( BOOL removeSuit );
 	BOOL SwitchWeapon( CBasePlayerItem *pWeapon );
@@ -235,11 +240,12 @@ public:
 	BOOL			FlashlightIsOn( void );
 	void			FlashlightTurnOn( void );
 	void			FlashlightTurnOff( void );
+	BOOL			Spect( void );
 	
 	void UpdatePlayerSound ( void );
 	void DeathSound ( void );
 
-	int Classify ( void );
+	int Classify ( );
 	void SetAnimation( PLAYER_ANIM playerAnim );
 	void SetWeaponAnimType( const char *szExtention );
 	char m_szAnimExtention[32];
@@ -310,6 +316,8 @@ public:
 	void UpdateStatusBar( void );
 	int m_izSBarState[ SBAR_END ];
 	float m_flNextSBarUpdateTime;
+	float m_flNextSBarUpdateTime3;
+	int	  m_fastShot; // 1.34 fire multiplier, use as powerup item
 	float m_flStatusBarDisappearDelay;
 	char m_SbarString0[ SBAR_STRING_SIZE ];
 	char m_SbarString1[ SBAR_STRING_SIZE ];
@@ -329,6 +337,7 @@ public:
 	int m_flNextChatTime13; //turrets limit
 	int m_flNextChatTime14; //freeze bags limit
 	float m_flNextChatTime15; //egon Storm delay
+	int m_flNextChatTime16; //Dcrystal delay
 	Vector	m_angle;
 
 };

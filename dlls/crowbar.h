@@ -6,7 +6,7 @@
 
 #define BLASTER_BEAM_BRIGHTNESS 255
 #define BLASTER_BEAM_WIDTH      4
-#define BLASTER_BEAM_SPRITE     "sprites/smoke.spr"
+#define BLASTER_BEAM_SPRITE     "sprites/mommaspit.spr"
 #define BLASTER_BEAM_SPEED      854
 #define BLASTER_BEAM_LENGTH     10
 
@@ -55,8 +55,10 @@ class   CRc2 : public CGrenade
 		int 	m_iSpriteTexture;
 		int 	m_iSpriteTexture2;
 		int 	m_flDie;
+		int		m_moving;
 };
 
 LINK_ENTITY_TO_CLASS( weapon_rocketlauncher, CRc2 );
+LINK_ENTITY_TO_CLASS( weapon_stoner, CRC );
 LINK_ENTITY_TO_CLASS( weapon_crowbar, CCrowbar );
 

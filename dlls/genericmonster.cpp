@@ -34,7 +34,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed( void );
-	int  Classify ( void );
+	int  Classify (  );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	int ISoundMask ( void );
 };
@@ -44,7 +44,7 @@ LINK_ENTITY_TO_CLASS( monster_generic, CGenericMonster );
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CGenericMonster :: Classify ( void )
+int	CGenericMonster :: Classify (   )
 {
 	return	CLASS_PLAYER_ALLY;
 }

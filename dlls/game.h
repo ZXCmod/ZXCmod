@@ -44,6 +44,16 @@ extern cvar_t	allowmonsters6;
 extern cvar_t	allowmonsters7;
 extern cvar_t	allowmonsters8;
 extern cvar_t	allowmonsters9;
+extern cvar_t	allowmonsters10;
+extern cvar_t	allowmonsters11; // SF radius
+extern cvar_t	allowmonsters12; // 
+extern cvar_t	allowmonsters13; //
+extern cvar_t	allowmonsters14; //
+extern cvar_t	allowmonsters15; // Triple rocket mod
+extern cvar_t	allowmonsters16; // 
+extern cvar_t	allowmonsters17; // 
+extern cvar_t	allowmonsters18; // 
+
 // Engine Cvars
 extern cvar_t	*g_psv_gravity;
 extern cvar_t	*g_psv_aim;

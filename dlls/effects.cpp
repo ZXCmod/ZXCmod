@@ -233,14 +233,14 @@ CBeam *CBeam::BeamCreate( const char *pSpriteName, int width )
 void CBeam::BeamInit( const char *pSpriteName, int width )
 {
 	pev->flags |= FL_CUSTOMENTITY;
-	SetColor( 255, RANDOM_LONG( 0, 20 ), RANDOM_LONG( 0, 20 ) );
-	SetBrightness( 255 );
+	SetColor( 100, 0, 0 );
+	SetBrightness( 250 );
 	SetNoise( 0 );
 	SetFrame( 0 );
 	SetScrollRate( 0 );
 	pev->model = MAKE_STRING( pSpriteName );
 	SetTexture( PRECACHE_MODEL( (char *)pSpriteName ) );
-	SetWidth( RANDOM_LONG( 10, 20 ) );
+	SetWidth( 16 );
 	pev->skin = 0;
 	pev->sequence = 0;
 	pev->rendermode = 0;

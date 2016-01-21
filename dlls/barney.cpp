@@ -41,33 +41,8 @@ extern int gmsgScoreInfo;
 #define	BARNEY_BODY_GUNHOLSTERED	0
 #define	BARNEY_BODY_GUNDRAWN		1
 #define BARNEY_BODY_GUNGONE			2
-#define ZOMBIE_CRAB "monster_headcrab"
-#define ZOMBIE_CRAB2 "monster_scientist"
 
-#define ZOMBIE_CRAB3 "monster_tentacle"
-#define ZOMBIE_CRAB4 "monster_turret"
-#define ZOMBIE_CRAB5 "monster_miniturret"
-#define ZOMBIE_CRAB6 "monster_bigmomma"
-#define ZOMBIE_CRAB7 "monster_alien_slave"
-#define ZOMBIE_CRAB8 "monster_bullchicken"
-#define ZOMBIE_CRAB9 "monster_human_grunt"
-#define ZOMBIE_CRAB10 "monster_cockroach"
-#define ZOMBIE_CRAB11 "monster_rat"
-#define ZOMBIE_CRAB12 "monster_player"
 
-#define ZOMBIE_CRAB13 "monster_osprey"
-#define ZOMBIE_CRAB14 "monster_alien_controller"
-#define ZOMBIE_CRAB15 "monster_nihilanth"
-#define ZOMBIE_CRAB16 "monster_mortar"
-#define ZOMBIE_CRAB17 "monster_leech"
-#define ZOMBIE_CRAB18 "monster_vortigaunt"
-#define ZOMBIE_CRAB19 "monster_houndeye"
-#define ZOMBIE_CRAB20 "monster_grunt_repel"
-#define ZOMBIE_CRAB21 "monster_cine_panther"
-#define ZOMBIE_CRAB22 "monster_gargantua"
-#define ZOMBIE_CRAB23 "monster_bigmomma"
-#define ZOMBIE_CRAB24 "monster_apache"
-#define ZOMBIE_CRAB25 "monster_alien_grunt"
 enum
 {
 	TASK_SAY_HEAL = LAST_TALKMONSTER_TASK + 1,
@@ -244,35 +219,6 @@ DEFINE_CUSTOM_SCHEDULES( CBarney )
 
 
 
-
-
-Task_t	tlHeal2[] =
-{
-	{ TASK_PLAY_SEQUENCE_FACE_TARGET,		(float)ACT_ARM	},			// Whip out the needle
-	{ TASK_HEAL,				(float)0	},	// Put it in the player
-	{ TASK_PLAY_SEQUENCE_FACE_TARGET,		(float)ACT_DISARM	},			// Put away the needle
-};
-
-Schedule_t	slHeal2[] =
-{
-	{
-		tlHeal2,
-		ARRAYSIZE ( tlHeal2 ),
-		0,	// Don't interrupt or he'll end up running around with a needle all the time
-		0,
-		"Heal"
-	},
-};
-
-
-
-
-
-
-
-
-
-
 IMPLEMENT_CUSTOM_SCHEDULES( CBarney, CTalkMonster );
 
 void CBarney :: StartTask( Task_t *pTask )
@@ -407,13 +353,27 @@ void CBarney :: BarneyFirePistol ( void )
 	UTIL_MakeVectors(pev->angles);
 	vecShootOrigin = pev->origin + Vector( 0, 0, 55 );
 	Vector vecShootDir = ShootAtEnemy( vecShootOrigin );
+	Vector vecThrow = gpGlobals->v_forward * 700;
 
 	Vector angDir = UTIL_VecToAngles( vecShootDir );
 	SetBlending( 0, angDir.x );
 	pev->effects = EF_MUZZLEFLASH;
-
-	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024, BULLET_MONSTER_12MM );
-		
+	
+	
+	
+	switch(RANDOM_LONG(0,5)) // spawn rockets
+	{
+		//case 0: FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024,  pev->dmg, 1, 1, VARS( pev->owner ) ); break;
+		case 0: FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_10DEGREES, 2048,  pev->dmg*2, 1, 1, VARS( pev->owner ) ); break;
+		case 1: FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 2048,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
+		case 2: FireBullets(2, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
+		case 3: FireBullets(3, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
+		case 4: FireBullets(10, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 640,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
+		case 5: CBaseEntity *pGlockCore = Create( "weapon_stoner", vecShootOrigin + gpGlobals->v_forward * 64, vecShootDir, edict() );
+					pGlockCore->pev->velocity = vecThrow;
+					pGlockCore->pev->owner = pev->owner;
+					pGlockCore->pev->dmg = pev->dmg+26; break;
+	}
 	int pitchShift = RANDOM_LONG( 0, 20 );
 	
 	// Only shift about half the time
@@ -472,21 +432,25 @@ void CBarney :: Spawn()
 	
 
 
+	//Classify2 			= CLASS_PLAYER_ALLY;
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_RED;
-	pev->health			= RANDOM_LONG(25,835);
+	pev->health			= 100;
+	pev->armorvalue		= 100;
 	pev->view_ofs		= Vector ( 0, 0, 50 );// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so npc will notice player and say hello
 	m_MonsterState		= MONSTERSTATE_NONE;
 
 	pev->body			= 0; // gun in holster
 	m_fGunDrawn			= FALSE;
+	pev->dmg			= 7;
 
 	m_afCapability		= bits_CAP_HEAR | bits_CAP_TURN_HEAD | bits_CAP_DOORS_GROUP;
 
 	MonsterInit();
 	SetUse( FollowerUse );
+	
 	//void SpawnCrab( void );
 
 }
@@ -497,6 +461,11 @@ void CBarney :: Spawn()
 void CBarney :: Precache()
 {
 	PRECACHE_MODEL("models/barney.mdl");
+	
+	UTIL_PrecacheOther( "weapon_stoner" );
+	UTIL_PrecacheOther( "monster_scientist" );
+	UTIL_PrecacheOther( "monster_alien_slave" );
+	UTIL_PrecacheOther( "monster_headcrab" );
 
 	PRECACHE_SOUND("barney/ba_attack1.wav" );
 	PRECACHE_SOUND("barney/ba_attack2.wav" );
@@ -513,32 +482,7 @@ void CBarney :: Precache()
 	// when a level is loaded, nobody will talk (time is reset to 0)
 	TalkInit();
 	CTalkMonster::Precache();
-	UTIL_PrecacheOther( ZOMBIE_CRAB );
-	UTIL_PrecacheOther( ZOMBIE_CRAB2 );
-	
-	UTIL_PrecacheOther( ZOMBIE_CRAB3 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB4 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB5 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB6 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB7 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB8 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB9 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB10 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB11 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB12 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB13 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB14 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB15 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB16 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB17 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB18 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB19 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB20 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB21 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB22 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB23 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB24 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB25 );
+
 	
 }	
 
@@ -615,7 +559,7 @@ int CBarney :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, floa
 		if ( m_hEnemy == NULL )
 		{
 			// If the player was facing directly at me, or I'm already suspicious, get mad
-			if ( (m_afMemory & bits_MEMORY_SUSPICIOUS) || IsFacing( pevAttacker, pev->origin ) && pev->health < 350 )
+			if ( (m_afMemory & bits_MEMORY_SUSPICIOUS) || IsFacing( pevAttacker, pev->origin ) && pev->health < 50 )
 			{
 				// Alright, now I'm pissed!
 				PlaySentence( "BA_MAD", 4, VOL_NORM, ATTN_NORM );
@@ -711,8 +655,8 @@ void CBarney::Killed( entvars_t *pevAttacker, int iGib)
 		
 	switch (RANDOM_LONG(0,1))
 	{
-	case 0: CBaseEntity::Create( ZOMBIE_CRAB, pev->origin, pev->angles, edict() ); break;
-	case 1: CBaseEntity::Create( ZOMBIE_CRAB2, pev->origin, pev->angles, edict() ); break;
+	case 0: CBaseEntity::Create( "monster_scientist", pev->origin, pev->angles, edict() ); break;
+	case 1: CBaseEntity::Create( "monster_headcrab", pev->origin, pev->angles, edict() ); break;
 	}
 	}
 
