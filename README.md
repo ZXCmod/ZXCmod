@@ -1,4 +1,4 @@
-# ZXCmod 1.32 free source 2008-2010.
+# ZXCmod 1.33 free source 2008-2010.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -7,6 +7,29 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
  
+###1.33
+
+- third attack on 357: inferno capsule - (python.cpp, weapons.h)
+- fourth attack on 357: HE capsule - (python.cpp, weapons.h)
+- bug fixed: stuck in weapons/ammo - (weapons.cpp)
+- gauss cannon velocity depend by ammo charge, and has another fly effect - (gauss.cpp)
+- snarks improved balance - (squeakgrenade.cpp)
+- bug fixed: no more turrets reactions on the hornets - (turret.cpp)
+- "Nuke Bomb" message replaced on "Nuclear Missile", rebalanced damage and bugs fixed - (gauss.cpp)
+- improved Health/Armor chargers and limits - (healthkit.cpp, h_battery.cpp)
+- all instances of owner deleted when disconnected 
+- player spawn more safe - (player.cpp)
+- new console command: `mp_allwep`. Default `1`.
+- added visual effects to a lot objects.
+- player ghost cant run on ground - (player.cpp)
+- any gibs deleted after few sec's - (combat.cpp)
+- in zoom mode for glock, launched fast grav-core with red trails. More damage and radius, needed `5` ammo. - (hl_wpn_glock.cpp)
+- flashlight turn off after dead event - (player.cpp)
+- turrets say `[weapon type]` messages while used. Added new attacks (total 9) - (turret.cpp)
+- more resistance by all shots with type DMG_BULLET, if have armor - (player.cpp).
+- rebalanced most weapons.
+  
+  
 ###1.32
 
 - fourth attack on RPG - (rpg.cpp, hornetgun.cpp, weapons.h)
@@ -14,6 +37,7 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 - gauss magnet ray updated - (gauss.cpp)
 - crossbow 4th attack updated - (crossbow.cpp)
 - "DamageForce" changed from `5` to `3` - (combat.cpp)
+  
   
 ###1.31 [3rd update] 
 
