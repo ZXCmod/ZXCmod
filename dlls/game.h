@@ -27,7 +27,7 @@ extern cvar_t	fraglimit;
 extern cvar_t	timelimit;
 extern cvar_t	friendlyfire;
 extern cvar_t	falldamage;
-extern cvar_t	weaponstay;
+//extern cvar_t	weaponstay;
 extern cvar_t	forcerespawn;
 extern cvar_t	flashlight;
 extern cvar_t	aimcrosshair;
@@ -38,6 +38,7 @@ extern cvar_t	defaultteam;
 extern cvar_t	allowmonsters;
 extern cvar_t	allowmonsters2; //1.27
 extern cvar_t	allowmonsters3; //1.27
+extern cvar_t	allowmonsters4;
 // Engine Cvars
 extern cvar_t	*g_psv_gravity;
 extern cvar_t	*g_psv_aim;

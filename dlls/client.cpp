@@ -82,22 +82,7 @@ called when a player connects to a server
 BOOL ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ]  )
 {	
 	entvars_t *pev = &pEntity->v;
-	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
-
-	
-		if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
-		{
-
-	CLIENT_COMMAND(pPlayer->edict(), "rate 10000\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_resend 3\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_lw 1\n");
-	}
 	return g_pGameRules->ClientConnected( pEntity, pszName, pszAddress, szRejectReason );
-
-// a client connecting during an intermission can cause problems
-//	if (intermission_running)
-//		ExitIntermission ();
-
 }
 
 
@@ -114,13 +99,13 @@ void ClientDisconnect( edict_t *pEntity )
 {
 	if (g_fGameOver)
 		return;
-
+/* 
 	char text[256];
 	sprintf( text, "", STRING(pEntity->v.netname) );
 	MESSAGE_BEGIN( MSG_ALL, gmsgSayText, NULL );
 		WRITE_BYTE( ENTINDEX(pEntity) );
 		WRITE_STRING( text );
-	MESSAGE_END();
+	MESSAGE_END(); */
 
 	CSound *pSound;
 	pSound = CSoundEnt::SoundPointerForIndex( CSoundEnt::ClientSoundIndex( pEntity ) );
@@ -153,7 +138,7 @@ void ClientDisconnect( edict_t *pEntity )
 // called by ClientKill and DeadThink
 void respawn(entvars_t* pev, BOOL fCopyCorpse)
 {
-	if (gpGlobals->coop || gpGlobals->deathmatch)
+	if (gpGlobals->deathmatch)
 	{
 		if ( fCopyCorpse )
 		{
@@ -477,16 +462,6 @@ void ClientCommand( edict_t *pEntity )
 
 		// tell the user they entered an unknown command
 		ClientPrint( &pEntity->v, HUD_PRINTCONSOLE, UTIL_VarArgs( "Unknown command: %s\n", command ) );
-		
-	//CVAR_SET_STRING("cl_lw", "0");
-	//CVAR_SET_STRING("fps_modem", "120");
-	//CVAR_SET_STRING("rate", "25000");
-	
-//ClientCmd( "_special" );
-//gEngfuncs.pfnServerCmd(cmdstring)
-//gEngfuncs.pfnClientCmd("snapshot\n");
-
-	//CVAR_CREATE( "zoom_sensitivity_ratio", "1.2", 0 );
 	}
 }
 
@@ -505,7 +480,7 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 	// Is the client spawned yet?
 	if ( !pEntity->pvPrivateData )
 		return;
-
+/* 
 	// msg everyone if someone changes their name,  and it isn't the first time (changing no name to current name)
 	if ( pEntity->v.netname && STRING(pEntity->v.netname)[0] != 0 && !FStrEq( STRING(pEntity->v.netname), g_engfuncs.pfnInfoKeyValue( infobuffer, "name" )) )
 	{
@@ -562,6 +537,7 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 	}
 
 	g_pGameRules->ClientUserInfoChanged( GetClassPtr((CBasePlayer *)&pEntity->v), infobuffer );
+	 */
 }
 
 static int g_serveractive = 0;
@@ -583,7 +559,7 @@ void ServerDeactivate( void )
 
 void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 {
-	int				i;
+ 	int				i;
 	CBaseEntity		*pClass;
 
 	// Every call to ServerActivate should be matched by a call to ServerDeactivate
@@ -613,6 +589,7 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 
 	// Link user messages here to make sure first client can get them...
 	LinkUserMessages();
+	
 }
 
 
@@ -809,7 +786,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.28";
+		return "Half-Life zxc mod 1.29";
 }
 
 /*
@@ -845,8 +822,8 @@ void PlayerCustomization( edict_t *pEntity, customization_t *pCust )
 	case t_decal:
 		pPlayer->SetCustomDecalFrames(pCust->nUserData2); // Second int is max # of frames.
 		break;
-	//case t_sound:
-	//case t_skin:
+	case t_sound:
+	case t_skin:
 	case t_model:
 		// Ignore for now.
 		break;
@@ -865,11 +842,11 @@ A spectator has joined the game
 */
 void SpectatorConnect( edict_t *pEntity )
 {
-	entvars_t *pev = &pEntity->v;
+/* 	entvars_t *pev = &pEntity->v;
 	CBaseSpectator *pPlayer = (CBaseSpectator *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
-		pPlayer->SpectatorConnect( );
+		pPlayer->SpectatorConnect( ); */
 }
 
 /*
@@ -881,11 +858,11 @@ A spectator has left the game
 */
 void SpectatorDisconnect( edict_t *pEntity )
 {
-	entvars_t *pev = &pEntity->v;
+/* 	entvars_t *pev = &pEntity->v;
 	CBaseSpectator *pPlayer = (CBaseSpectator *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
-		pPlayer->SpectatorDisconnect( );
+		pPlayer->SpectatorDisconnect( ); */
 }
 
 /*
@@ -897,11 +874,11 @@ A spectator has sent a usercmd
 */
 void SpectatorThink( edict_t *pEntity )
 {
-	entvars_t *pev = &pEntity->v;
+/* 	entvars_t *pev = &pEntity->v;
 	CBaseSpectator *pPlayer = (CBaseSpectator *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
-		pPlayer->SpectatorThink( );
+		pPlayer->SpectatorThink( ); */
 }
 
 ////////////////////////////////////////////////////////
@@ -1455,23 +1432,24 @@ void RegisterEncoders( void )
 	DELTA_ADDENCODER( "Player_Encode", Player_Encode );
 }
 
+//debugger found it as reason of crash, close code
 int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 {
-#if defined( CLIENT_WEAPONS )
-	int i;
-	weapon_data_t *item;
+/* 
+	//int i;
+	//weapon_data_t *item;
 	entvars_t *pev = &player->v;
 	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev );
-	CBasePlayerWeapon *gun;
+	//CBasePlayerWeapon *gun;
 	
-	ItemInfo II;
+	//ItemInfo II;
 
 	memset( info, 0, 32 * sizeof( weapon_data_t ) );
 
 	if ( !pl )
 		return 1;
 
-	// go through all of the weapons and make a list of the ones to pack
+ 	// go through all of the weapons and make a list of the ones to pack
 	for ( i = 0 ; i < MAX_ITEM_TYPES ; i++ )
 	{
 		if ( pl->m_rgpPlayerItems[ i ] )
@@ -1515,11 +1493,12 @@ int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 				pPlayerItem = pPlayerItem->m_pNext;
 			}
 		}
-	}
-#else
+	} 
+
 	memset( info, 0, 32 * sizeof( weapon_data_t ) );
-#endif
 	return 1;
+	 */
+	 return TRUE;
 }
 
 /*

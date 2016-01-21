@@ -29,7 +29,7 @@ cvar_t	fraglimit	= {"mp_fraglimit","50", FCVAR_SERVER };
 cvar_t	timelimit	= {"mp_timelimit","30", FCVAR_SERVER };
 cvar_t	friendlyfire= {"mp_friendlyfire","0", FCVAR_SERVER };
 cvar_t	falldamage	= {"mp_falldamage","0", FCVAR_SERVER };
-cvar_t	weaponstay	= {"mp_weaponstay","0", FCVAR_SERVER };
+//cvar_t	weaponstay	= {"mp_weaponstay","0", FCVAR_SERVER };
 cvar_t	forcerespawn= {"mp_forcerespawn","1", FCVAR_SERVER };
 cvar_t	flashlight	= {"mp_flashlight","1", FCVAR_SERVER };
 cvar_t	aimcrosshair= {"mp_autocrosshair","0", FCVAR_SERVER };
@@ -37,9 +37,10 @@ cvar_t	decalfrequency = {"decalfrequency","20", FCVAR_SERVER };
 cvar_t	teamlist = {"mp_teamlist","hgrunt;scientist", FCVAR_SERVER };
 cvar_t	teamoverride = {"mp_teamoverride","1" };
 cvar_t	defaultteam = {"mp_defaultteam","0" };
-cvar_t	allowmonsters={"mp_allowmonsters","1", FCVAR_SERVER };
+cvar_t	allowmonsters={"mp_allowmonsters","0", FCVAR_SERVER };
 cvar_t	allowmonsters2={"mp_fragmonsters","1", FCVAR_SERVER };
 cvar_t	allowmonsters3={"mp_crowbar","1", FCVAR_SERVER };
+cvar_t	allowmonsters4={"mp_dmode","0", FCVAR_SERVER }; //1.29, regeneration mod
 
 	// CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	// CVAR_SET_STRING("sv_stepsize", "18");
@@ -48,7 +49,7 @@ cvar_t	allowmonsters3={"mp_crowbar","1", FCVAR_SERVER };
 	
 	
 
-cvar_t  mp_chattime = {"mp_chattime","9", FCVAR_SERVER };
+cvar_t  mp_chattime = {"mp_chattime","5", FCVAR_SERVER };
 
 // Engine Cvars
 cvar_t 	*g_psv_gravity = NULL;
@@ -474,7 +475,7 @@ void GameDLLInit( void )
 
 	CVAR_REGISTER (&friendlyfire);
 	CVAR_REGISTER (&falldamage);
-	CVAR_REGISTER (&weaponstay);
+	//CVAR_REGISTER (&weaponstay);
 	CVAR_REGISTER (&forcerespawn);
 	CVAR_REGISTER (&flashlight);
 	CVAR_REGISTER (&aimcrosshair);
@@ -485,6 +486,7 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&allowmonsters);
 	CVAR_REGISTER (&allowmonsters2); //1.27
 	CVAR_REGISTER (&allowmonsters3); //1.28
+	CVAR_REGISTER (&allowmonsters4); //1.29
 
 	CVAR_REGISTER (&mp_chattime);
 

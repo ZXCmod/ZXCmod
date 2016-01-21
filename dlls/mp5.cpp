@@ -354,8 +354,8 @@ void CMP5::ThirdAttack( void )
 	//UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 	m_iClip--;
 	EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart11.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
-	CBaseEntity *pZap = Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-	
+	Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+	//CBaseEntity *pZap = 
 			SendWeaponAnim( 5 );
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.12;

@@ -719,11 +719,20 @@ void    CBfb :: Hit( CBaseEntity* Target )
                         dont_ignore_monsters,
                         ENT( pev ),
                         &TResult );
+						
+		CBaseEntity *pEntity = NULL;
    
-		
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 256 )) != NULL)
+       		 {
+				if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+					{
+					UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 1.2, 1 );
+					pEntity->TakeDamage(pev, VARS( pev->owner ), 73, DMG_MORTAR); //destroy all near thinks
+					} 
+			}
 		
 //full explode after touch with wall
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(291,549), 205, CLASS_NONE, DMG_MORTAR  ); //end blast
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 750, 215, CLASS_NONE, DMG_MORTAR  ); //end blast
 /* 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_BEAMCYLINDER );
 			WRITE_COORD( pev->origin.x);
@@ -860,7 +869,7 @@ TraceResult tr, beam_tr;
 Explode(DMG_FREEZE);
 if (gpGlobals->time >= m_flDie) //full explode and self destroy
 	{
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(71,83), 512, CLASS_NONE, DMG_MORTAR  ); //end blast
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 500, 512, CLASS_NONE, DMG_MORTAR  ); //end blast
 	pev->takedamage = DAMAGE_NO;
 	SetThink( SUB_Remove );
 }

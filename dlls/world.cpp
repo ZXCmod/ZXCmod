@@ -35,40 +35,6 @@
 #include "gamerules.h"
 #include "teamplay_gamerules.h"
 
-
-
-
-
-/*
-#define ZOMBIE_CRAB "monster_headcrab"
-#define ZOMBIE_CRAB2 "monster_scientist"
-#define ZOMBIE_CRAB3 "monster_tentacle"
-#define ZOMBIE_CRAB4 "monster_turret"
-#define ZOMBIE_CRAB5 "monster_miniturret"
-#define ZOMBIE_CRAB6 "monster_bigmomma"
-#define ZOMBIE_CRAB7 "monster_alien_slave"
-#define ZOMBIE_CRAB8 "monster_bullchicken"
-#define ZOMBIE_CRAB9 "monster_human_grunt"
-#define ZOMBIE_CRAB10 "monster_cockroach"
-#define ZOMBIE_CRAB11 "monster_rat"
-#define ZOMBIE_CRAB12 "monster_player"
-#define ZOMBIE_CRAB13 "monster_osprey"
-#define ZOMBIE_CRAB14 "monster_alien_controller"
-#define ZOMBIE_CRAB15 "monster_nihilanth"
-#define ZOMBIE_CRAB16 "monster_mortar"
-#define ZOMBIE_CRAB17 "monster_leech"
-#define ZOMBIE_CRAB18 "monster_vortigaunt"
-#define ZOMBIE_CRAB19 "monster_houndeye"
-#define ZOMBIE_CRAB20 "monster_grunt_repel"
-#define ZOMBIE_CRAB21 "monster_cine_panther"
-#define ZOMBIE_CRAB22 "monster_gargantua"
-#define ZOMBIE_CRAB23 "monster_bigmomma"
-#define ZOMBIE_CRAB24 "monster_apache"
-#define ZOMBIE_CRAB25 "monster_alien_grunt"
-#define ZOMBIE_CRAB26 "monster_barnacle"
-
-*/
-
 extern CGraph WorldGraph;
 extern CSoundEnt *pSoundEnt;
 
@@ -510,17 +476,21 @@ LINK_ENTITY_TO_CLASS( worldspawn, CWorld );
 
 extern DLL_GLOBAL BOOL		g_fGameOver;
 float g_flWeaponCheat; 
+float g_flWeaponCheat2; 
 
 void CWorld :: Spawn( void )
 {
 	g_fGameOver = FALSE;
 	Precache( );
 	g_flWeaponCheat = CVAR_GET_FLOAT( "sv_cheats" );  // Is the impulse 101 command allowed?
+	g_flWeaponCheat2 = CVAR_GET_FLOAT( "mp_dmode" );  // regen mode
+	
 
 }
 
 void CWorld :: Precache( void )
 {
+
 	UTIL_PrecacheOther( "monster_sentry" );
 	UTIL_PrecacheOther( "monster_turret" ); //new weapon: turret
 	UTIL_PrecacheOther( "monster_gman" );

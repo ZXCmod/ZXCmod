@@ -151,6 +151,7 @@ void CRpgRocket :: Spawn( void )
 
 	pev->velocity = gpGlobals->v_forward * 250;
 	pev->gravity = 0.5;
+	pev->ltime = 255;
 
 	pev->nextthink = gpGlobals->time + 0.4;
 
@@ -163,6 +164,7 @@ void CRpgRocket :: Spawn( void )
 //=========================================================
 void CRpgRocket :: RocketTouch ( CBaseEntity *pOther )
 {
+
 	if ( m_pLauncher )
 	{
 		// my launcher is still around, tell it I'm dead.
@@ -200,12 +202,12 @@ void CRpgRocket :: IgniteThink( void  )
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT(entindex());	// entity
 		WRITE_SHORT(m_iTrail );	// model
-		WRITE_BYTE( RANDOM_LONG(50,90) ); // life
-		WRITE_BYTE( RANDOM_LONG(2,5) );  // width
+		WRITE_BYTE( 60 ); // life
+		WRITE_BYTE( 3 );  // width
+		WRITE_BYTE( pev->ltime );   // r, g, b
+		WRITE_BYTE( pev->ltime );   // r, g, b
 		WRITE_BYTE( 255 );   // r, g, b
-		WRITE_BYTE( 255 );   // r, g, b
-		WRITE_BYTE( 255 );   // r, g, b
-		WRITE_BYTE( RANDOM_LONG(200,255) );	// brightness
+		WRITE_BYTE( 225 );	// brightness
 
 	MESSAGE_END();  // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 
@@ -373,6 +375,8 @@ void CRpg::Precache( void )
 	UTIL_PrecacheOther( "rpg_rocket" );
 
 	PRECACHE_SOUND("weapons/rocketfire1.wav");
+	//PRECACHE_SOUND("weapons/pinpull.wav");
+	
 	PRECACHE_SOUND("weapons/glauncher.wav"); // alternative fire sound
 
 	m_usRpg = PRECACHE_EVENT ( 1, "events/rpg.sc" );
@@ -489,8 +493,8 @@ void CRpg::PrimaryAttack()
 
 		m_iClip--; 
 				
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	}
 	else
 	{
@@ -545,7 +549,7 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
 	m_iClip--; 
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.25;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
 	m_pPlayer->m_flNextChatTime13 ++;
 	}
@@ -559,6 +563,50 @@ else
 	UpdateSpot( );
 	}
 }
+
+
+void CRpg::ThirdAttack()
+{
+if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
+
+	{
+		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+	#ifndef CLIENT_DLL
+		// player "shoot" animation
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * -17 + gpGlobals->v_up * -8;
+		Vector vecSrc2 = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 17 + gpGlobals->v_up * -8;
+		CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
+		CRpgRocket *pRocket2 = CRpgRocket::CreateRpgRocket( vecSrc2, m_pPlayer->pev->v_angle, m_pPlayer, this );
+		pRocket->pev->dmg = 88;
+		pRocket->pev->ltime = 80;
+		pRocket->pev->nextthink = gpGlobals->time + 0.50; //post delay
+		pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
+
+		pRocket2->pev->dmg = 89;
+		pRocket2->pev->ltime = 250;
+		pRocket2->pev->nextthink = gpGlobals->time + 0.40; //post delay
+		pRocket2->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
+	
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
+	
+		#endif
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--; 
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/rocketfire1.wav", 0.9, ATTN_NORM);
+				
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
+	}
+
+
+}
+
+
+
+
 
 
 void CRpg::WeaponIdle( void )
@@ -611,23 +659,16 @@ if (m_iClip >= 1)
 		m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
 		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-	#ifndef CLIENT_DLL
+
 		// player "shoot" animation
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		Vector vecThrow = gpGlobals->v_forward;
 		m_pPlayer->m_flNextChatTime13 ++;
 		CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
-		//m_flNextChatTime13
-	#endif
-int flags;
-#if defined( CLIENT_WEAPONS )
-	flags = FEV_GLOBAL;
-#else
-	flags = 0;
-#endif
 
-		PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
+
+		PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 		m_iClip--; 
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
@@ -670,7 +711,7 @@ int flags;
 			else
 				iAnim = RPG_IDLE;
 
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 90.0 / 15.0;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3;
 		}
 		else
 		{
@@ -679,7 +720,7 @@ int flags;
 			else
 				iAnim = RPG_FIDGET;
 
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 		}
 
 		SendWeaponAnim( iAnim );

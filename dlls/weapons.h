@@ -90,7 +90,7 @@ public:
 
 
 // weapon weight factors (for auto-switching)   (-1 = noswitch)
-#define CROWBAR_WEIGHT		25
+#define CROWBAR_WEIGHT		250
 #define GLOCK_WEIGHT		10
 #define PYTHON_WEIGHT		15
 #define MP5_WEIGHT			15
@@ -154,7 +154,7 @@ public:
 #define HANDGRENADE_DEFAULT_GIVE	10
 #define SATCHEL_DEFAULT_GIVE		2
 #define TRIPMINE_DEFAULT_GIVE		1
-#define SNARK_DEFAULT_GIVE			5
+#define SNARK_DEFAULT_GIVE			6
 #define HIVEHAND_DEFAULT_GIVE		16
 
 // The amount of ammo given to a player by an ammo item.
@@ -168,7 +168,7 @@ public:
 #define AMMO_CROSSBOWCLIP_GIVE	CROSSBOW_MAX_CLIP
 #define AMMO_RPGCLIP_GIVE		1
 #define AMMO_URANIUMBOX_GIVE	25
-#define AMMO_SNARKBOX_GIVE		5
+#define AMMO_SNARKBOX_GIVE		6
 
 // bullet types
 typedef	enum
@@ -393,6 +393,7 @@ extern void DecalGunshot( TraceResult *pTrace, int iBulletType );
 extern void SpawnBlood(Vector vecSpot, int bloodColor, float flDamage);
 extern int DamageDecal( CBaseEntity *pEntity, int bitsDamageType );
 extern void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
+
 
 typedef struct 
 {
@@ -718,11 +719,12 @@ public:
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void ); // 1.29 wp
 	void WeaponIdle( void );
 	float m_flNextChatTime9; //delay
 	void UpdateSpot( void );
 	BOOL ShouldWeaponIdle( void ) { return TRUE; };
-	float m_flNextChatTime13;
+	int m_flNextChatTime13;
 
 
 	CLaserSpot *m_pSpot;
@@ -940,6 +942,7 @@ public:
 	int m_iFirePhase;// don't save me.
 	short BSpr;
 	float FTime1;
+	float m_flNextChatTime14;
 
 
 
@@ -1070,10 +1073,12 @@ public:
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void ); // 1.29 wp
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 	int m_fJustThrown;
+	int m_iSpriteTexture;
 
 	virtual BOOL UseDecrement( void )
 	{ 

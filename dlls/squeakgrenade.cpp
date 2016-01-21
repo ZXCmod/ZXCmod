@@ -123,7 +123,7 @@ TYPEDESCRIPTION	CSqueakGrenade::m_SaveData[] =
 
 IMPLEMENT_SAVERESTORE( CSqueakGrenade, CGrenade );
 
-#define SQUEEK_DETONATE_DELAY	15.0
+#define SQUEEK_DETONATE_DELAY	5.0
 
 int CSqueakGrenade :: Classify ( void )
 {
@@ -178,12 +178,12 @@ void CSqueakGrenade :: Spawn( void )
 	ResetSequenceInfo( );
 	
 	//pev->flags |= FL_MONSTER;
-	pev->takedamage		= RANDOM_FLOAT(7, 14);
+	pev->takedamage		= 10;
 	pev->health			= 1;
 	pev->gravity		= 0.5;
 	pev->friction		= 0.5;
 
-	pev->dmg = RANDOM_FLOAT(27, 34);
+	pev->dmg = 30;
 	
 	
 	
@@ -200,7 +200,7 @@ void CSqueakGrenade :: Spawn( void )
 		WRITE_BYTE( 255 ); // r, g, b
 		WRITE_BYTE( 255 ); // r, g, b
 		WRITE_BYTE( 255 ); // r, g, b
-		WRITE_BYTE( RANDOM_FLOAT(64, 128) ); // brightness
+		WRITE_BYTE( 40 ); // brightness
 
 		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 
@@ -505,7 +505,9 @@ void CSqueak::Precache( void )
 	PRECACHE_MODEL("models/p_squeak.mdl");
 	PRECACHE_SOUND("squeek/sqk_hunt2.wav");
 	PRECACHE_SOUND("squeek/sqk_hunt3.wav");
+	PRECACHE_SOUND("garg/gar_stomp1.wav");
 	UTIL_PrecacheOther("monster_snark");
+	m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
 
 	m_usSnarkFire = PRECACHE_EVENT ( 1, "events/snarkfire.sc" );
 }
@@ -682,6 +684,73 @@ void CSqueak::SecondaryAttack( void )
 		}
 	}
 }
+
+void CSqueak::ThirdAttack( void )
+{
+
+
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
+	{
+	CBaseEntity *pEntity = NULL;
+
+	
+	
+	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "garg/gar_stomp1.wav", 1.0, ATTN_NORM);
+	
+
+
+	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
+	
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+
+	
+	m_pPlayer->pev->velocity.z = 340;
+
+	
+
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 128 )) != NULL)
+       		 {
+				if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+					{
+					UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 0.7, 1 );
+					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(45,55), DMG_MORTAR); //destroy all near thinks
+					} 
+			}
+			
+	
+			//beam
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_BEAMCYLINDER );
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z + 300 ); // reach damage radius over .2 seconds
+			WRITE_SHORT( m_iSpriteTexture );
+			WRITE_BYTE( 0 ); // startframe
+			WRITE_BYTE( 16 ); // framerate
+			WRITE_BYTE( 6 ); // life
+			WRITE_BYTE( 10 );  // width
+			WRITE_BYTE( 0 );   // noise
+			WRITE_BYTE( 200 );   // r, g, b
+			WRITE_BYTE( 0 );   // r, g, b
+			WRITE_BYTE( 0 );   // r, g, b
+			WRITE_BYTE( 155 ); // brightness
+			WRITE_BYTE( 4 );		// speed
+		MESSAGE_END();
+
+	return;
+	
+	}
+
+}
+
+
+
 
 
 void CSqueak::WeaponIdle( void )

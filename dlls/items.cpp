@@ -28,6 +28,7 @@
 #include "skill.h"
 #include "items.h"
 #include "gamerules.h"
+#include "game.h"
 
 extern int gmsgItemPickup;
 
@@ -89,6 +90,8 @@ void CWorldItem::Spawn( void )
 
 void CItem::Spawn( void )
 {
+
+
 	pev->movetype = MOVETYPE_TOSS;
 	pev->solid = SOLID_TRIGGER;
 	UTIL_SetOrigin( pev, pev->origin );
@@ -161,7 +164,7 @@ void CItem::Materialize( void )
 	if ( pev->effects & EF_NODRAW )
 	{
 		// changing from invisible state to visible.
-		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, 150 );
+		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, RANDOM_LONG(140,150));
 		pev->effects &= ~EF_NODRAW;
 		pev->effects |= EF_MUZZLEFLASH;
 	}
@@ -206,6 +209,9 @@ class CItemBattery : public CItem
 {
 	void Spawn( void )
 	{ 
+		if (allowmonsters4.value != 0)
+			return; //item dont spawn
+		
 		Precache( );
 		SET_MODEL(ENT(pev), "models/w_battery.mdl");
 		CItem::Spawn( );

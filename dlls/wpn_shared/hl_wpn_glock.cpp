@@ -201,14 +201,9 @@ void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
 	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
 	Vector vecAiming;
 	
-	if ( fUseAutoAim )
-	{
-		vecAiming = m_pPlayer->GetAutoaimVector( AUTOAIM_10DEGREES );
-	}
-	else
-	{
+
 		vecAiming = gpGlobals->v_forward;
-	}
+	
 
 	Vector vecDir;
 	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( 0, flSpread, 0 ), 8192, RANDOM_LONG( 9, 13 ), 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
@@ -220,6 +215,7 @@ void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
+	
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 }
@@ -591,14 +587,18 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 	EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
 	pev->takedamage = DAMAGE_NO;
 	SetThink( SUB_Remove );
+	}
 }
 
-}
 
-
-
-
-
+/* 
+	if (!g_pGameRules->FAllowMonsters())
+	{
+		pev->flags |= FL_KILLME;		// Post this because some monster code modifies class data after calling this function
+//		REMOVE_ENTITY(ENT(pev));
+		return;
+	}
+ */
 
 
 

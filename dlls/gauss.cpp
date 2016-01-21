@@ -43,6 +43,13 @@
 #define BLASTER_OFFSET_FORWARD  0
 #define BLASTER_OFFSET_RIGHT    7
 #define BLASTER_OFFSET_UP               0
+
+
+
+
+
+
+
 //nuke class
 class   CBlaster2Beam : public CGrenade
 {
@@ -384,21 +391,16 @@ void CGauss::SecondaryAttack()
 
 void CGauss::ThirdAttack( void )
 {
-
 		CBaseEntity *pEntity;
 		TraceResult	tr;	
 		Vector vecSrc;
-		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-		UTIL_MakeVectors( anglesAim );
-		//Vector vecSrc = m_pPlayer->GetGunPosition( );
-		vecSrc = m_pPlayer->GetGunPosition( )  + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
+		vecSrc = m_pPlayer->GetGunPosition( );
 		Vector vecDir = gpGlobals->v_forward;
-		//UTIL_MakeAimVectors( pev->angles );
 		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 2048, dont_ignore_monsters, m_pPlayer->edict(), &tr);
 		//Vector( -16, -16, 0 )
 		pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
 		
-	if (pEntity != NULL && pEntity->pev->takedamage && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1 && pEntity->IsPlayer()) // != pEntity->IsPlayer()
+	if (pEntity != NULL && pEntity->pev->takedamage && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1 && pEntity->IsPlayer()) //  && pEntity->IsPlayer()
     {
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
@@ -419,7 +421,7 @@ void CGauss::ThirdAttack( void )
             WRITE_BYTE( 0 ); // Starting frame
             WRITE_BYTE( 0  ); // framerate * 0.1
             WRITE_BYTE( 1 ); // life * 0.1
-            WRITE_BYTE( 30 ); // width
+            WRITE_BYTE( 12 ); // width
             WRITE_BYTE( 15 ); // noise
             WRITE_BYTE( 125 ); // color r,g,b
             WRITE_BYTE( 25 ); // color r,g,b
@@ -428,21 +430,23 @@ void CGauss::ThirdAttack( void )
             WRITE_BYTE( 100 ); // scroll speed
 			MESSAGE_END();
 			
-		pEntity->pev->punchangle.z = RANDOM_LONG(-25,25);
-		pEntity->pev->punchangle.x = RANDOM_LONG(-25,25);
-		pEntity->TakeDamage(pev, VARS( pev->owner ), 3, DMG_BLAST); //nuke wave immune bonus
+		pEntity->pev->punchangle.z = RANDOM_LONG(-35,25);
+		pEntity->pev->punchangle.x = RANDOM_LONG(-25,35);
+		pEntity->TakeDamage(pev, VARS( pev->owner ), 3, DMG_BLAST);
 		
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		//UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		
 		//fix cheat in teamplay
 		CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
-		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE)) // && (pEntity->IsPlayer())
+		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE) && m_pPlayer->pev->health <= 250) // && (pEntity->IsPlayer())
 			m_pPlayer->pev->health += 3.0; //take unlimited health
 
 	
-	
-	vecDir = ( pEntity->Center() - Vector ( m_pPlayer->pev->v_angle.x, m_pPlayer->pev->v_angle.y, m_pPlayer->pev->v_angle.z ) - Center() ).Normalize();
-	pEntity->pev->velocity = vecDir * -150;
+	//pev->view_ofs v_angle punchangle
+	//pEntity->pev->velocity = m_pPlayer->pev->angles; //m_pPlayer->pev->velocity 
+	pEntity->pev->velocity.x = ( ( m_pPlayer->pev->velocity.x + m_pPlayer->pev->origin.x) - pEntity->pev->origin.x);
+	pEntity->pev->velocity.y = ( ( m_pPlayer->pev->velocity.y + m_pPlayer->pev->origin.y) - pEntity->pev->origin.y);
+	pEntity->pev->velocity.z = ( ( m_pPlayer->pev->velocity.z + m_pPlayer->pev->origin.z) - pEntity->pev->origin.z);
 	
 	//vecDir = ( pEntity->Center() - Vector ( m_pPlayer->pev->v_angle.x, m_pPlayer->pev->v_angle.y, m_pPlayer->pev->v_angle.z ) - Center() ).Normalize();
 	//pEntity->pev->velocity = m_pPlayer->pev->velocity + vecDir * -375;
@@ -461,61 +465,9 @@ void CGauss::ThirdAttack( void )
 //now unused
 BOOL CGauss::Lock( )
 {
-/* 
 
-		CBaseEntity *pEntity;
-		TraceResult	tr;	
-		Vector vecSrc;
-		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-		UTIL_MakeVectors( anglesAim );
-		//Vector vecSrc = m_pPlayer->GetGunPosition( );
-		vecSrc = m_pPlayer->GetGunPosition( )  + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
-		Vector vecDir = gpGlobals->v_forward;
-		//UTIL_MakeAimVectors( pev->angles );
-		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 1024, dont_ignore_monsters, m_pPlayer->edict(), &tr);
-		pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
-		
-		/////beam ray
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-            WRITE_BYTE( TE_BEAMPOINTS );
-            WRITE_COORD(vecSrc.x);
-            WRITE_COORD(vecSrc.y);
-            WRITE_COORD(vecSrc.z);
-            WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
-            WRITE_COORD( pEntity->pev->origin.y );
-            WRITE_COORD( pEntity->pev->origin.z );
-            WRITE_SHORT( BSpr ); //sprite
-            WRITE_BYTE( 0 ); // Starting frame
-            WRITE_BYTE( 0  ); // framerate * 0.1
-            WRITE_BYTE( 1 ); // life * 0.1
-            WRITE_BYTE( 30 ); // width
-            WRITE_BYTE( 15 ); // noise
-            WRITE_BYTE( 125 ); // color r,g,b
-            WRITE_BYTE( 25 ); // color r,g,b
-            WRITE_BYTE( 1 ); // color r,g,b
-            WRITE_BYTE( 100 ); // brightness
-            WRITE_BYTE( 100 ); // scroll speed
-			MESSAGE_END();
-	
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		//Vector vecSrc = m_pPlayer->GetGunPosition( );;
-		//Vector vecAiming = gpGlobals->v_forward;
+	return TRUE;
 
-		//TraceResult tr;
-		//UTIL_TraceLine ( vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr );
-		
-//pEntity->pev, tr.vecEndPos
-	
-	
-	vecDir = ( pEntity->Center() - Vector ( m_pPlayer->pev->v_angle.x, m_pPlayer->pev->v_angle.y, m_pPlayer->pev->v_angle.z ) - Center() ).Normalize();
-	pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -225;
-	
-	//vecDir = ( pEntity->Center() - Vector ( m_pPlayer->pev->v_angle.x, m_pPlayer->pev->v_angle.y, m_pPlayer->pev->v_angle.z ) - Center() ).Normalize();
-	//pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -225;
-	// m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 0.1; 
-	
- */
-return TRUE;
 }
 
 

@@ -21,6 +21,7 @@
 #include "nodes.h"
 #include "player.h"
 #include "gamerules.h"
+extern float g_flWeaponCheat;
 
 // special deathmatch shotgun spreads
 #define VECTOR_CONE_DM_SHOTGUN	Vector( 0.08716, 0.04362, 0.00  )// 10 degrees by 5 degrees
@@ -40,7 +41,7 @@ enum shotgun_e {
 };
 
 //new weapon when reload attack
- class   CPhase : public CGrenade
+ class   CPhase : public CBaseEntity
 {
         public:
 		
@@ -52,9 +53,10 @@ enum shotgun_e {
 		int m_flDie;
 		int m_flDie2;
 		int m_iBalls;
+		short		m_Sprite;
 }; 
 //result of recharge flare
- class   CPhase2 : public CGrenade
+ class   CPhase2 : public CBaseEntity
 {
         public:
 		
@@ -113,6 +115,7 @@ PRECACHE_SOUND("debris/beamstart4.wav");
 	m_usDoubleFire = PRECACHE_EVENT( 1, "events/shotgun2.sc" );
 	PRECACHE_MODEL( "sprites/bigflare1.spr" );
 	PRECACHE_MODEL( "sprites/blueflare1.spr" );
+	PRECACHE_MODEL( "sprites/flare6.spr" );
 }
 
 int CShotgun::AddToPlayer( CBasePlayer *pPlayer )
@@ -327,10 +330,8 @@ void CShotgun::ThirdAttack( void )
 		CBaseEntity *pEntity;
 		TraceResult	tr;	
 		Vector vecSrc;
-		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-		UTIL_MakeVectors( anglesAim );
 		//Vector vecSrc = m_pPlayer->GetGunPosition( );
-		vecSrc = m_pPlayer->GetGunPosition( )  + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
+		vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
 		Vector vecDir = gpGlobals->v_forward;
 		//UTIL_MakeAimVectors( pev->angles );
 		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 4096, dont_ignore_monsters, m_pPlayer->edict(), &tr);
@@ -543,7 +544,6 @@ LINK_ENTITY_TO_CLASS( item_artifact_super_damage, CPhase2 );
 void CPhase::Spawn( )
 {
 		Precache();
-	
         SET_MODEL( ENT(pev), "models/clustergrenade.mdl" );
 		//
         pev->movetype = MOVETYPE_NONE;
@@ -565,6 +565,7 @@ void CPhase::Spawn( )
 		pev->takedamage = DAMAGE_YES;
 		m_flDie = gpGlobals->time + 10;
 		pev->ltime = 80;
+		
 
 	//destroy new clusters, if not in radius
 	CBaseEntity *pEntity = NULL;
@@ -572,10 +573,12 @@ void CPhase::Spawn( )
        	{
 		if (FClassnameIs( pEntity->pev, "weapon_shotgun") && (pEntity->edict() != edict()))
 		{
+
 			SUB_Remove();
 			return;
 		}
 		}
+
 		
 		SetThink( IgniteThink );
 }
@@ -584,26 +587,29 @@ void CPhase::Spawn( )
 
 void CPhase::Precache( void )
 {
-m_iBalls = PRECACHE_MODEL( "sprites/blueflare1.spr" );
-Count();
+
+	m_Sprite = PRECACHE_MODEL( "sprites/flare6.spr" );
+	m_iBalls = PRECACHE_MODEL( "sprites/blueflare1.spr" );
+	Count();
 }
 
 void CPhase::Count( void  )
 {
+
 		
 TraceResult tr, beam_tr;
 		// balls
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, tr.vecEndPos );
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_SPRITETRAIL );// TE_RAILTRAIL);
 			WRITE_COORD( pev->origin.x );
 			WRITE_COORD( pev->origin.y );
 			WRITE_COORD( pev->origin.z );
-			WRITE_COORD( pev->origin.x + tr.vecPlaneNormal.x*3 );
-			WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*3 );
-			WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*3  );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z  );
 			WRITE_SHORT( m_iBalls );		// model
 			WRITE_BYTE( 10  );				// count
-			WRITE_BYTE( 9 );				// life * 10
+			WRITE_BYTE( 5 );				// life * 10
 			WRITE_BYTE( RANDOM_LONG( 1, 2 ) );				// size * 10
 			WRITE_BYTE( 90 );				// amplitude * 0.1
 			WRITE_BYTE( 2 );				// speed * 100
@@ -618,6 +624,18 @@ void CPhase::Motion( void )
 	//limit
 	if (pev->ltime < 5)
 	pev->ltime = 7;
+	
+	
+			// animated sprite
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SPRITE );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_SHORT( m_Sprite );
+			WRITE_BYTE( pev->ltime/50 ); // scale * 10
+			WRITE_BYTE( pev->ltime/2 ); // brightness
+		MESSAGE_END();
 }
 
 
@@ -647,7 +665,7 @@ void CPhase::IgniteThink( void )
 
 
 
-		pev->model = MAKE_STRING("sprites/bigflare1.spr");
+/* 		pev->model = MAKE_STRING("sprites/bigflare1.spr");
 		CSprite *pSprite = CSprite::SpriteCreate( "sprites/bigflare1.spr", pev->origin, TRUE );
 		if ( pSprite )
 			{
@@ -659,7 +677,7 @@ void CPhase::IgniteThink( void )
 				pSprite->SetTransparency( kRenderTransAdd, 255, 255, 255, 100, kRenderFxFadeFast );
 				if (pSprite->pev->scale > 40)
 					pSprite->pev->scale = 40;
-			}
+			} */
 
 
 
@@ -717,15 +735,16 @@ void CPhase2::Spawn( )
 	    if (pEntity != NULL)
 		{
 		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-		pPlayer->m_flNextChatTime12 = gpGlobals->time + 180; //set reload timer to owner
-/* 		MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pev->owner) );
-			WRITE_STRING( "Beam created!" );
-		MESSAGE_END(); */
+		
+		if (g_flWeaponCheat != 0.0)
+			pPlayer->m_flNextChatTime12 = gpGlobals->time + 900; //set reload timer x5
+		else
+			pPlayer->m_flNextChatTime12 = gpGlobals->time + 180; //set reload timer normal
+		
 		UTIL_ShowMessageAll( "Shotgun gravity-beam created!"  );
 		}
 		
 		value = 2048;
-		
 		SetThink( IgniteThink );
 }
 
@@ -740,24 +759,6 @@ SetThink(IgniteThink);
 
 void CPhase2::IgniteThink( void )
 {
-/* 	//init vectors
-	CBaseEntity *pEntity = NULL;
-	Vector	vecDir;
-	vecDir = Vector( 0, 0, 0 );
-	Vector vecDirToEnemy;
-	
-	//init distance
-	Vector vecMid = pev->origin; // + pev->view_ofs
-	Vector vecMidEnemy = pEntity->BodyTarget( vecMid );
-
-	//int fEnemyVisible = FBoxVisible(pev, m_hEnemy->pev, vecMidEnemy );	
-	vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
-	float flDistToEnemy = vecDirToEnemy.Length();
-	Vector vec = UTIL_VecToAngles(vecMidEnemy - vecMid); */
-
-
-
-
 
 	//init vectors
 	CBaseEntity *pEntity = NULL;
@@ -793,7 +794,7 @@ void CPhase2::IgniteThink( void )
                 WRITE_BYTE( 0 ); // Starting frame
                 WRITE_BYTE( 16  ); // framerate * 0.1
                 WRITE_BYTE( 1 ); // life * 0.1
-                WRITE_BYTE( 20 ); // width
+                WRITE_BYTE( 8 ); // width
                 WRITE_BYTE( 64 ); // noise
                 WRITE_BYTE( 200 ); // color r,g,b
                 WRITE_BYTE( 200 ); // color r,g,b
@@ -803,14 +804,14 @@ void CPhase2::IgniteThink( void )
         MESSAGE_END();
 		//1.28
 		UTIL_Sparks( tr.vecEndPos );
-		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 128, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
+		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 1280, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
 		//lights
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE(TE_DLIGHT);
 			WRITE_COORD(tr.vecEndPos.x);	// X
 			WRITE_COORD(tr.vecEndPos.y);	// Y
 			WRITE_COORD(tr.vecEndPos.z);	// Z
-			WRITE_BYTE( 30 );		// radius * 0.1
+			WRITE_BYTE( 8 );		// radius * 0.1
 			WRITE_BYTE( 92 );		// r
 			WRITE_BYTE( 16 );		// g
 			WRITE_BYTE( 16 );		// b
@@ -829,10 +830,10 @@ if (gpGlobals->time <= m_flDie - 6) //14 sec
 				vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
 				float flDistToEnemy = vecDirToEnemy.Length();
 				
-				if (pEntity->pev->takedamage && !(pEntity->pev->health <= 3))
+				if (pEntity->IsPlayer() && !(pEntity->pev->health <= 3))
 					{
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 40 ) - Center() ).Normalize();
-					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->dmg + 64 + value/flDistToEnemy*30); //600 700/16
+					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->dmg + 64 + value/flDistToEnemy*36); //600 700/16
 					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 40, 40, CLASS_NONE, DMG_MORTAR  );
 					pev->dmg += 1; //increase grav. power
 					} 

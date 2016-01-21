@@ -317,8 +317,8 @@ public:
 	float m_flNextChatTime; //chat timer
 	float m_flNextChatTime2; //crystal delay
 	float m_flNextChatTime3; //nuke delay
-	float m_flNextChatTime4; //satchels limit
-	float m_flNextChatTime5; //tripmine limit
+	int m_flNextChatTime4; //satchels limit
+	int m_flNextChatTime5; //tripmine limit
 	float m_flNextChatTime6; //GravGrenades delay
 	float m_flNextChatTime7; //turrets limit
 	float m_flNextChatTime8; //hornetgun reload delay
@@ -326,8 +326,8 @@ public:
 	float m_flNextChatTime10; //egon reload delay
 	float m_flNextChatTime11; //crowbar reload delay
 	float m_flNextChatTime12; //shotgun flare delay
-	float m_flNextChatTime13; //turrets limit
-	float m_flNextChatTime14;
+	int m_flNextChatTime13; //turrets limit
+	int m_flNextChatTime14; //freeze bags limit
 	float m_flNextChatTime15;
 
 };

@@ -219,7 +219,7 @@ void CCrossbowBolt::ExplodeThink( void ) //touch explode. Clear, if explode been
 		{
 			WRITE_SHORT( g_sModelIndexWExplosion );
 		}
-		WRITE_BYTE( iScale * 25  ); // scale * 10
+		WRITE_BYTE( iScale * 10  ); // scale * 10
 		WRITE_BYTE( 15  ); // framerate
 		WRITE_BYTE( TE_EXPLFLAG_NONE );
 	MESSAGE_END();

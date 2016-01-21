@@ -872,7 +872,7 @@ float CBaseMonster :: DamageForce( float damage )
 // RadiusDamage - this entity is exploding, or otherwise needs to inflict damage upon entities within a certain range.
 // 
 // only damage ents that can clearly be seen by the explosion!
-
+short m_LaserSprite;
 	
 void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType )
 {
@@ -880,7 +880,8 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 	TraceResult	tr;
 	float		flAdjustedDamage, falloff;
 	Vector		vecSpot;
-
+	m_LaserSprite = PRECACHE_MODEL( "sprites/bolt1.spr" ); //1.29
+	
 	if ( flRadius )
 		falloff = flDamage / flRadius;
 	else
@@ -923,6 +924,35 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 					tr.flFraction = 0.0;
 				}
 				
+				//nice effects
+				
+				/////beam ray
+				MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+					WRITE_BYTE( TE_BEAMPOINTS );
+					WRITE_COORD(pevInflictor->origin.x);
+					WRITE_COORD(pevInflictor->origin.y);
+					WRITE_COORD(pevInflictor->origin.z);
+					WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+					WRITE_COORD( pEntity->pev->origin.y );
+					WRITE_COORD( pEntity->pev->origin.z );
+					WRITE_SHORT( m_LaserSprite ); //sprite
+					WRITE_BYTE( 1 ); // Starting frame
+					WRITE_BYTE( 0  ); // framerate * 0.1
+					WRITE_BYTE( 1 ); // life * 0.1
+					WRITE_BYTE( 4 ); // width
+					WRITE_BYTE( 0 ); // noise
+					WRITE_BYTE( 255 ); // color r,g,b
+					WRITE_BYTE( 128 ); // color r,g,b
+					WRITE_BYTE( 16 ); // color r,g,b
+					WRITE_BYTE( 255 ); // brightness
+					WRITE_BYTE( 100 ); // scroll speed
+				MESSAGE_END();
+				
+				
+				
+				
+				
+				
 				// decrease damage for an ent that's farther from the bomb.
 				flAdjustedDamage = ( vecSrc - tr.vecEndPos ).Length() * falloff;
 				flAdjustedDamage = flDamage - flAdjustedDamage;
@@ -941,7 +971,10 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 				}
 				else
 				{
+				if ( pEntity->edict() == pEntity->pev->owner )
 					pEntity->TakeDamage ( pevInflictor, pevAttacker, flAdjustedDamage, bitsDamageType );
+				else
+					pEntity->TakeDamage ( pevInflictor, pevAttacker, flAdjustedDamage/2, bitsDamageType ); //less self dmg
 				}
 			}
 		}

@@ -1029,12 +1029,8 @@ void CBaseTurret ::	TurretDeath( void )
 {
 	BOOL iActive = FALSE;
 	
-	//1.28 limit reset for big guns
-	CBaseEntity *pEntity = NULL;
-	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
-	
 	StudioFrameAdvance( );
-	pev->nextthink = gpGlobals->time + 0.1;
+	pev->nextthink = gpGlobals->time + 0.25;
 
 	if (pev->deadflag != DEAD_DEAD)
 	{
@@ -1093,9 +1089,10 @@ void CBaseTurret ::	TurretDeath( void )
 		pev->framerate = 0;
 		SetThink( NULL );
 	}
-	
-
-		pl->m_flNextChatTime13 --;
+		//1.28 limit reset for big guns
+		CBaseEntity *pEntity = NULL;
+		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
+		pl->m_flNextChatTime13 -= 1;
 		
 	
 	SetThink( SUB_Remove );
@@ -1453,7 +1450,6 @@ void CSentry ::	SentryDeath( void )
 
 		pev->solid = SOLID_NOT;
 		pev->angles.y = UTIL_AngleMod( pev->angles.y + RANDOM_LONG( 0, 2 ) * 120 );
-		pl->m_flNextChatTime13 --;
 		EyeOn( );
 		SetThink( SUB_Remove );
 	}
@@ -1468,22 +1464,22 @@ void CSentry ::	SentryDeath( void )
 		// lots of smoke
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_SMOKE );
-			WRITE_COORD( vecSrc.x + RANDOM_FLOAT( -16, 16 ) );
-			WRITE_COORD( vecSrc.y + RANDOM_FLOAT( -16, 16 ) );
+			WRITE_COORD( vecSrc.x);
+			WRITE_COORD( vecSrc.y);
 			WRITE_COORD( vecSrc.z - 32 );
 			WRITE_SHORT( g_sModelIndexSmoke ); //PRECACHE_MODEL ("sprites/steam1.spr");// smoke
 			WRITE_BYTE( 15 ); // scale * 10
-			WRITE_BYTE( 8 ); // framerate
+			WRITE_BYTE( 10 ); // framerate
 		MESSAGE_END();
 		// lots of smoke
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_SMOKE );
-			WRITE_COORD( vecSrc.x + RANDOM_FLOAT( -16, 16 ) );
-			WRITE_COORD( vecSrc.y + RANDOM_FLOAT( -16, 16 ) );
+			WRITE_COORD( vecSrc.x);
+			WRITE_COORD( vecSrc.y);
 			WRITE_COORD( vecSrc.z - 32 );
 			WRITE_SHORT( g_sModelIndexSmoke );
 			WRITE_BYTE( 55 ); // scale * 10
-			WRITE_BYTE( 1 ); // framerate
+			WRITE_BYTE( 8 ); // framerate
 		MESSAGE_END();
 	}
 	
@@ -1497,5 +1493,9 @@ void CSentry ::	SentryDeath( void )
 		pev->framerate = 0;
 		SetThink( NULL );
 	}
+	
+	if (pl != NULL)
+		pl->m_flNextChatTime13 -= 1;
+	
 }
 

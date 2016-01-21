@@ -87,14 +87,14 @@ public:
 
 	void		AdjustAnglesForBarrel( Vector &angles, float distance );
 
-	virtual int	Save( CSave &save );
-	virtual int	Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
+	//virtual int	Save( CSave &save );
+	//virtual int	Restore( CRestore &restore );
+	//static	TYPEDESCRIPTION m_SaveData[];
 
 	BOOL OnControls( entvars_t *pevTest );
 	BOOL StartControl( CBasePlayer* pController );
 	void StopControl( void );
-	void ControllerPostFrame( void );
+	void ControllerPostFrame();
 
 
 protected:
@@ -133,7 +133,7 @@ protected:
 };
 
 
-TYPEDESCRIPTION	CFuncTank::m_SaveData[] = 
+/* TYPEDESCRIPTION	CFuncTank::m_SaveData[] = 
 {
 	DEFINE_FIELD( CFuncTank, m_yawCenter, FIELD_FLOAT ),
 	DEFINE_FIELD( CFuncTank, m_yawRate, FIELD_FLOAT ),
@@ -164,7 +164,7 @@ TYPEDESCRIPTION	CFuncTank::m_SaveData[] =
 };
 
 IMPLEMENT_SAVERESTORE( CFuncTank, CBaseEntity );
-
+ */
 static Vector gTankSpread[] =
 {
 	Vector( 0, 0, 0 ),		// perfect
@@ -393,11 +393,13 @@ void CFuncTank :: StopControl()
 }
 
 // Called each frame by the player's ItemPostFrame
-void CFuncTank :: ControllerPostFrame( void )
+void CFuncTank :: ControllerPostFrame()
 {
 	ASSERT(m_pController != NULL);
 
-	if ( gpGlobals->time < m_flNextAttack )
+	
+	
+	if ( gpGlobals->time < m_flNextAttack && m_pController != NULL )
 		return;
 
 	if ( m_pController->pev->button & IN_ATTACK )
@@ -833,9 +835,9 @@ public:
 	void	Think( void );
 	CLaser *GetLaser( void );
 
-	virtual int	Save( CSave &save );
-	virtual int	Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
+	//virtual int	Save( CSave &save );
+	//virtual int	Restore( CRestore &restore );
+	//static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	CLaser	*m_pLaser;
@@ -843,13 +845,13 @@ private:
 };
 LINK_ENTITY_TO_CLASS( func_tanklaser, CFuncTankLaser );
 
-TYPEDESCRIPTION	CFuncTankLaser::m_SaveData[] = 
+/* TYPEDESCRIPTION	CFuncTankLaser::m_SaveData[] = 
 {
 	DEFINE_FIELD( CFuncTankLaser, m_pLaser, FIELD_CLASSPTR ),
 	DEFINE_FIELD( CFuncTankLaser, m_laserTime, FIELD_TIME ),
-};
+}; */
 
-IMPLEMENT_SAVERESTORE( CFuncTankLaser, CFuncTank );
+//IMPLEMENT_SAVERESTORE( CFuncTankLaser, CFuncTank );
 
 void CFuncTankLaser::Activate( void )
 {
@@ -1151,20 +1153,20 @@ public:
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void Think( void );
 
-	virtual int	Save( CSave &save );
-	virtual int	Restore( CRestore &restore );
-	static TYPEDESCRIPTION m_SaveData[];
+	//virtual int	Save( CSave &save );
+	//virtual int	Restore( CRestore &restore );
+	//static TYPEDESCRIPTION m_SaveData[];
 
 	CFuncTank *m_pTank;
 };
 LINK_ENTITY_TO_CLASS( func_tankcontrols, CFuncTankControls );
 
-TYPEDESCRIPTION	CFuncTankControls::m_SaveData[] = 
+/* TYPEDESCRIPTION	CFuncTankControls::m_SaveData[] = 
 {
 	DEFINE_FIELD( CFuncTankControls, m_pTank, FIELD_CLASSPTR ),
-};
+}; */
 
-IMPLEMENT_SAVERESTORE( CFuncTankControls, CBaseEntity );
+//IMPLEMENT_SAVERESTORE( CFuncTankControls, CBaseEntity );
 
 int	CFuncTankControls :: ObjectCaps( void ) 
 { 

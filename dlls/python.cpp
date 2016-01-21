@@ -524,7 +524,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 			
 			
 			
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 175, 500, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 125, 400, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
 
         if( TResult->fAllSolid ) return;
         UTIL_DecalTrace( TResult, DECAL_SCORCH2 );

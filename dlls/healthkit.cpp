@@ -21,6 +21,7 @@
 #include "player.h"
 #include "items.h"
 #include "gamerules.h"
+#include "game.h"
 
 extern int gmsgItemPickup;
 
@@ -54,6 +55,11 @@ IMPLEMENT_SAVERESTORE( CHealthKit, CItem);
 
 void CHealthKit :: Spawn( void )
 {
+if (allowmonsters4.value != 0)
+	return;
+
+
+
 	Precache( );
 	SET_MODEL(ENT(pev), "models/w_medkit.mdl");
 

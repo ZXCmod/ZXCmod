@@ -33,6 +33,7 @@
 #include "shake.h" //init fade_
 extern CGraph	WorldGraph;
 extern int gEvilImpulse101;
+extern float g_flWeaponCheat;
 
 
 #define NOT_USED 255
@@ -479,6 +480,8 @@ void CBasePlayerItem :: SetObjectCollisionBox( void )
 //=========================================================
 void CBasePlayerItem :: FallInit( void )
 {
+
+
 	pev->movetype = MOVETYPE_TOSS;
 	pev->solid = SOLID_BBOX;
 
@@ -528,6 +531,13 @@ void CBasePlayerItem::FallThink ( void )
 //=========================================================
 void CBasePlayerItem::Materialize( void )
 {
+	if (g_flWeaponCheat != 0.0)
+	{
+	SUB_Remove(); //no spawn weapons
+		pev->nextthink = gpGlobals->time + 0.1;
+		SetThink( SUB_Remove );
+	}
+		//
 	if ( pev->effects & EF_NODRAW )
 	{
 		// changing from invisible state to visible.
@@ -535,6 +545,7 @@ void CBasePlayerItem::Materialize( void )
 		pev->effects &= ~EF_NODRAW;
 		pev->effects |= EF_MUZZLEFLASH;
 	}
+
 
 	pev->solid = SOLID_TRIGGER;
 
@@ -584,6 +595,7 @@ void CBasePlayerItem :: CheckRespawn ( void )
 //=========================================================
 CBaseEntity* CBasePlayerItem::Respawn( void )
 {
+
 	// make a copy of this weapon that is invisible and inaccessible to players (no touch function). The weapon spawn/respawn code
 	// will decide when to make the weapon visible and touchable.
 	CBaseEntity *pNewWeapon = CBaseEntity::Create( (char *)STRING( pev->classname ), g_pGameRules->VecWeaponRespawnSpot( this ), pev->angles, pev->owner );
@@ -1136,6 +1148,10 @@ void CBasePlayerWeapon::Holster( int skiplocal /* = 0 */ )
 
 void CBasePlayerAmmo::Spawn( void )
 {
+if (g_flWeaponCheat != 0.0)
+	UTIL_Remove( this );
+	//SUB_Remove(); //no spawn ammo
+
 	pev->movetype = MOVETYPE_TOSS;
 	pev->solid = SOLID_TRIGGER;
 	UTIL_SetSize(pev, Vector(-16, -16, 0), Vector(16, 16, 16));
@@ -1309,7 +1325,12 @@ void CWeaponBox :: KeyValue( KeyValueData *pkvd )
 
 void CWeaponBox::Spawn( void )
 {
+
+
 Precache( );
+if (g_flWeaponCheat != 0.0)
+	Kill();
+	//SUB_Remove(); //no spawn weaponbox
 pev->movetype = MOVETYPE_TOSS;
 pev->solid = SOLID_TRIGGER;
 SET_MODEL( ENT(pev), "models/w_weaponbox.mdl");

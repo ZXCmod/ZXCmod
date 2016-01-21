@@ -69,6 +69,7 @@ extern CGraph	WorldGraph;
 #define	FLASH_DRAIN_TIME	 1.2 //100 units/3 minutes
 #define	FLASH_CHARGE_TIME	 0.2 // 100 units/20 seconds  (seconds per unit)
 
+ 
 // Global Savedata for player
 TYPEDESCRIPTION	CBasePlayer::m_playerSaveData[] = 
 {
@@ -147,7 +148,7 @@ TYPEDESCRIPTION	CBasePlayer::m_playerSaveData[] =
 	//DEFINE_FIELD( CBasePlayer, m_nCustomSprayFrames, FIELD_INTEGER ), // Don't need to restore
 	
 };	
-
+ 
 
 int giPrecacheGrunt = 0;
 int gmsgShake = 0;
@@ -244,16 +245,9 @@ LINK_ENTITY_TO_CLASS( player, CBasePlayer );
 
 void CBasePlayer :: Pain( void )
 {
-	float	flRndSound;//sound randomizer
 
-	flRndSound = RANDOM_FLOAT ( 0 , 1 ); 
-	
-	if ( flRndSound <= 0.33 )
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
-	else if ( flRndSound <= 0.66 )	
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain6.wav", 1, ATTN_NORM);
-	else
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain7.wav", 1, ATTN_NORM);
+	EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
+
 }
 
 /* 
@@ -273,49 +267,6 @@ Vector VecVelocityForDamage(float flDamage)
 	return vec;
 }
 
-#if 0 /*
-static void ThrowGib(entvars_t *pev, char *szGibModel, float flDamage)
-{
-	edict_t *pentNew = CREATE_ENTITY();
-	entvars_t *pevNew = VARS(pentNew);
-
-	pevNew->origin = pev->origin;
-	SET_MODEL(ENT(pevNew), szGibModel);
-	UTIL_SetSize(pevNew, g_vecZero, g_vecZero);
-
-	pevNew->velocity		= VecVelocityForDamage(flDamage);
-	pevNew->movetype		= MOVETYPE_BOUNCE;
-	pevNew->solid			= SOLID_NOT;
-	pevNew->avelocity.x		= RANDOM_FLOAT(0,600);
-	pevNew->avelocity.y		= RANDOM_FLOAT(0,600);
-	pevNew->avelocity.z		= RANDOM_FLOAT(0,600);
-	CHANGE_METHOD(ENT(pevNew), em_think, SUB_Remove);
-	pevNew->ltime		= gpGlobals->time;
-	pevNew->nextthink	= gpGlobals->time + RANDOM_FLOAT(10,20);
-	pevNew->frame		= 0;
-	pevNew->flags		= 0;
-}
-	
-	
-static void ThrowHead(entvars_t *pev, char *szGibModel, floatflDamage)
-{
-	SET_MODEL(ENT(pev), szGibModel);
-	pev->frame			= 0;
-	pev->nextthink		= -1;
-	pev->movetype		= MOVETYPE_BOUNCE;
-	pev->takedamage		= DAMAGE_NO;
-	pev->solid			= SOLID_NOT;
-	pev->view_ofs		= Vector(0,0,8);
-	UTIL_SetSize(pev, Vector(-16,-16,0), Vector(16,16,56));
-	pev->velocity		= VecVelocityForDamage(flDamage);
-	pev->avelocity		= RANDOM_FLOAT(-1,1) * Vector(0,600,0);
-	pev->origin.z -= 24;
-	ClearBits(pev->flags, FL_ONGROUND);
-}
-
-
-*/ 
-#endif
 
 int TrainSpeed(int iSpeed, int iMax)
 {
@@ -343,29 +294,7 @@ int TrainSpeed(int iSpeed, int iMax)
 
 void CBasePlayer :: DeathSound( void )
 {
-	// water death sounds
-	/*
-	if (pev->waterlevel == 3)
-	{
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/h2odeath.wav", 1, ATTN_NONE);
-		return;
-	}
-	*/
-
-	// temporarily using pain sounds for death sounds
-	switch (RANDOM_LONG(1,5)) 
-	{
-	case 1: 
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
-		break;
-	case 2: 
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain6.wav", 1, ATTN_NORM);
-		break;
-	case 3: 
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain7.wav", 1, ATTN_NORM);
-		break;
-	}
-
+	EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
 	// play one of the suit death alarms
 	EMIT_GROUPNAME_SUIT(ENT(pev), "HEV_DEAD");
 }
@@ -577,17 +506,11 @@ UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_RED, flDama
 
 		if (bitsDamage & DMG_CLUB)
 		{
-			if (fmajor)
-				SetSuitUpdate("!HEV_DMG4", FALSE, SUIT_NEXT_IN_30SEC);	// minor fracture
 			bitsDamage &= ~DMG_CLUB;
 			ffound = TRUE;
 		}
 		if (bitsDamage & (DMG_FALL | DMG_CRUSH))
 		{
-			if (fmajor)
-				SetSuitUpdate("!HEV_DMG5", FALSE, SUIT_NEXT_IN_30SEC);	// major fracture
-			else
-				SetSuitUpdate("!HEV_DMG4", FALSE, SUIT_NEXT_IN_30SEC);	// minor fracture
 	
 			bitsDamage &= ~(DMG_FALL | DMG_CRUSH);
 			ffound = TRUE;
@@ -595,21 +518,13 @@ UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_RED, flDama
 		
 		if (bitsDamage & DMG_BULLET)
 		{
-			if (m_lastDamageAmount > 5)
-				SetSuitUpdate("!HEV_DMG6", FALSE, SUIT_NEXT_IN_30SEC);	// blood loss detected
-			//else
-			//	SetSuitUpdate("!HEV_DMG0", FALSE, SUIT_NEXT_IN_30SEC);	// minor laceration
-			
+		
 			bitsDamage &= ~DMG_BULLET;
 			ffound = TRUE;
 		}
 
 		if (bitsDamage & DMG_SLASH)
 		{
-			if (fmajor)
-				SetSuitUpdate("!HEV_DMG1", FALSE, SUIT_NEXT_IN_30SEC);	// major laceration
-			else
-				SetSuitUpdate("!HEV_DMG0", FALSE, SUIT_NEXT_IN_30SEC);	// minor laceration
 
 			bitsDamage &= ~DMG_SLASH;
 			ffound = TRUE;
@@ -617,36 +532,35 @@ UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_RED, flDama
 		
 		if (bitsDamage & DMG_SONIC)
 		{
-			if (fmajor)
-				SetSuitUpdate("!HEV_DMG2", FALSE, SUIT_NEXT_IN_1MIN);	// internal bleeding
+
 			bitsDamage &= ~DMG_SONIC;
 			ffound = TRUE;
 		}
 
 		if (bitsDamage & (DMG_POISON | DMG_PARALYZE))
 		{
-			SetSuitUpdate("!HEV_DMG3", FALSE, SUIT_NEXT_IN_1MIN);	// blood toxins detected
+
 			bitsDamage &= ~(DMG_POISON | DMG_PARALYZE);
 			ffound = TRUE;
 		}
 
 		if (bitsDamage & DMG_ACID)
 		{
-			SetSuitUpdate("!HEV_DET1", FALSE, SUIT_NEXT_IN_1MIN);	// hazardous chemicals detected
+
 			bitsDamage &= ~DMG_ACID;
 			ffound = TRUE;
 		}
 
 		if (bitsDamage & DMG_NERVEGAS)
 		{
-			SetSuitUpdate("!HEV_DET0", FALSE, SUIT_NEXT_IN_1MIN);	// biohazard detected
+
 			bitsDamage &= ~DMG_NERVEGAS;
 			ffound = TRUE;
 		}
 
 		if (bitsDamage & DMG_RADIATION)
 		{
-			SetSuitUpdate("!HEV_DET2", FALSE, SUIT_NEXT_IN_1MIN);	// radiation detected
+
 			bitsDamage &= ~DMG_RADIATION;
 			ffound = TRUE;
 		}
@@ -659,41 +573,6 @@ UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_RED, flDama
 
 	pev->punchangle.x = -2;
 
-	if (fTookDamage && !ftrivial && fmajor && flHealthPrev >= 75) 
-	{
-		// first time we take major damage...
-		// turn automedic on if not on
-		SetSuitUpdate("!HEV_MED1", FALSE, SUIT_NEXT_IN_30MIN);	// automedic on
-
-		// give morphine shot if not given recently
-		SetSuitUpdate("!HEV_HEAL7", FALSE, SUIT_NEXT_IN_30MIN);	// morphine shot
-	}
-	
-	if (fTookDamage && !ftrivial && fcritical && flHealthPrev < 75)
-	{
-
-		// already took major damage, now it's critical...
-		if (pev->health < 6)
-			SetSuitUpdate("!HEV_HLTH3", FALSE, SUIT_NEXT_IN_10MIN);	// near death
-		else if (pev->health < 20)
-			SetSuitUpdate("!HEV_HLTH2", FALSE, SUIT_NEXT_IN_10MIN);	// health critical
-	
-		// give critical health warnings
-		if (!RANDOM_LONG(0,3) && flHealthPrev < 50)
-			SetSuitUpdate("!HEV_DMG7", FALSE, SUIT_NEXT_IN_5MIN); //seek medical attention
-	}
-
-	// if we're taking time based damage, warn about its continuing effects
-	if (fTookDamage && (bitsDamageType & DMG_TIMEBASED) && flHealthPrev < 75)
-		{
-			if (flHealthPrev < 50)
-			{
-				if (!RANDOM_LONG(0,3))
-					SetSuitUpdate("!HEV_DMG7", FALSE, SUIT_NEXT_IN_5MIN); //seek medical attention
-			}
-			else
-				SetSuitUpdate("!HEV_HLTH1", FALSE, SUIT_NEXT_IN_10MIN);	// health dropping
-		}
 
 	return fTookDamage;
 }
@@ -1672,6 +1551,7 @@ void CBasePlayer::Duck( )
 //
 int  CBasePlayer::Classify ( void )
 {
+
 	return CLASS_PLAYER;
 }
 
@@ -1728,6 +1608,7 @@ void CBasePlayer::InitStatusBar()
 {
 	m_flStatusBarDisappearDelay = 0;
 	m_SbarString1[0] = m_SbarString0[0] = 0; 
+
 }
 
 void CBasePlayer::UpdateStatusBar()
@@ -1878,7 +1759,6 @@ if (pev->rendermode == kRenderTransTexture)
 	pev->renderamt = pev->health; //dynamic transparency
 
 
-	
 	
 
 	  
@@ -2347,6 +2227,8 @@ void CBasePlayer::CheckSuitUpdate()
 			// queue is empty, don't check 
 			m_flSuitUpdate = 0;
 	}
+	
+
 }
  
 // add sentence to suit playlist queue. if fgroup is true, then
@@ -2794,7 +2676,7 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 	player = pPlayer->edict();
 	
 // choose a info_player_deathmatch point
-	if (g_pGameRules->IsCoOp())
+/* 	if (g_pGameRules->IsCoOp())
 	{
 		pSpot = UTIL_FindEntityByClassname( g_pLastSpawn, "info_player_coop");
 		if ( !FNullEnt(pSpot) )
@@ -2802,7 +2684,7 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 		pSpot = UTIL_FindEntityByClassname( g_pLastSpawn, "info_player_start");
 		if ( !FNullEnt(pSpot) ) 
 			goto ReturnSpot;
-	}
+	} */
 
 	
 	
@@ -2811,8 +2693,8 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 	
 	
 	
-	
-	else if ( g_pGameRules->IsDeathmatch() )
+	////////////////////////////////////////
+	if ( g_pGameRules->IsDeathmatch() )
 	{
 		pSpot = g_pLastSpawn;
 		// Randomize the start spot
@@ -2852,17 +2734,19 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 		// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
 		if ( !FNullEnt( pSpot ) )
 		{
-			CBaseEntity *ent = NULL;
-			while ( (ent = UTIL_FindEntityInSphere( ent, pSpot->pev->origin, 128 )) != NULL )
-			{
+			//CBaseEntity *ent = NULL;
+			//while ( (ent = UTIL_FindEntityInSphere( ent, pSpot->pev->origin, 128 )) != NULL )
+			//{
 				// if ent is a client, kill em (unless they are ourselves)
-				if ( ent->IsPlayer() && !(ent->edict() == player) )
-					ent->TakeDamage( VARS(INDEXENT(0)), VARS(INDEXENT(0)), 1, DMG_GENERIC );
-			}
+				//if ( ent->IsPlayer() && !(ent->edict() == player) )
+				//	ent->TakeDamage( VARS(INDEXENT(0)), VARS(INDEXENT(0)), 1, DMG_GENERIC );
+			//}
 			goto ReturnSpot;
 		}
 	}
+	/////////////////////////////
 
+	
 	// If startspot is set, (re)spawn there.
 	if ( FStringNull( gpGlobals->startspot ) || !strlen(STRING(gpGlobals->startspot)))
 	{
@@ -2916,15 +2800,7 @@ void CBasePlayer::Spawn( void )
 	pev->rendermode = kRenderNormal;
     pev->renderfx = kRenderFxNone;
     pev->renderamt = 0;
-	//EnableControl(FALSE);
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "debris/beamstart8b.wav", 1.0, ATTN_NORM);
-	//EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/sprayer.wav", 1, ATTN_NORM);
-	//client cmd
-	//CLIENT_COMMAND(edict(), "rate 15000\n");
-	//CLIENT_COMMAND(edict(), "cl_resend 3\n");
-	//CLIENT_COMMAND(edict(), "cl_lw 1\n");
-	//CLIENT_COMMAND(edict(), "cl_updaterate 20\n");
-	//CLIENT_COMMAND(edict(), "cl_cmdrate 20\n");
 	
 	
 	
@@ -2985,16 +2861,14 @@ void CBasePlayer::Spawn( void )
 	m_flNextChatTime = gpGlobals->time;
 
 	g_pGameRules->PlayerSpawn( this );
-	
-	
+
 	
 
 }
 
 void CBasePlayer::Puto( void )
 {
-//if ( pev->button & IN_ATTACK || pev->button & IN_JUMP ) 
-//	g_pGameRules->PlayerSpawn( this );
+
 }
 
 void CBasePlayer :: Precache( void )
@@ -3041,6 +2915,9 @@ void CBasePlayer :: Precache( void )
 		m_fInitHUD = TRUE;
 	PRECACHE_MODEL("models/hgrunt.mdl");
 	PRECACHE_MODEL("models/player/hgrunt/Hgrunt.mdl");
+	
+	
+
 }
 
 
@@ -3480,6 +3357,7 @@ ImpulseCommands
 ============
 */
 extern float g_flWeaponCheat;
+extern float g_flWeaponCheat2;
 
 void CBasePlayer::ImpulseCommands( )
 {
@@ -3561,15 +3439,44 @@ void CBasePlayer::ImpulseCommands( )
 //=========================================================
 void CBasePlayer::CheatImpulseCommands( int iImpulse )
 {
+	if ( g_flWeaponCheat2 != 0)
+	{
+		if (pev->rendermode != kRenderTransTexture && pev->health < pev->max_health)
+			pev->health += 0.1;
+	}
+
+
+//removed from 1.29
+
+/* 
 #if !defined( HLDEMO_BUILD )
+	//if ( g_flWeaponCheat2 == 0.0 )
+	//{
+	//	return;
+	//}
+	
+	//pev->ltime = 1;
+
+		
+		
+		
+		
+		
 	if ( g_flWeaponCheat == 0.0 )
 	{
 		return;
 	}
 
+	
+	
 	CBaseEntity *pEntity;
 	TraceResult tr;
 
+	
+	
+// if (allowmonsters4.value != 0)
+
+	
 	switch ( iImpulse )
 	{
 	case 76:
@@ -3734,7 +3641,9 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 		}
 		break;
 	}
-#endif	// HLDEMO_BUILD
+#endif	// HLDEMO_BUILD 
+
+*/
 }
 
 //
@@ -4556,12 +4465,9 @@ int CBasePlayer :: GetCustomDecalFrames( void )
 //=========================================================
 void CBasePlayer::DropPlayerItem ( char *pszItemName )
 {
-	if ( !g_pGameRules->IsMultiplayer() || (weaponstay.value > 0) )
-	{
-		// no dropping in single player.
-		return;
-	}
-
+if (g_flWeaponCheat != 0.0)
+	return; //no spawn weapons
+	
 	if ( !strlen( pszItemName ) )
 	{
 		// if this string has no length, the client didn't type a name!

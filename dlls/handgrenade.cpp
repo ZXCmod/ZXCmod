@@ -22,6 +22,7 @@
 #include "soundent.h"
 #include "shake.h"
 #include "gamerules.h"
+extern float g_flWeaponCheat;
 
 
 #define	HANDGRENADE_PRIMARY_VOLUME		450
@@ -132,6 +133,8 @@ void CHandGrenade::Holster( int skiplocal /* = 0 */ )
 
 void CHandGrenade::PrimaryAttack()
 {
+
+
 	if ( !m_flStartThrow && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] > 0 )
 	{
 		m_flStartThrow = gpGlobals->time;
@@ -401,18 +404,26 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 ///////spawn Grav with reload delay 3 sec
 void CHandGrenade :: Reload( void )
 {
-int iAnim;
-Vector vecSrc = m_pPlayer->pev->origin;
-Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
+	if ( g_flWeaponCheat != 0) //no hornets anymore, fix server crash
+	{
+		MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(m_pPlayer->pev) );
+			WRITE_STRING( "Attack disabled, while sv_cheats is on." );
+		MESSAGE_END();
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "buttons/bell1.wav", 0.75, ATTN_NORM, 1.0, 102 );
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 2; //delay
+		return;
+	}
 
-#ifndef CLIENT_DLL
+	int iAnim;
+	Vector vecSrc = m_pPlayer->pev->origin;
+	Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
+
 		CBaseEntity *hGren = Create( "weapon_saa", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
 		hGren->pev->velocity = vecThrow;
 		//hGren->pev->avelocity.y = 500;
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		iAnim = HANDGRENADE_THROW1;
 		SendWeaponAnim( iAnim );
-#endif
 
 	m_fInAttack = 0;
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10; //(<1.26)
@@ -468,21 +479,14 @@ void    CGrav1 :: Spawn( )
 		pev->takedamage = DAMAGE_YES;
 		pev->nextthink = gpGlobals->time + 5.1;//10 times a second
 		SetThink( MoveThink );
-		
-		
-
 		pev->health			= 9999999; //get more eat!
-
-	
-	//pev->gravity		= 1;
-	//pev->friction		= 0.5;
 }
 
 void CGrav1 :: Precache( void )
 {
-m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
-PRECACHE_SOUND( "weapons/gravgren.wav" );
-m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
+	m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
+	PRECACHE_SOUND( "weapons/gravgren.wav" );
+	m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 }
 
 
@@ -516,7 +520,7 @@ void    CGrav1:: Explode(int DamageType)
 	vecEnd = pev->origin + vecEnd.Normalize() * 2048;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
 	
-			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 400 )) != NULL)
+			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 300 )) != NULL)
        		 	{
 				if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP) ///NICE!!!
 				{
@@ -572,31 +576,14 @@ void    CGrav1:: Explode(int DamageType)
 		WRITE_SHORT( RANDOM_LONG(256,1024) );
 		WRITE_SHORT( RANDOM_LONG(128,1024) );	// Random velocity modifier
 	MESSAGE_END();
-}
+		}
 
-}
+	}
 
-
-
-	//Vector target = m_hTargetEnt->pev->origin - pev->origin;
-	//if ( target.Length() > 250 )
-	//	return;
-	//m_hTargetEnt->TakeHealth( 15, DMG_GENERIC );
-			// lots of smoke
-		/*MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_SMOKE );
-			WRITE_COORD( pev->origin.x + RANDOM_FLOAT( -16, 16 ) );
-			WRITE_COORD( pev->origin.y + RANDOM_FLOAT( -16, 16 ) );
-			WRITE_COORD( pev->origin.z - 32 );
-			WRITE_SHORT( g_sModelIndexSmoke );
-			WRITE_BYTE( 15 ); // scale * 10
-			WRITE_BYTE( 3 ); // framerate
-		MESSAGE_END();
-		*/
 		
-pev->nextthink = gpGlobals->time + 0.15; //0.15 old
-pev->effects |= EF_LIGHT;
-SetThink(MoveThink);
+	pev->nextthink = gpGlobals->time + 0.15; //0.15 old
+	pev->effects |= EF_LIGHT;
+	SetThink(MoveThink);
 }
 
 
@@ -610,7 +597,7 @@ if (gpGlobals->time >= m_flDie-5.4 && gpGlobals->time <= m_flDie-5.1)
 	return; // fixed 1.24
 	}
 else
-Explode(DMG_FREEZE);
+	Explode(DMG_FREEZE);
 
 
 if (gpGlobals->time >= m_flDie) //full explode and self destroy
@@ -623,13 +610,13 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 			Vector direction = Vector(0,0,1);
 			
 			
-			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 512 )) != NULL)
+			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 256 )) != NULL) //512
        		 	{
 				if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP) ///NICE!!!
 				{
 				vecDir = ( pEntity->Center() - Vector ( 0, 0, 10 ) - Center() ).Normalize(); ///NOW WORKED! CONGRATULATIONS!
 				pEntity->pev->velocity = pEntity->pev->velocity + vecDir * 2048;
-				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 7, 512, CLASS_NONE, DMG_FREEZE|DMG_MORTAR  );
+				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 8, 512, CLASS_NONE, DMG_FREEZE|DMG_MORTAR  );
 				UTIL_ScreenShake( pEntity->pev->origin, 12.0, 120, 0.9, 1 );
 
 //spark effects

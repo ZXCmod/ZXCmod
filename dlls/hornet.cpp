@@ -61,19 +61,13 @@ void CHornet :: Spawn( void )
 {
 	Precache();
 	pev->movetype	= MOVETYPE_FLY;
-	pev->solid		= SOLID_BBOX;
+	pev->solid		= SOLID_NOT;
 	pev->takedamage = DAMAGE_YES;
 	pev->flags		|= FL_MONSTER;
 	pev->health		= 1;// weak!
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		// hornets don't live as long in multiplayer
-		m_flStopAttack = gpGlobals->time + 3.5;
-	}
-	else
-	{
-		m_flStopAttack	= gpGlobals->time + 5.0;
-	}
+
+	m_flStopAttack = gpGlobals->time + 3.5;
+
 	m_flFieldOfView = 0.4; // +- 25 degrees
 	if ( RANDOM_LONG ( 1, 5 ) <= 2 )
 	{
