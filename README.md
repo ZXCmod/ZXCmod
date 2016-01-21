@@ -1,4 +1,4 @@
-# ZXCmod 1.31-3 free source 2008-2010.
+# ZXCmod 1.32 free source 2008-2010.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -7,7 +7,16 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
  
-###1.31 [3rd update]
+###1.32
+
+- fourth attack on RPG - (rpg.cpp, hornetgun.cpp, weapons.h)
+- fourth attack on hornetgun: heal ray - (hornetgun.cpp, weapons.h)
+- gauss magnet ray updated - (gauss.cpp)
+- crossbow 4th attack updated - (crossbow.cpp)
+- "DamageForce" changed from `5` to `3` - (combat.cpp)
+  
+###1.31 [3rd update] 
+
 - third attack on crossbow
 - fourth attack on crossbow
 - improved weap. balance
