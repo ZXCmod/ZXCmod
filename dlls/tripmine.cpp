@@ -21,6 +21,7 @@
 #include "player.h"
 #include "effects.h"
 #include "gamerules.h"
+#include "tripmine.h"
 
 #define	TRIPMINE_PRIMARY_VOLUME		450
 
@@ -37,114 +38,6 @@ enum tripmine_e {
 	TRIPMINE_GROUND,
 };
 
-
-
-
-class CTripmineGrenade : public CGrenade
-{
-	void Spawn( void );
-	void Precache( void );
-
-	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
-	
-	void EXPORT WarningThink( void );
-	void EXPORT PowerupThink( void );
-	void EXPORT BeamBreakThink( void );
-	void EXPORT DelayDeathThink( void );
-	void Killed( entvars_t *pevAttacker, int iGib );
-
-	void MakeBeam( void );
-	void KillBeam( void );
-
-	float		m_flPowerUp;
-	Vector		m_vecDir;
-	Vector		m_vecEnd;
-	float		m_flBeamLength;
-
-	EHANDLE		m_hOwner;
-	CBeam		*m_pBeam;
-	Vector		m_posOwner;
-	Vector		m_angleOwner;
-	edict_t		*m_pRealOwner;// tracelines don't hit PEV->OWNER, which means a player couldn't detonate his own trip mine, so we store the owner here.
-};
-
-LINK_ENTITY_TO_CLASS( monster_tripmine, CTripmineGrenade );
-
-
-
-
-
-
-class CTripmineGrenade2 : public CGrenade
-{
-	void Spawn( void );
-	void Precache( void );
-
-	//virtual int		Save( CSave &save );
-	//virtual int		Restore( CRestore &restore );
-
-
-	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
-	
-	void EXPORT WarningThink( void );
-	void EXPORT PowerupThink( void );
-	void EXPORT BeamBreakThink( void );
-	void EXPORT DelayDeathThink( void );
-	void Killed( entvars_t *pevAttacker, int iGib );
-
-	int m_flNextChatTime5;
-	void MakeBeam( void );
-	void KillBeam( void );
-
-	float		m_flPowerUp;
-	Vector		m_vecDir;
-	Vector		m_vecEnd;
-	float		m_flBeamLength;
-
-	EHANDLE		m_hOwner;
-	CBeam		*m_pBeam;
-	Vector		m_posOwner;
-	Vector		m_angleOwner;
-	edict_t		*m_pRealOwner;// tracelines don't hit PEV->OWNER, which means a player couldn't detonate his own trip mine, so we store the owner here.
-};
-
-LINK_ENTITY_TO_CLASS( monster_replicateur, CTripmineGrenade2 );
-
-
-
-
-//1.30a new weepon
-
-class CTripmineGrenade3 : public CGrenade
-	{
-	void Spawn( void );
-	void Precache( void );
-
-	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
-	
-	void EXPORT WarningThink( void );
-	void EXPORT PowerupThink( void );
-	void EXPORT BeamBreakThink( void );
-	void EXPORT DelayDeathThink( void );
-	void Killed( entvars_t *pevAttacker, int iGib );
-
-	void MakeBeam( void );
-	void KillBeam( void );
-
-	float		m_flPowerUp;
-	Vector		m_vecDir;
-	Vector		m_vecEnd;
-	float		m_flBeamLength;
-
-	EHANDLE		m_hOwner;
-	CBeam		*m_pBeam;
-	Vector		m_posOwner;
-	Vector		m_angleOwner;
-	edict_t		*m_pRealOwner;// tracelines don't hit PEV->OWNER, which means a player couldn't detonate his own trip mine, so we store the owner here.
-
-	};
-
-LINK_ENTITY_TO_CLASS( weapon_energy, CTripmineGrenade3 );
 
 
 
@@ -205,6 +98,7 @@ void CTripmineGrenade :: Precache( void )
 	PRECACHE_SOUND("weapons/mine_deploy.wav");
 	PRECACHE_SOUND("weapons/mine_activate.wav");
 	PRECACHE_SOUND("weapons/mine_charge.wav");
+	
 }
 
 
@@ -440,6 +334,7 @@ void CTripmine::Precache( void )
 	PRECACHE_MODEL ("models/v_tripmine.mdl");
 	PRECACHE_MODEL ("models/p_tripmine.mdl");
 	UTIL_PrecacheOther( "monster_tripmine" );
+	g_sModelIndexLaser = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 
 	m_usTripFire = PRECACHE_EVENT( 1, "events/tripfire.sc" );
 }
@@ -648,7 +543,45 @@ void CTripmine::ThirdAttack( void )
 
 }
 
+void CTripmine::FourthAttack( void )
+{
+/* 	TraceResult	tr;	
+	
+	//m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	
+	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
+	Vector vecAiming = gpGlobals->v_forward;
+	Vector vecDir;
+	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_1DEGREES, 8192, 30, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	//pEntity->pev->velocity = gpGlobals->v_forward  * 600;
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				 WRITE_BYTE( TE_BEAMPOINTS );
+				 WRITE_COORD( vecSrc.x);
+				 WRITE_COORD( vecSrc.y);
+				 WRITE_COORD( vecSrc.z);
+				 WRITE_COORD( tr.vecEndPos.x);
+				 WRITE_COORD( tr.vecEndPos.y);
+				 WRITE_COORD( tr.vecEndPos.z);
+				 WRITE_SHORT(g_sModelIndexLaser ); // model
+				 WRITE_BYTE( 0 ); // framestart?
+				 WRITE_BYTE( 0 ); // framerate?
+				 WRITE_BYTE( 2 ); // life
+				 WRITE_BYTE( 16 ); // width
+				 WRITE_BYTE( 0 ); // noise
+				 WRITE_BYTE( 200 ); // r, g, b
+				 WRITE_BYTE( 16 ); // r, g, b
+				 WRITE_BYTE( 16 ); // r, g, b
+				 WRITE_BYTE( 128 ); // brightness
+				 WRITE_BYTE( 0 ); // speed?
+		MESSAGE_END(); 
+	m_pPlayer->m_angle = m_pPlayer->pev->v_angle;
 
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1; */
+}
 
 
 void CTripmine::WeaponIdle( void )

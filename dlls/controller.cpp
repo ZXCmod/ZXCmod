@@ -12,6 +12,7 @@
 *   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
+/* 
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 
 //=========================================================
@@ -190,13 +191,7 @@ int CController :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 
 void CController::Killed( entvars_t *pevAttacker, int iGib )
 {
-	// shut off balls
-	/*
-	m_iBall[0] = 0;
-	m_iBallTime[0] = gpGlobals->time + 4.0;
-	m_iBall[1] = 0;
-	m_iBallTime[1] = gpGlobals->time + 4.0;
-	*/
+
 
 	// fade balls
 	if (m_pBall[0])
@@ -1425,3 +1420,4 @@ void CControllerZapBall::ExplodeTouch( CBaseEntity *pOther )
 
 
 #endif		// !OEM && !HLDEMO
+ */

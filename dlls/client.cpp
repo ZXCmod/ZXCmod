@@ -406,8 +406,8 @@ void ClientCommand( edict_t *pEntity )
 	{
 		if ( g_flWeaponCheat != 0.0)
 		{
-			//int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
-			//GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
+			int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
+			GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
 		}
 	}
 
@@ -634,10 +634,7 @@ void PlayerPostThink( edict_t *pEntity )
 	//entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
-	if ( pPlayer==NULL )
-		return;
-
-	if (pPlayer != NULL)
+	if (pPlayer)
 		pPlayer->PostThink( );
 }
 
@@ -678,6 +675,7 @@ void ClientPrecache( void )
 {
 	// setup precaches always needed
 	PRECACHE_SOUND("player/sprayer.wav");			// spray paint sound for PreAlpha
+	PRECACHE_SOUND("zxc/sprayer.wav");			// spray paint sound 2
 	PRECACHE_SOUND("debris/beamstart8b.wav");			
 	// PRECACHE_SOUND("player/pl_jumpland2.wav");		// UNDONE: play 2x step sound
 	
@@ -802,7 +800,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.32";
+		return "Half-Life zxc mod 1.33";
 }
 
 /*
@@ -1451,21 +1449,21 @@ void RegisterEncoders( void )
 //debugger found it as reason of crash, close code
 int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 {
-/* 
-	//int i;
-	//weapon_data_t *item;
+#if defined( CLIENT_WEAPONS )
+	int i;
+	weapon_data_t *item;
 	entvars_t *pev = &player->v;
 	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev );
-	//CBasePlayerWeapon *gun;
+	CBasePlayerWeapon *gun;
 	
-	//ItemInfo II;
+	ItemInfo II;
 
 	memset( info, 0, 32 * sizeof( weapon_data_t ) );
 
 	if ( !pl )
 		return 1;
 
- 	// go through all of the weapons and make a list of the ones to pack
+	// go through all of the weapons and make a list of the ones to pack
 	for ( i = 0 ; i < MAX_ITEM_TYPES ; i++ )
 	{
 		if ( pl->m_rgpPlayerItems[ i ] )
@@ -1489,10 +1487,9 @@ int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 						item->m_iId						= II.iId;
 						item->m_iClip					= gun->m_iClip;
 
-						//item->m_flTimeWeaponIdle		= max( gun->m_flTimeWeaponIdle, -0.001 ); // remov
+						item->m_flTimeWeaponIdle		= max( gun->m_flTimeWeaponIdle, -0.001 );
 						item->m_flNextPrimaryAttack		= max( gun->m_flNextPrimaryAttack, -0.001 );
 						item->m_flNextSecondaryAttack	= max( gun->m_flNextSecondaryAttack, -0.001 );
-						//item->m_flNextThirdAttack		= max( gun->m_flNextThirdAttack, -0.001 );
 						item->m_fInReload				= gun->m_fInReload;
 						item->m_fInSpecialReload		= gun->m_fInSpecialReload;
 						item->fuser1					= max( gun->pev->fuser1, -0.001 );
@@ -1509,12 +1506,11 @@ int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 				pPlayerItem = pPlayerItem->m_pNext;
 			}
 		}
-	} 
-
+	}
+#else
 	memset( info, 0, 32 * sizeof( weapon_data_t ) );
+#endif
 	return 1;
-	 */
-	 return TRUE;
 }
 
 /*

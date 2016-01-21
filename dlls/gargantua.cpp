@@ -179,7 +179,7 @@ void CStomp::Think( void )
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-/////what the method???? VOID  without class??? How!?
+//
 void StreakSplash( const Vector &origin, const Vector &direction, int color, int count, int speed, int velocityRange )
 {
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, origin );

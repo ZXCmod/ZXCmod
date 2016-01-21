@@ -42,11 +42,13 @@ public:
 
 	static	TYPEDESCRIPTION m_SaveData[];
 
-	float m_flNextCharge; 
+	private:
+	float   m_flNextCharge; 
 	int		m_iReactivate ; // DeathMatch Delay until reactvated
 	int		m_iJuice;
 	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
 	float   m_flSoundTime;
+	float	multiple;
 };
 
 TYPEDESCRIPTION CRecharge::m_SaveData[] =
@@ -94,6 +96,8 @@ void CRecharge::Spawn()
 	SET_MODEL(ENT(pev), STRING(pev->model) );
 	m_iJuice = gSkillData.suitchargerCapacity;
 	pev->frame = 0;			
+	multiple = 0.0;
+
 }
 
 void CRecharge::Precache()
@@ -106,6 +110,8 @@ void CRecharge::Precache()
 
 void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 { 
+	//Well done part, v1.33
+
 	// if it's not a player, ignore
 	if (!FClassnameIs(pActivator->pev, "player"))
 		return;
@@ -117,8 +123,19 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		Off();
 	}
 
+	// Make sure that we have a caller
+	if (!pActivator)
+		return;
+
+	m_hActivator = pActivator;
+
+	//only recharge the player
+
+	if (!m_hActivator->IsPlayer() )
+		return;
+	
 	// if the player doesn't have the suit, or there is no juice left, make the deny noise
-	if ((m_iJuice <= 0) || (!(pActivator->pev->weapons & (1<<WEAPON_SUIT))))
+	if ((m_iJuice <= 0) || ( m_hActivator->pev->armorvalue >= 100 ) )
 	{
 		if (m_flSoundTime <= gpGlobals->time)
 		{
@@ -136,16 +153,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	if (m_flNextCharge >= gpGlobals->time)
 		return;
 
-	// Make sure that we have a caller
-	if (!pActivator)
-		return;
 
-	m_hActivator = pActivator;
-
-	//only recharge the player
-
-	if (!m_hActivator->IsPlayer() )
-		return;
 	
 	// Play the on sound or the looping charging sound
 	if (!m_iOn)
@@ -166,13 +174,16 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	{
 		m_iJuice--;
 		m_hActivator->pev->armorvalue += 1;
+		
+		if (multiple <= 0.5)
+			multiple += 0.0075;
 
 		if (m_hActivator->pev->armorvalue > 100)
 			m_hActivator->pev->armorvalue = 100;
 	}
 
 	// govern the rate of charge
-	m_flNextCharge = gpGlobals->time + 0.1;
+	m_flNextCharge = (gpGlobals->time + 0.2) - multiple;
 }
 
 void CRecharge::Recharge(void)
@@ -189,6 +200,7 @@ void CRecharge::Off(void)
 		STOP_SOUND( ENT(pev), CHAN_STATIC, "items/suitcharge1.wav" );
 
 	m_iOn = 0;
+	multiple = 0.0;
 
 	if ((!m_iJuice) &&  ( ( m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
 	{

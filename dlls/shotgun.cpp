@@ -22,11 +22,13 @@
 #include "player.h"
 #include "gamerules.h"
 #include "decals.h"
+// special deathmatch shotgun spreads
+#define VECTOR_CONE_DM_SHOTGUN	Vector( 0.08716, 0.02131, 0.00  )// 10 degrees by 5 degrees
+#define VECTOR_CONE_DM_DOUBLESHOTGUN Vector( 0.17365, 0.04362, 0.00 ) // 20 degrees by 5 degrees
+
 extern float g_flWeaponCheat;
 
-// special deathmatch shotgun spreads
-#define VECTOR_CONE_DM_SHOTGUN	Vector( 0.08716, 0.04362, 0.00  )// 10 degrees by 5 degrees
-#define VECTOR_CONE_DM_DOUBLESHOTGUN Vector( 0.17365, 0.04362, 0.00 ) // 20 degrees by 5 degrees
+
 
 enum shotgun_e {
 	SHOTGUN_IDLE = 0,
@@ -51,10 +53,12 @@ enum shotgun_e {
         void    Precache           ( );
         void    Motion             ( );
 		void 	EXPORT Update      ( );
+		
+		private:
 		int 	m_flDie;
 		int 	m_flDie2;
 		int 	m_iBalls;
-		short	m_Sprite;
+		unsigned short	m_Sprite;
 }; 
 //result of recharge flare
  class   CPhase2 : public CBaseEntity
@@ -64,11 +68,13 @@ enum shotgun_e {
         void    	Spawn           		 ( );
         void    	Motion       			 ( );
 		void    	EXPORT IgniteThink       ( void );
-		short		m_LaserSprite;
+		
+		private:
+		unsigned short		m_LaserSprite;
 		int 		m_flDie;
 		int 		value;
-		short		m_Sprite_2;
-		short		m_Sprite_3;
+		unsigned short		m_Sprite_2;
+		unsigned short		m_Sprite_3;
 		int 		m_value;
 		int 		m_loop;
 		BOOL 		m_loop_2;
@@ -80,13 +86,14 @@ class   CSCannon : public CGrenade
 {
         public:
 
-        void    	Spawn           	   (void);
-        void    	EXPORT MoveThink       (void);
+        void    	Spawn           	   ( void );
+        void    	EXPORT MoveThink       ( void );
 		void 		EXPORT MoveTouch	   ( CBaseEntity *pOther );
 	
-		short		m_Sprite;
-		short		m_SpriteExp;
-		short		m_iSpriteTexture;
+		private:
+		unsigned short		m_Sprite;
+		unsigned short		m_SpriteExp;
+		unsigned short		m_iSpriteTexture;
 		int         m_timer;
 		int 		m_iBodyGibs;
 };
@@ -123,9 +130,6 @@ void CShotgun::Precache( void )
 
 	PRECACHE_SOUND ("weapons/reload1.wav");	// shotgun reload
 	PRECACHE_SOUND ("weapons/reload3.wav");	// shotgun reload
-
-//	PRECACHE_SOUND ("weapons/sshell1.wav");	// shotgun reload - played on client
-//	PRECACHE_SOUND ("weapons/sshell3.wav");	// shotgun reload - played on client
 	
 	PRECACHE_SOUND ("weapons/357_cock1.wav"); // gun empty sound
 	PRECACHE_SOUND ("weapons/scock1.wav");	// cock gun
@@ -241,12 +245,12 @@ void CShotgun::PrimaryAttack()
 	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 
 	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
-	Vector vecAiming = m_pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
+	Vector vecAiming = gpGlobals->v_forward;
 
 	Vector vecDir;
 
 
-	vecDir = m_pPlayer->FireBulletsPlayer( 5, vecSrc, vecAiming, VECTOR_CONE_DM_SHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	vecDir = m_pPlayer->FireBulletsPlayer( 15, vecSrc, vecAiming, VECTOR_CONE_DM_SHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
 
 
@@ -310,11 +314,11 @@ void CShotgun::SecondaryAttack( void )
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
-	Vector vecAiming = m_pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
+	Vector vecAiming = gpGlobals->v_forward;
 
 	Vector vecDir;
 	
-	vecDir = m_pPlayer->FireBulletsPlayer( 10, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	vecDir = m_pPlayer->FireBulletsPlayer( 30, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
 		
 	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usDoubleFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
@@ -341,7 +345,12 @@ void CShotgun::ThirdAttack( void )
 {
 //phase_pulse
 //new code
-
+	if (m_iClip <= 0)
+	{
+		Reload( );
+		PlayEmptySound( );
+		return;
+	}
 
 	if (  m_pPlayer->m_flNextChatTime12 < gpGlobals->time ) //need delay
 		{
@@ -393,6 +402,7 @@ void CShotgun::ThirdAttack( void )
 		#endif
 		
 
+		
 		while ((pEntity = UTIL_FindEntityInSphere( pEntity, tr.vecEndPos, 30 )) != NULL)
 		{
 			
@@ -410,7 +420,13 @@ void CShotgun::ThirdAttack( void )
 
 void CShotgun::FourthAttack( void )
 {
-
+	if (m_iClip <= 1)
+	{
+		Reload( );
+		PlayEmptySound( );
+		return;
+	}
+	
 	if ( m_iClip >= 2) 
 		{
 		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
@@ -898,6 +914,7 @@ void CPhase2::IgniteThink( void )
 		UTIL_Sparks( tr.vecEndPos );
 		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 1280, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
 		//TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, BULLET_MONSTER_12MM);
+		UTIL_DecalTrace( &tr, DECAL_SMALLSCORCH1 + RANDOM_LONG(0,2) );
 		
 		//lights
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );

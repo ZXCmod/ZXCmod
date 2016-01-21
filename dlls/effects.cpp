@@ -666,6 +666,7 @@ void CLightning::StrikeThink( void )
 
 	CBaseEntity *pStart = RandomTargetname( STRING(m_iszStartEntity) );
 	CBaseEntity *pEnd = RandomTargetname( STRING(m_iszEndEntity) );
+	int iCount;
 
 	if ( pStart != NULL && pEnd != NULL )
 	{
@@ -725,7 +726,9 @@ void CLightning::StrikeThink( void )
 			WRITE_BYTE( (int)(m_life*10.0) ); // life
 			WRITE_BYTE( m_boltWidth );  // width
 			WRITE_BYTE( m_noiseAmplitude );   // noise
-			WRITE_BYTE( (int)pev->rendercolor.x );   // r, g, b
+			for ( iCount = pev->rendercolor.x ; iCount > 0 ; iCount-- )
+				WRITE_BYTE( (int)pev->rendercolor.x );   // r, g, b
+			
 			WRITE_BYTE( (int)pev->rendercolor.y );   // r, g, b
 			WRITE_BYTE( (int)pev->rendercolor.z );   // r, g, b
 			WRITE_BYTE( pev->renderamt );	// brightness

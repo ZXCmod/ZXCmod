@@ -31,34 +31,17 @@ class CHealthKit : public CItem
 	void Precache( void );
 	BOOL MyTouch( CBasePlayer *pPlayer );
 
-/*
-	virtual int		Save( CSave &save ); 
-	virtual int		Restore( CRestore &restore );
-	
-	static	TYPEDESCRIPTION m_SaveData[];
-*/
 
 };
 
 
 LINK_ENTITY_TO_CLASS( item_healthkit, CHealthKit );
 
-/*
-TYPEDESCRIPTION	CHealthKit::m_SaveData[] = 
-{
-
-};
-
-
-IMPLEMENT_SAVERESTORE( CHealthKit, CItem);
-*/
 
 void CHealthKit :: Spawn( void )
 {
-if (allowmonsters4.value != 0)
-	return;
-
-
+	if (allowmonsters4.value != 0)
+		return;
 
 	Precache( );
 	SET_MODEL(ENT(pev), "models/w_medkit.mdl");
@@ -122,11 +105,13 @@ public:
 
 	static	TYPEDESCRIPTION m_SaveData[];
 
-	float m_flNextCharge; 
+	private:
+	float   m_flNextCharge; 
 	int		m_iReactivate ; // DeathMatch Delay until reactvated
 	int		m_iJuice;
 	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
 	float   m_flSoundTime;
+	float	multiple;
 };
 
 TYPEDESCRIPTION CWallHealth::m_SaveData[] =
@@ -172,8 +157,13 @@ void CWallHealth::Spawn()
 	UTIL_SetOrigin(pev, pev->origin);		// set size and link into world
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	SET_MODEL(ENT(pev), STRING(pev->model) );
-	m_iJuice = RANDOM_LONG(30,60);
+	m_iJuice = 100;
 	pev->frame = 0;			
+	multiple = 0.0;
+	
+	// pev->rendermode = kRenderTransAdd;
+	// if (pev->renderamt <= 250)
+		// pev->renderamt = m_iJuice*2;
 
 }
 
@@ -202,7 +192,7 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 	}
 
 	// if the player doesn't have the suit, or there is no juice left, make the deny noise
-	if ((m_iJuice <= 0) || (!(pActivator->pev->weapons & (1<<WEAPON_SUIT))))
+	if ((m_iJuice <= 0) || ( pActivator->pev->health >= pActivator->pev->max_health ))
 	{
 		if (m_flSoundTime <= gpGlobals->time)
 		{
@@ -234,20 +224,23 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 	}
 
 
-	// charge the player
+	
+	// charge the player, multiple added in v1.33
 	if ( pActivator->TakeHealth( 1, DMG_GENERIC ) )
 	{
 		m_iJuice--;
+		if (multiple <= 0.5)
+			multiple += 0.0075;
 	}
 
-	// govern the rate of charge
-	m_flNextCharge = gpGlobals->time + 0.1;
+	// govern the rate of charge *
+	m_flNextCharge = (gpGlobals->time + 0.2) - multiple;
 }
 
 void CWallHealth::Recharge(void)
 {
 		EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/medshot4.wav", 1.0, ATTN_NORM );
-	m_iJuice = RANDOM_LONG(30,60);
+	m_iJuice = 100;
 	pev->frame = 0;			
 	SetThink( SUB_DoNothing );
 }
@@ -259,6 +252,7 @@ void CWallHealth::Off(void)
 		STOP_SOUND( ENT(pev), CHAN_STATIC, "items/medcharge4.wav" );
 
 	m_iOn = 0;
+	multiple = 0.0;
 
 	if ((!m_iJuice) &&  ( ( m_iReactivate = g_pGameRules->FlHealthChargerRechargeTime() ) > 0) )
 	{

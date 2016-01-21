@@ -480,7 +480,7 @@ Schedule_t* CHeadCrab :: GetScheduleOfType ( int Type )
 	return CBaseMonster::GetScheduleOfType( Type );
 }
 
-
+/* 
 class CBabyCrab : public CHeadCrab
 {
 public:
@@ -553,3 +553,4 @@ Schedule_t* CBabyCrab :: GetScheduleOfType ( int Type )
 
 	return CHeadCrab::GetScheduleOfType( Type );
 }
+ */

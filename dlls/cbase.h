@@ -138,7 +138,8 @@ class CBaseEntity
 public:
 	float				FTime1; //player freeze
 	float				FTime2; //monsters freeze
-
+	short m_LaserSprite2;
+	short m_iSpriteTexture_s;
 	
 	void	TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
 	
@@ -377,6 +378,8 @@ public:
 	int m_fireState;
 
 	int     m_type; //two types of think's: freeze|explode
+	
+
 };
 
 

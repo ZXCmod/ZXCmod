@@ -170,6 +170,8 @@ void DecalGunshot( TraceResult *pTrace, int iBulletType )
 		// Decal the wall with a gunshot
 		if ( !FNullEnt(pTrace->pHit) )
 			pEntity = CBaseEntity::Instance(pTrace->pHit);
+			
+		//UTIL_ParticleEffect ( pTrace->vecEndPos, g_vecZero, 64, 25 );
 
 		switch( iBulletType )
 		{
@@ -483,7 +485,7 @@ void CBasePlayerItem :: FallInit( void )
 
 
 	pev->movetype = MOVETYPE_TOSS;
-	pev->solid = SOLID_BBOX;
+	pev->solid = SOLID_TRIGGER;
 
 	UTIL_SetOrigin( pev, pev->origin );
 	UTIL_SetSize(pev, Vector( -2, -2, 0), Vector(2, 2, 2) );//pointsize until it lands on the ground.
@@ -542,6 +544,12 @@ void CBasePlayerItem::Materialize( void )
 	if ( pev->effects & EF_NODRAW )
 	{
 		// changing from invisible state to visible.
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE( TE_TELEPORT );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+		MESSAGE_END();
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, 150 );
 		pev->effects &= ~EF_NODRAW;
 		pev->effects |= EF_MUZZLEFLASH;
@@ -675,7 +683,32 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->TabulateAmmo();
 		m_fInReload = FALSE;
 	}
-
+/* 	
+	if ( pl->m_pActiveItem->m_iId == WEAPON_CROWBAR)
+	{
+		//ranking
+		char  szText[64];
+		hudtextparms_t hText;
+		//float st = m_pPlayer->m_flNextChatTime15;
+		//sprintf(szText, "%s%d", m_pPlayer->pev->health ); //game text
+		sprintf(szText, "%i Points", (int)m_pPlayer->m_flNextChatTime10 );
+		memset(&hText, 0, sizeof(hText));
+		hText.channel = 0;
+		//range by 0.0 to 1.0
+		hText.x = 0.90;
+		hText.y = 0.85;
+		hText.effect = 1; // Fade in/out
+		hText.r1 = hText.g1 = hText.b1 = 255;
+		hText.a1 = 255;
+		hText.r2 = hText.g2 = hText.b2 = 255;
+		hText.a2 = 255;
+		hText.fadeinTime = 0.5;
+		hText.fadeoutTime = 0.5;
+		hText.holdTime = 2.5;
+		hText.fxTime = 0.1;
+		UTIL_HudMessage(m_pPlayer, hText, szText);
+	}
+ */
 	// << fourth attack (<1.31)
 	if ((m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
@@ -707,24 +740,21 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	else if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
 	
-	//work here with reset invisible
-	//reset values when invisibled
-	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-	{
-	if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-	{
-		m_pPlayer->pev->rendermode = kRenderNormal;
-		m_pPlayer->pev->renderfx = kRenderFxNone;
-		m_pPlayer->pev->renderamt = 0;
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
-		UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-	}
-	}
-	
-	
-	
-	
-	//!(m_pPlayer->pev->button & IN_USE) && //cuted
+		//work here with reset invisible
+		//reset values when invisibled
+		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+		{
+			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+			{
+				m_pPlayer->pev->rendermode = kRenderNormal;
+				m_pPlayer->pev->renderfx = kRenderFxNone;
+				m_pPlayer->pev->renderamt = 0;
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+			}
+		}
+
+		//!(m_pPlayer->pev->button & IN_USE) && //cuted
 		if ( pszAmmo2() && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
 		{
 			m_fFireOnEmpty = TRUE;
@@ -732,8 +762,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->TabulateAmmo();
 		SecondaryAttack();
 		m_pPlayer->pev->button &= ~IN_ATTACK2;
-		
-	
+
 	}
 	
 	//<< first
@@ -743,14 +772,14 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	//reset values when invisibled
 	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
 	{
-	if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-	{
-		m_pPlayer->pev->rendermode = kRenderNormal;
-		m_pPlayer->pev->renderfx = kRenderFxNone;
-		m_pPlayer->pev->renderamt = 0;
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
-		UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-	}
+		if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+		{
+			m_pPlayer->pev->rendermode = kRenderNormal;
+			m_pPlayer->pev->renderfx = kRenderFxNone;
+			m_pPlayer->pev->renderamt = 0;
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+			UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+		}
 	}
 	
 	
@@ -771,25 +800,25 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		}
 		if ( (m_iClip != 0 ))
 		{
-		m_pPlayer->TabulateAmmo();
-		ThirdAttack();
-		
+			m_pPlayer->TabulateAmmo();
+			ThirdAttack();
 		}
 		
 		
-	//reset values when invisibled
-	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-	{
-	if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-	{
-		m_pPlayer->pev->rendermode = kRenderNormal;
-		m_pPlayer->pev->renderfx = kRenderFxNone;
-		m_pPlayer->pev->renderamt = 0;
-		UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-		
-	}
-	}
+		//reset values when invisibled
+		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+		{
+			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+			{
+				m_pPlayer->pev->rendermode = kRenderNormal;
+				m_pPlayer->pev->renderfx = kRenderFxNone;
+				m_pPlayer->pev->renderamt = 0;
+				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+				
+			}
+		}
 	} 
+	
 	
 	
 	else if ( m_pPlayer->pev->button & IN_RELOAD && iMaxClip() != WEAPON_NOCLIP && !m_fInReload ) 
@@ -832,6 +861,8 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		WeaponIdle();
 	}
 }
+
+
 
 void CBasePlayerItem::DestroyItem( void )
 {
@@ -1179,7 +1210,6 @@ void CBasePlayerAmmo::Spawn( void )
 {
 if (g_flWeaponCheat != 0.0)
 	UTIL_Remove( this );
-	//SUB_Remove(); //no spawn ammo
 
 	pev->movetype = MOVETYPE_TOSS;
 	pev->solid = SOLID_TRIGGER;
@@ -1207,6 +1237,13 @@ void CBasePlayerAmmo::Materialize( void )
 {
 	if ( pev->effects & EF_NODRAW )
 	{
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE( TE_TELEPORT );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+		MESSAGE_END();
+		
 		// changing from invisible state to visible.
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, 150 );
 		pev->effects &= ~EF_NODRAW;
@@ -1354,15 +1391,13 @@ void CWeaponBox :: KeyValue( KeyValueData *pkvd )
 
 void CWeaponBox::Spawn( void )
 {
-
-
-Precache( );
-if (g_flWeaponCheat != 0.0)
-	Kill();
-	//SUB_Remove(); //no spawn weaponbox
-pev->movetype = MOVETYPE_TOSS;
-pev->solid = SOLID_TRIGGER;
-SET_MODEL( ENT(pev), "models/w_weaponbox.mdl");
+	// if (g_flWeaponCheat != 0.0)
+		// UTIL_Remove( this );
+	
+	Precache( );
+	pev->movetype = MOVETYPE_TOSS;
+	pev->solid = SOLID_TRIGGER;
+	SET_MODEL( ENT(pev), "models/w_weaponbox.mdl");
 } 
 
 //=========================================================

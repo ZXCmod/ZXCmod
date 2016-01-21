@@ -394,11 +394,12 @@ void CGrenade :: TumbleThink2( void )
 
 
 		//FireBullets( 64, pev->origin, vecSrc, Vector( RANDOM_LONG(-360,360), RANDOM_LONG(-360,360), RANDOM_LONG(-180,360) ), 768, 35, 1, 70, VARS( pev->owner ) );
-		FireBullets( 8, pev->origin, vecSrc, Vector( 2000,2000,2000 ), 128, 35, 1, 50, VARS( pev->owner ) );
+		//FireBullets( 8, pev->origin, vecSrc, Vector( 2000,2000,2000 ), 128, 35, 1, 50, VARS( pev->owner ) );
 		
-		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 32, pev->angles, pev->owner ); 
+		//Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 32, pev->angles, pev->owner ); 
 		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 64, pev->angles, pev->owner ); 
-		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 96, pev->angles, pev->owner ); 
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 75, 195, CLASS_NONE, DMG_BLAST  ); //end blast
+		//Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 96, pev->angles, pev->owner ); 
 
 		SetThink( Detonate );
 	}
@@ -419,6 +420,8 @@ class   CGrenadeBeam : public CBaseEntity
 {
 		void    Spawn           ( );
 		void    EXPORT Update   ( void );
+		
+		private:
 		short	m_LaserSprite;
 		short	m_LaserSprite2;
 		int		m_iBalls;
@@ -525,7 +528,7 @@ void CGrenadeBeam::Update( void )
 					
 					UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
 					UTIL_ScreenFade( pEntity, Vector(255,255,250), 1, 0.84, 128, FFADE_IN ); //flash 
-					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(7,14), DMG_MORTAR);	
+					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(65,75), DMG_MORTAR);	
 
 				}
 			

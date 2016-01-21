@@ -22,6 +22,7 @@
 #include "soundent.h"
 #include "shake.h"
 #include "gamerules.h"
+#include "handgrenade.h"
 extern float g_flWeaponCheat;
 
 
@@ -71,6 +72,7 @@ void CHandGrenade::Precache( void )
 	PRECACHE_MODEL( "sprites/xflare2.spr" );
 	PRECACHE_MODEL( "sprites/plasma.spr" );
 	//m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
+	PRECACHE_MODEL( "sprites/steam1.spr" );
 	
 
 }
@@ -184,13 +186,14 @@ if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10)
 
 void CHandGrenade::FourthAttack()
 {
-	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] > 0 )
+	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 5 )
 	{
 		m_flStartThrow2 = gpGlobals->time;
 		m_flReleaseThrow = 0;
 
 		SendWeaponAnim( HANDGRENADE_PINPULL );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+		m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ]-=4;
 		m_type = 1; //fire grenade
 		
 	}
@@ -441,38 +444,6 @@ void CHandGrenade :: Reload( void )
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10; //(<1.26)
 }
 
-class   CGrav1 : public CBaseEntity
-{
-        private:
-
-        void    Spawn           ( void );
-		void 	Precache 		( void );
-        void    MoveThink       ( void );
-        void    Explode         ( void );
-		int 	m_flDie;
-		int 	m_flDie2;
-		int     BeamSprite;
-		int 	m_iSpriteTexture;
-		short	m_LaserSprite;
-		short	m_Sprite;
-};
-
-class   CSmoke : public CBaseEntity
-{
-        private:
-
-        void    Spawn           ( void );
-		void 	Precache 		( void );
-        void    MoveThink       ( void );
-		int 	m_flDie;
-		short	m_Sprite;
-};
-
-
-LINK_ENTITY_TO_CLASS( weapon_saa, CGrav1 );
-LINK_ENTITY_TO_CLASS( weapon_canister, CSmoke );
-
-
 
 
 
@@ -480,18 +451,21 @@ LINK_ENTITY_TO_CLASS( weapon_canister, CSmoke );
 void    CGrav1 :: Spawn( void )
 {
 	Precache( );
+	
 	SET_MODEL( ENT(pev), "models/w_grenade.mdl" );
 	pev->movetype = MOVETYPE_TOSS;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
+	UTIL_SetSize( pev, Vector( -4, -4, -1), Vector(4, 4, 8) );
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_grenade" ); // GravGrenade
-	m_flDie = gpGlobals->time + RANDOM_LONG(12,16);
+	m_flDie = gpGlobals->time + 10; //10
 	pev->dmg = 0;
 	pev->takedamage = DAMAGE_YES;
-	pev->nextthink = gpGlobals->time + 5.1;//10 times a second
+	pev->nextthink = gpGlobals->time + 5.0;//10 times a second
 	SetThink( MoveThink );
 	pev->health			= 9999999; //get more eat!
+	pev->gravity 		= 0.5;
+	//pev->friction 		= 0.5;
 	m_Sprite = PRECACHE_MODEL( "sprites/xflare2.spr" );
 }
 
@@ -500,6 +474,8 @@ void CGrav1 :: Precache( void )
 	m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
 	PRECACHE_SOUND( "weapons/gravgren.wav" );
 	m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
+
+	
 }
 
 
@@ -527,16 +503,50 @@ void    CGrav1 :: MoveThink( void )
 	Vector	vecDir;
 	vecDir = Vector( 0, 0, 0 );
 	Vector direction = Vector(0,0,1); 
+	static float i;
 	
 	// Make a lightning strike
 	Vector vecEnd;
 	TraceResult tr;
 	vecEnd.x = 0;	// Pick a random direction
 	vecEnd.y = 0;
-	vecEnd.z = RANDOM_FLOAT(128,255);
+	vecEnd.z = RANDOM_LONG(128,255);
 	vecEnd = pev->origin + vecEnd.Normalize() * 512;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
-	pev->velocity.z = 35; //jump
+	//pev->velocity.z = -35; //jump
+	
+
+	
+	// pev->avelocity.y = 80;
+	// pev->avelocity.x = 120;
+	
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BOX );
+		WRITE_COORD( pev->origin.x - i ); //start
+		WRITE_COORD( pev->origin.y - i );
+		WRITE_COORD( pev->origin.z - i );
+		WRITE_COORD( pev->origin.x + i ); //start
+		WRITE_COORD( pev->origin.y + i );
+		WRITE_COORD( pev->origin.z + i );
+		WRITE_SHORT( 1 );
+		WRITE_BYTE( 255 ); // color r,g,b
+		WRITE_BYTE( 155 ); // color r,g,b
+		WRITE_BYTE( 55 ); // color r,g,b
+	MESSAGE_END();
+	
+	
+	i -= 0.5;
+	
+	
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_IMPLOSION );
+		WRITE_COORD( pev->origin.x );
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_BYTE( 64 );	// rad
+		WRITE_BYTE( 24 );		// count
+		WRITE_BYTE( 8 );		// life
+	MESSAGE_END();
 	
 	//find and capture nearest objects
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 284 )) != NULL) //256
@@ -546,16 +556,10 @@ void    CGrav1 :: MoveThink( void )
 				vecDir = ( pEntity->Center() - Vector ( 0, 0, 10 ) - Center() ).Normalize();
 				pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -200; //300  + pev->dmg
 
-				//push up
-				switch(RANDOM_LONG(0,3))
-				{
-					case 1: pEntity->pev->velocity.z += pEntity->pev->velocity.z + 128;
-					pev->velocity.z = 135; //jump
-					break;
-				}
+
 				
 				//::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 1000, 25, CLASS_NONE, DMG_GENERIC  );
-				UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
+				UTIL_ScreenShake( pEntity->pev->origin, 256.0, 60.0, 0.5, 1 );
 				//UTIL_ScreenFade( pEntity, Vector(0,RANDOM_LONG(128,255),RANDOM_LONG(170,255)), 64, 12, 16, FFADE_IN );
 				
 				//lightings up
@@ -571,7 +575,7 @@ void    CGrav1 :: MoveThink( void )
 					WRITE_BYTE( 0 ); // Starting frame
 					WRITE_BYTE( 16  ); // framerate * 0.1
 					WRITE_BYTE( 1 ); // life * 0.1
-					WRITE_BYTE( 16 ); // width
+					WRITE_BYTE( 8 ); // width
 					WRITE_BYTE( 24 ); // noise
 					WRITE_BYTE( 255 ); // color r,g,b
 					WRITE_BYTE( 255 ); // color r,g,b
@@ -583,7 +587,16 @@ void    CGrav1 :: MoveThink( void )
 				//dont hurt through wall
 				if (FVisible( pEntity ))
 				{
-					pEntity->TakeDamage(pev, VARS( pev->owner ), 1, DMG_SHOCK);	
+				
+					//push up
+					switch(RANDOM_LONG(0,3))
+					{
+						case 1: pEntity->pev->velocity.z += pEntity->pev->velocity.z + 128;
+						pev->velocity.z = 200; //jump
+						break;
+					}
+					pEntity->TakeDamage(pev, VARS( pev->owner ), 2, DMG_SHOCK);	
+					//UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 1.5, 1 );
 				
 					//shock ray
 					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -598,8 +611,8 @@ void    CGrav1 :: MoveThink( void )
 						WRITE_BYTE( 1 ); // Starting frame
 						WRITE_BYTE( 0  ); // framerate * 0.1
 						WRITE_BYTE( 1 ); // life * 0.1
-						WRITE_BYTE( 8 ); // width
-						WRITE_BYTE( 24 ); // noise
+						WRITE_BYTE( 7 ); // width
+						WRITE_BYTE( RANDOM_LONG(16,128) ); // noise
 						WRITE_BYTE( 250 ); // color r,g,b
 						WRITE_BYTE( 250 ); // color r,g,b
 						WRITE_BYTE( 255 ); // color r,g,b
@@ -629,6 +642,7 @@ void    CGrav1 :: MoveThink( void )
 			}
 		}
 
+
 	if (pev->effects != EF_LIGHT)
 	{
 		pev->velocity.z = 345;
@@ -646,7 +660,15 @@ void    CGrav1 :: MoveThink( void )
 			WRITE_BYTE( 200 ); // brightness
 		MESSAGE_END();
 		
+		
+
+
+		
+		
 		pev->effects |= EF_LIGHT;
+		//pev->movetype = MOVETYPE_BOUNCE;
+		pev->gravity 		= 1.0;
+		i = 20;
 	}
 	
 	//release a destroy
@@ -716,7 +738,7 @@ void    CGrav1 :: MoveThink( void )
 			}
 	}
 
-	if (gpGlobals->time >= m_flDie+5)
+	if (gpGlobals->time >= m_flDie+0.25)
 		{
 		// random explosions
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );

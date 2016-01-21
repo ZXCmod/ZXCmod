@@ -45,6 +45,7 @@ cvar_t	allowmonsters5={"mp_python","1", FCVAR_SERVER }; //1.30a, python
 cvar_t	allowmonsters6={"mp_gauss","1", FCVAR_SERVER }; //1.30a, gauss
 cvar_t	allowmonsters7={"mp_tank","0", FCVAR_SERVER }; //1.31, func_tank
 cvar_t	allowmonsters8={"mp_teleport","1", FCVAR_SERVER }; //1.31, cwb teleportation
+cvar_t	allowmonsters9={"mp_allwep","1", FCVAR_SERVER }; //1.33, wpn limit
 
 	// CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	// CVAR_SET_STRING("sv_stepsize", "18");
@@ -495,6 +496,7 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&allowmonsters6); //gauss
 	CVAR_REGISTER (&allowmonsters7); //tnk
 	CVAR_REGISTER (&allowmonsters8); //tlp
+	CVAR_REGISTER (&allowmonsters9); //sdfdfskdflsdf
 
 	CVAR_REGISTER (&mp_chattime);
 

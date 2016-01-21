@@ -12,6 +12,8 @@
 *   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
+/* 
+
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 
 //=========================================================
@@ -923,16 +925,7 @@ void CIchthyosaur::Swim( )
 		// ALERT( at_console, "run  %.2f\n", pev->framerate );
 	}
 
-/*
-	if (!m_pBeam)
-	{
-		m_pBeam = CBeam::BeamCreate( "sprites/laserbeam.spr", 80 );
-		m_pBeam->PointEntInit( pev->origin + m_SaveVelocity, entindex( ) );
-		m_pBeam->SetEndAttachment( 1 );
-		m_pBeam->SetColor( 255, 180, 96 );
-		m_pBeam->SetBrightness( 192 );
-	}
-*/
+
 #define PROBE_LENGTH 150
 	Angles = UTIL_VecToAngles( m_SaveVelocity );
 	Angles.x = -Angles.x;
@@ -960,15 +953,7 @@ void CIchthyosaur::Swim( )
 	else
 		pev->velocity = m_SaveVelocity = m_SaveVelocity * 80;
 
-	// ALERT( at_console, "%.0f %.0f\n", m_flightSpeed, pev->velocity.Length() );
 
-
-	// ALERT( at_console, "Steer %f %f %f\n", SteeringVector.x, SteeringVector.y, SteeringVector.z );
-
-/*
-	m_pBeam->SetStartPos( pev->origin + pev->velocity );
-	m_pBeam->RelinkBeam( );
-*/
 
 	// ALERT( at_console, "speed %f\n", m_flightSpeed );
 	
@@ -1106,3 +1091,5 @@ Vector CIchthyosaur::DoProbe(const Vector &Probe)
 }
 
 #endif
+
+ */

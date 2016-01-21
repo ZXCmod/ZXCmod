@@ -29,6 +29,8 @@
 int iHornetTrail;
 int iHornetPuff;
 
+#define HORNET_DETONATE_DELAY	1.0
+
 LINK_ENTITY_TO_CLASS( hornet, CHornet );
 
 //=========================================================
@@ -62,9 +64,7 @@ void CHornet :: Spawn( void )
 	Precache();
 	pev->movetype	= MOVETYPE_FLY;
 	pev->solid		= SOLID_NOT;
-	pev->takedamage = DAMAGE_YES;
 	pev->flags		|= FL_MONSTER;
-	pev->health		= 1;// weak!
 
 	m_flStopAttack = gpGlobals->time + 3.5;
 
@@ -80,7 +80,7 @@ void CHornet :: Spawn( void )
 		m_flFlySpeed = HORNET_ORANGE_SPEED;
 	}
 	SET_MODEL(ENT( pev ), "models/hornet.mdl");
-	UTIL_SetSize( pev, Vector( -4, -4, -4 ), Vector( 4, 4, 4 ) );
+	UTIL_SetSize( pev, Vector( -3, -3, -3 ), Vector( 3, 3, 3 ) );
 	SetTouch( DieTouch );
 	SetThink( StartTrack );
 	edict_t *pSoundEnt = pev->owner;
@@ -97,6 +97,8 @@ void CHornet :: Spawn( void )
 	}
 	pev->nextthink = 5;
 	ResetSequenceInfo( );
+	
+	m_flDie = gpGlobals->time + HORNET_DETONATE_DELAY;
 }
 
 
@@ -157,7 +159,7 @@ void CHornet :: StartTrack ( void )
 	SetTouch( TrackTouch );
 	SetThink( TrackTarget );
 
-	pev->nextthink = gpGlobals->time + 1.0;
+	pev->nextthink = gpGlobals->time + 0.1;
 }
 
 //=========================================================
@@ -169,8 +171,10 @@ void CHornet :: StartDart ( void )
 
 	SetTouch( DartTouch );
 
-	SetThink( SUB_Remove );
-	pev->nextthink = gpGlobals->time + 4;
+	//SetThink( SUB_Remove );
+	
+	
+	//pev->nextthink = gpGlobals->time + 3;
 }
 
 void CHornet::IgniteTrail( void )
@@ -223,7 +227,7 @@ old colors
 			break;
 		}
 
-		WRITE_BYTE( RANDOM_LONG(128,255) );	// brightness
+		WRITE_BYTE( 100 );	// brightness
 
 	MESSAGE_END();
 }
@@ -238,19 +242,25 @@ void CHornet :: TrackTarget ( void )
 	float	flDelta;
 
 	StudioFrameAdvance( );
+	
+	// explode when ready
+	if (gpGlobals->time >= m_flDie)
+	{
+		UTIL_Remove( this );
+		return;
+	}
 
 	if (gpGlobals->time > m_flStopAttack)
 	{
 		SetTouch( NULL );
-		SetThink( SUB_Remove );
-		pev->nextthink = gpGlobals->time + 0.1;
+		UTIL_Remove( this );
 		return;
 	}
 
 	// UNDONE: The player pointer should come back after returning from another level
 	if ( m_hEnemy == NULL )
 	{// enemy is dead.
-		Look( 512 );
+		Look( 256 );
 		m_hEnemy = BestVisibleEnemy( );
 	}
 	
@@ -265,7 +275,7 @@ void CHornet :: TrackTarget ( void )
 
 	vecDirToEnemy = ( m_vecEnemyLKP - pev->origin ).Normalize();
 
-	if (pev->velocity.Length() < 0.1)
+	if (pev->velocity.Length() < 0.9)
 		vecFlightDir = vecDirToEnemy;
 	else 
 		vecFlightDir = pev->velocity.Normalize();
@@ -353,6 +363,8 @@ void CHornet :: TrackTouch ( CBaseEntity *pOther )
 		pev->solid = SOLID_NOT;
 		return;
 	}
+	
+
 
 	if ( IRelationship( pOther ) <= R_NO )
 	{
@@ -389,13 +401,14 @@ void CHornet::DieTouch ( CBaseEntity *pOther )
 			case 2:	EMIT_SOUND( ENT(pev), CHAN_VOICE, "hornet/ag_hornethit3.wav", 1, ATTN_NORM);	break;
 		}
 			
-		pOther->TakeDamage( pev, VARS( pev->owner ), pev->dmg, DMG_BULLET );
+		pOther->TakeDamage( pev, VARS( pev->owner ), 10, DMG_BULLET );
 	}
 
 	pev->modelindex = 0;// so will disappear for the 0.1 secs we wait until NEXTTHINK gets rid
-	pev->solid = SOLID_NOT;
 
-	SetThink ( SUB_Remove );
-	pev->nextthink = gpGlobals->time + 1;// stick around long enough for the sound to finish!
+	UTIL_Remove( this );
+	
+	//SetThink ( SUB_Remove );
+	//pev->nextthink = gpGlobals->time + 1;// stick around long enough for the sound to finish!
 }
 

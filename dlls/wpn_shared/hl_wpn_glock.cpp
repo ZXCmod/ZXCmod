@@ -34,6 +34,34 @@ enum glock_e {
 	GLOCK_ADD_SILENCER
 };
 
+
+//////////////NEW weapon
+
+class   CGB : public CBaseEntity
+{
+        public:
+
+        void    Spawn           ( void );
+		void 	Precache 		( void );
+        void    MoveThink       ( void );
+		
+		
+		private:
+		
+		int 	m_flDie;
+		int 	m_flDie2;
+		int     BeamSprite;
+		int 	m_iSpriteTexture;
+		short	m_LaserSprite;
+		int 	m_iBalls;
+		
+		
+		static CGB* Create( Vector, Vector, CBaseEntity* );
+		void EXPORT Hit         ( CBaseEntity* );
+		
+};
+
+LINK_ENTITY_TO_CLASS( weapon_minigun, CGB );
 LINK_ENTITY_TO_CLASS( weapon_glock, CGlock );
 LINK_ENTITY_TO_CLASS( weapon_9mmhandgun, CGlock );
 
@@ -46,6 +74,8 @@ void CGlock::Spawn( )
 	SET_MODEL(ENT(pev), "models/w_9mmhandgun.mdl");
 
 	m_iDefaultAmmo = GLOCK_DEFAULT_GIVE;
+	
+	m_typeG = 0;
 
 	FallInit();// get ready to fall down.
 }
@@ -105,9 +135,9 @@ void CGlock::Reload( void )
 	int iResult;
 
 	if (m_iClip == 0)
-		iResult = DefaultReload( 17, GLOCK_RELOAD, 1.5 );
+		iResult = DefaultReload( 17, GLOCK_RELOAD, 1.25 );
 	else
-		iResult = DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.5 );
+		iResult = DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.25 );
 
 	if (iResult)
 	{
@@ -132,33 +162,63 @@ BOOL CGlock::Deploy( )
 
 void CGlock::SecondaryAttack( void )
 {
-	GlockFire( 0.07, 0.2, FALSE );
+	GlockFire( 0.07, 0.2 );
 }
 
 void CGlock::PrimaryAttack( void )
 {
-	GlockFire( 0.025, 0.3, FALSE );
+	GlockFire( 0.035, 0.3 ); //0.25
 }
 
+//updated in v1.33 with both types
 void CGlock::ThirdAttack( void )
 {
+	int iResult;
+
+	if (m_iClip <= 4)
+		iResult = DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.25 );
+		
 	if (  m_iClip >= 4 ) //need delay
 		{
-			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); //play sound
-			m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
-			Vector vecSrc = m_pPlayer->pev->origin;
-			Vector vecThrow = gpGlobals->v_forward * 700; //init and start speed of core, 540
-			#ifndef CLIENT_DLL
-				CBaseEntity *pSatchel = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-				pSatchel->pev->velocity = vecThrow;
-				m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-				m_iClip-=4;
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.1;
-				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.1;
-				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.1;
-				SendWeaponAnim( GLOCK_SHOOT );
-			#endif
-			return;
+		
+		SendWeaponAnim( GLOCK_SHOOT );
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		Vector vecSrc = m_pPlayer->pev->origin;
+		
+		if (  m_typeG == 0 ) //normal
+			{
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); //play sound
+				Vector vecThrow = gpGlobals->v_forward * 700; //init and start speed of core, 540
+				#ifndef CLIENT_DLL
+					CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+					pGlockCore->pev->velocity = vecThrow;
+					m_iClip-=4;
+					m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+					m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+					m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+				#endif
+				return;
+			}
+		if (  m_typeG == 1 ) //normal // typed as 1 (red trails)
+		{
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); //play sound
+				Vector vecThrow = gpGlobals->v_forward * 1200; //init and start speed of core, 540
+				#ifndef CLIENT_DLL
+					CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+					pGlockCore->pev->velocity = vecThrow;
+					pGlockCore->pev->dmg = 112; 
+					m_iClip-=5;
+					m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.1;
+					m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.1;
+					m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.1;
+				#endif
+				return;
+		}
+		
+		
+		
+		
 		}
 
 }
@@ -170,6 +230,7 @@ void CGlock::FourthAttack( void )
 		m_fInZoom = FALSE;
 		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;
 		m_flNextSecondaryAttack = 0.3;
+		m_typeG = 0;
 		//return;
 	}
 	else if ( m_pPlayer->pev->fov != 60 )
@@ -177,13 +238,14 @@ void CGlock::FourthAttack( void )
 		m_fInZoom = TRUE;
 		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 60;
 		m_flNextSecondaryAttack = 0.3;
+		m_typeG = 1;
 		//return;
 	}
 	PlayEmptySound( );
 	m_flNextSecondaryAttack = 0.3;
 }
 
-void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
+void CGlock::GlockFire( float flSpread , float flCycleTime )
 {
 	if (m_iClip <= 0)
 	{
@@ -227,9 +289,9 @@ void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
 
 #ifndef CLIENT_DLL
 	Vector vecDir;
-	vecDir = m_pPlayer->FireBulletsPlayer( 2, vecSrc, vecAiming, Vector( flSpread, flSpread, flSpread ), 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( flSpread, flSpread, flSpread ), 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
-	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), fUseAutoAim ? m_usFireGlock1 : m_usFireGlock2, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, ( m_iClip == 0 ) ? 1 : 0, 0 );
+	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), vecDir ? m_usFireGlock1 : m_usFireGlock2, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, ( m_iClip == 0 ) ? 1 : 0, 0 );
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + flCycleTime;
 
@@ -241,9 +303,6 @@ void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 }
 
-void CGlock::GlockFire2( float flSpread , float flCycleTime, BOOL fUseAutoAim )
-{
-}
 
 
 void CGlock::Holster( int skiplocal /* = 0 */ )
@@ -344,30 +403,6 @@ LINK_ENTITY_TO_CLASS( ammo_9mmclip, CGlockAmmo );
 
 
 
-//////////////NEW weapon
-
-class   CGB : public CBaseEntity
-{
-        public:
-
-        void    Spawn           ( );
-		void Precache ();
-        void    MoveThink       ( );
-        void    Explode         ( );
-		int m_flDie;
-		int m_flDie2;
-		int     BeamSprite;
-		int m_iSpriteTexture;
-		short		m_LaserSprite;
-		int m_iBalls;
-		
-		static CGB* Create( Vector, Vector, CBaseEntity* );
-		void EXPORT Hit         ( CBaseEntity* );
-		
-};
-
-LINK_ENTITY_TO_CLASS( weapon_minigun, CGB );
-
 
 
 void    CGB :: Spawn( )
@@ -448,27 +483,40 @@ void    CGB :: Hit( CBaseEntity* Target )
 }
 
 
-void    CGB:: Explode()
-{
-
-}
 
 
 void    CGB :: MoveThink( )
 {
 
 	//set trails
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-	WRITE_BYTE( TE_BEAMFOLLOW );
-	WRITE_SHORT(entindex()); // entity
-	WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
-	WRITE_BYTE( 30 ); // life
-	WRITE_BYTE( 2 ); // width
-	WRITE_BYTE( 10 ); // r, g, b
-	WRITE_BYTE( 200 ); // r, g, b
-	WRITE_BYTE( 10 ); // r, g, b
-	WRITE_BYTE( 40 ); // brightness
-	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	if (pev->dmg <= 100)
+	{
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
+		WRITE_BYTE( 24 ); // life
+		WRITE_BYTE( 2 ); // width
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 200 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 36 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	}
+	else
+	{
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
+		WRITE_BYTE( 30 ); // life
+		WRITE_BYTE( 2 ); // width
+		WRITE_BYTE( 200 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 10 ); // r, g, b
+		WRITE_BYTE( 30 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	}
 
 	// Make a lightning strike
 	Vector vecEnd;
@@ -521,10 +569,17 @@ void    CGB :: MoveThink( )
 		{
 			if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()) && pEntity->pev->health >= 3) //!(pEntity->pev->movetype == MOVETYPE_FLY)
 				{
-				pEntity->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pEntity->pev->origin.x));
-				pEntity->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pEntity->pev->origin.y));
-				pEntity->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pEntity->pev->origin.z));
-				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/3, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+					if ( FBitSet(pEntity->pev->flags, FL_DUCKING) && (pEntity->pev->flags & FL_ONGROUND) ) 
+					{
+					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/2, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+					}
+					else
+					{
+					pEntity->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pEntity->pev->origin.x));
+					pEntity->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pEntity->pev->origin.y));
+					pEntity->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pEntity->pev->origin.z));
+					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/3, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+					}
 				} 
 		}
 

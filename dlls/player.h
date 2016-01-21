@@ -178,7 +178,7 @@ public:
 	int	m_rgAmmo[MAX_AMMO_SLOTS];
 	int	m_rgAmmoLast[MAX_AMMO_SLOTS];
 
-	Vector				m_vecAutoAim;
+	//Vector				m_vecAutoAim;
 	BOOL				m_fOnTarget;
 	int					m_iDeaths;
 	float				m_iRespawnFrames;	// used in PlayerDeathThink() to make sure players can always respawn
@@ -287,9 +287,9 @@ public:
 	int AmmoInventory( int iAmmoIndex );
 	int Illumination( void );
 
-	void ResetAutoaim( void );
-	Vector GetAutoaimVector( float flDelta  );
-	Vector AutoaimDeflection( Vector &vecSrc, float flDist, float flDelta  );
+	 void ResetAutoaim( void );
+	 Vector GetAutoaimVector( float flDelta  );
+	 Vector AutoaimDeflection( Vector &vecSrc, float flDist, float flDelta  );
 
 	void ForceClientDllUpdate( void );  // Forces all client .dll specific data to be resent to client.
 
@@ -329,13 +329,11 @@ public:
 	int m_flNextChatTime13; //turrets limit
 	int m_flNextChatTime14; //freeze bags limit
 	float m_flNextChatTime15; //egon Storm delay
+	Vector	m_angle;
 
 };
 
-#define AUTOAIM_2DEGREES  0.0348994967025
-#define AUTOAIM_5DEGREES  0.08715574274766
-#define AUTOAIM_8DEGREES  0.1391731009601
-#define AUTOAIM_10DEGREES 0.1736481776669
+
 
 
 extern int	gmsgHudText;

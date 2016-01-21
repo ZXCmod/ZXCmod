@@ -34,7 +34,7 @@
 // Try this on a model with hulls/tracehull?
 //
 
-
+/* 
 #include	"float.h"
 #include	"extdll.h"
 #include	"util.h"
@@ -719,5 +719,5 @@ void CLeech::Killed(entvars_t *pevAttacker, int iGib)
 	pev->takedamage = DAMAGE_NO;
 	SetThink( DeadThink );
 }
-
+ */
 

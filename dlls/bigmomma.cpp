@@ -601,7 +601,7 @@ int CBigMomma :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 
 void CBigMomma :: LayHeadcrab( void )
 {
-	CBaseEntity *pChild = CBaseEntity::Create( BIG_CHILDCLASS, pev->origin, pev->angles, edict() );
+/* 	CBaseEntity *pChild = CBaseEntity::Create( BIG_CHILDCLASS, pev->origin, pev->angles, edict() );
 
 	pChild->pev->spawnflags |= SF_MONSTER_FALL_TO_GROUND;
 
@@ -622,7 +622,7 @@ void CBigMomma :: LayHeadcrab( void )
 	UTIL_DecalTrace( &tr, DECAL_MOMMABIRTH );
 
 	EMIT_SOUND_DYN( edict(), CHAN_WEAPON, RANDOM_SOUND_ARRAY(pBirthSounds), 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
-	m_crabCount++;
+	m_crabCount++; */
 }
 
 

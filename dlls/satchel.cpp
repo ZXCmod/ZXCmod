@@ -41,10 +41,12 @@ class   CBlasterBeam4 : public CGrenade
         void    EXPORT Hit         ( CBaseEntity* );
         void    Explode         (int);
         static  CBlasterBeam4* Create( Vector, Vector, CBaseEntity* );
+		
+		private:
         int     BeamSprite;
-		int m_iSpriteTexture;
-		float m_flDie;
-		float m_flDie2;
+		int 	m_iSpriteTexture;
+		float 	m_flDie;
+		float 	m_flDie2;
 
 };
 

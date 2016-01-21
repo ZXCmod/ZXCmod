@@ -104,7 +104,7 @@ float CSqueakGrenade::m_flNextBounceSoundTime = 0;
 LINK_ENTITY_TO_CLASS( monster_snark, CSqueakGrenade );
 
 
-#define SQUEEK_DETONATE_DELAY	5.0
+#define SQUEEK_DETONATE_DELAY	8.0
 
 int CSqueakGrenade :: Classify ( void )
 {
@@ -136,7 +136,7 @@ void CSqueakGrenade :: Spawn( void )
 	pev->solid = SOLID_BBOX;
 
 	SET_MODEL(ENT(pev), "models/w_squeak.mdl");
-	UTIL_SetSize(pev, Vector( -4, -4, 0), Vector(4, 4, 8));
+	UTIL_SetSize(pev, Vector( -3, -3, 0), Vector(4, 4, 5));
 	UTIL_SetOrigin( pev, pev->origin );
 
 	SetTouch( SuperBounceTouch );
@@ -160,14 +160,9 @@ void CSqueakGrenade :: Spawn( void )
 	
 	//pev->flags |= FL_MONSTER;
 	pev->takedamage		= 10;
-	pev->health			= 1;
-	pev->gravity		= 0.5;
-	pev->friction		= 0.5;
-
-	pev->dmg = 30;
-	
-	
-	
+	pev->health			= 10;
+	pev->gravity		= 0.35;
+	pev->friction		= 0.4;
 	
 	// +BubbleMod (thanks)
 
@@ -223,16 +218,16 @@ void CSqueakGrenade :: Killed( entvars_t *pevAttacker, int iGib )
 	pev->takedamage = DAMAGE_NO;
 
 	// play squeek blast
-	EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "squeek/sqk_blast1.wav", 1, 0.5, 0, PITCH_NORM);	
+	EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "squeek/sqk_blast1.wav", 1, 0.5, 0, RANDOM_LONG(95,100));	
 
 	CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, SMALL_EXPLOSION_VOLUME, 3.0 );
 
 	UTIL_BloodDrips( pev->origin, g_vecZero, BloodColor(), 80 );
 
-	if (m_hOwner != NULL)
-		RadiusDamage ( pev, m_hOwner->pev, pev->dmg, CLASS_NONE, DMG_POISON );
-	else
-		RadiusDamage ( pev, pev, pev->dmg, CLASS_NONE, DMG_POISON );
+	// if (m_hOwner != NULL)
+		// RadiusDamage ( pev, m_hOwner->pev, pev->dmg, CLASS_NONE, DMG_POISON );
+	// else
+		// RadiusDamage ( pev, pev, pev->dmg, CLASS_NONE, DMG_POISON );
 
 	// reset owner so death message happens
 	if (m_hOwner != NULL)
@@ -259,6 +254,7 @@ void CSqueakGrenade::HuntThink( void )
 		return;
 	}
 	
+	
 	StudioFrameAdvance( );
 	pev->nextthink = gpGlobals->time + 0.1;
 
@@ -278,8 +274,8 @@ void CSqueakGrenade::HuntThink( void )
 		{
 			pev->movetype = MOVETYPE_FLY;
 		}
-		pev->velocity = pev->velocity * 0.9;
-		pev->velocity.z += 8.0;
+		pev->velocity = pev->velocity * 0.5;
+		pev->velocity.z += 3.0;
 	}
 	else if (pev->movetype = MOVETYPE_FLY)
 	{
@@ -291,8 +287,8 @@ void CSqueakGrenade::HuntThink( void )
 		return;
 
 	m_flNextHunt = gpGlobals->time + 2.0;
+	//    m_hEnemy->edict() != pev->owner
 	
-	CBaseEntity *pOther = NULL;
 	Vector vecDir;
 	TraceResult tr;
 
@@ -304,10 +300,12 @@ void CSqueakGrenade::HuntThink( void )
 
 	if (m_hEnemy == NULL || !m_hEnemy->IsAlive())
 	{
+		
 		// find target, bounce a bit towards it.
 		Look( 512 );
 		m_hEnemy = BestVisibleEnemy( );
 	}
+
 
 	// squeek if it's about time blow up
 	if ((m_flDie - gpGlobals->time <= 0.5) && (m_flDie - gpGlobals->time >= 0.3))
@@ -323,6 +321,7 @@ void CSqueakGrenade::HuntThink( void )
 
 	if (m_hEnemy != NULL)
 	{
+	
 		if (FVisible( m_hEnemy ))
 		{
 			vecDir = m_hEnemy->EyePosition() - pev->origin;
@@ -339,7 +338,7 @@ void CSqueakGrenade::HuntThink( void )
 
 		// ALERT( at_console, "%.0f %.2f %.2f %.2f\n", flVel, m_vecTarget.x, m_vecTarget.y, m_vecTarget.z );
 
-		pev->velocity = pev->velocity * flAdj + m_vecTarget * 300;
+		pev->velocity = pev->velocity * flAdj + m_vecTarget * 250;
 	}
 
 	if (pev->flags & FL_ONGROUND)
@@ -403,13 +402,13 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 			{
 				// ALERT( at_console, "hit enemy\n");
 				ClearMultiDamage( );
-				pOther->TraceAttack(pev, RANDOM_LONG(7,19), gpGlobals->v_forward, &tr, DMG_SLASH ); 
+				pOther->TraceAttack(pev, RANDOM_LONG(1,45), gpGlobals->v_forward, &tr, DMG_SLASH ); 
 				if (m_hOwner != NULL)
 					ApplyMultiDamage( pev, m_hOwner->pev );
 				else
 					ApplyMultiDamage( pev, pev );
 
-				pev->dmg += RANDOM_FLOAT(7, 14); // add more explosion damage
+				// pev->dmg += RANDOM_FLOAT(7, 14); // add more explosion damage
 				// m_flDie += 2.0; // add more life
 
 				// make bite sound
@@ -550,7 +549,7 @@ void CSqueak::Holster( int skiplocal /* = 0 */ )
 void CSqueak::PrimaryAttack()
 {
 
-	if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] )
+	if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 3 )
 	{
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		TraceResult tr;
@@ -568,11 +567,11 @@ void CSqueak::PrimaryAttack()
 		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
 
 	int flags;
-#ifdef CLIENT_WEAPONS
-	flags = FEV_GLOBAL;
-#else
-	flags = 0;
-#endif
+	#ifdef CLIENT_WEAPONS
+		flags = FEV_GLOBAL;
+	#else
+		flags = 0;
+	#endif
 
 	    PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usSnarkFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
 
@@ -581,26 +580,26 @@ void CSqueak::PrimaryAttack()
 			// player "shoot" animation
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-#ifndef CLIENT_DLL
+	#ifndef CLIENT_DLL
 			CBaseEntity *pSqueak = CBaseEntity::Create( "monster_snark", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			pSqueak->pev->velocity = gpGlobals->v_forward * 800 + m_pPlayer->pev->velocity;
-#endif
+			pSqueak->pev->velocity = gpGlobals->v_forward * 400 + m_pPlayer->pev->velocity;
+	#endif
 
 			// play hunt sound
 			float flRndSound = RANDOM_FLOAT ( 0 , 1 );
 
 			if ( flRndSound <= 0.5 )
-				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 105);
+				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 97);
 			else 
-				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 105);
+				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 103);
 
 			m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
 
-			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
 
 			m_fJustThrown = 1;
 
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.58;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 		}
 	}	
@@ -692,17 +691,16 @@ void CSqueak::ThirdAttack( void )
 
 	
 
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 128 )) != NULL)
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 130 )) != NULL)
        		 {
 				if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
 					{
-					UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 0.7, 1 );
-					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(45,55), DMG_MORTAR); //destroy all near thinks
+						UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 0.7, 1 );
+						if (FVisible( pEntity ))
+							pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(45,55), DMG_MORTAR); //destroy all near thinks
 					} 
 			}
-			
-	
-			//beam
+		//beam
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_BEAMCYLINDER );
 			WRITE_COORD( pev->origin.x);

@@ -37,11 +37,13 @@ enum mp5_e
 };
 
 //zap
- class   CZap : public CGrenade
+class   CZap : public CGrenade
 {
         public:
         void    Spawn           ( );
-		short		m_LaserSprite;
+		
+		private:
+		unsigned short   m_LaserSprite;
 }; 
 
 
@@ -153,6 +155,11 @@ BOOL CMP5::Deploy( )
 void CMP5::PrimaryAttack()
 {
 
+	Vector i;
+	
+	
+	
+	
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
@@ -180,12 +187,17 @@ void CMP5::PrimaryAttack()
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
-	Vector vecAiming = m_pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
+	Vector vecAiming = gpGlobals->v_forward;
 	Vector vecDir;
+	
+	if ( FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) //the true sensor
+		i = VECTOR_CONE_3DEGREES;
+	else
+		i = VECTOR_CONE_6DEGREES;
 
 
 	// player spread
-	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_4DEGREES, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, i, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
 	
 	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usMP5, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
@@ -342,17 +354,17 @@ void CMP5::ThirdAttack( void )
 			MESSAGE_END();
 
 			#ifndef CLIENT_DLL
-			m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecDir, Vector( 0, 0, 0 ), 4096, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-			UTIL_DecalTrace( &tr, DECAL_BIGSHOT1 + RANDOM_LONG(1,4) ); // + RANDOM_LONG(1,4)
-			UTIL_Sparks( tr.vecEndPos );
-			m_iClip--;
-			EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart11.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
-			Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			SendWeaponAnim( 5 );
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.12;
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.12;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.12;
+				m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecDir, Vector( 0, 0, 0 ), 4096, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+				UTIL_DecalTrace( &tr, DECAL_BIGSHOT1 + RANDOM_LONG(1,4) ); // + RANDOM_LONG(1,4)
+				UTIL_Sparks( tr.vecEndPos );
+				m_iClip--;
+				EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart11.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
+				Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+				SendWeaponAnim( 5 );
+				m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.12;
+				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.12;
+				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.12;
 			#endif
 	}
 	
@@ -599,13 +611,14 @@ class   CPlasma : public CBaseEntity
         void    Spawn           ( );
 		void 	Precache 		( );
         void    MoveThink       ( );
-		int 	m_flDie;
-		short   m_Sprite;
-		short   m_Sprite2;
-		
-		
 		static CPlasma* Create( Vector, Vector, CBaseEntity* );
 		void EXPORT Hit   ( CBaseEntity* );
+		
+		
+		private:
+		int 	m_flDie;
+		unsigned short   m_Sprite;
+		unsigned short   m_Sprite2;
 		
 };
 
@@ -681,8 +694,8 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 	if (Target->pev->takedamage)
 	{
 		//Target->TraceAttack(pev, RANDOM_LONG(19,24), gpGlobals->v_forward, &TResult, DMG_BULLET ); 
-		Target->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(31,37), DMG_FALL);
-		Target->pev->velocity = Target->pev->velocity/2;
+		Target->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(30,38), DMG_FALL);
+		Target->pev->velocity = Target->pev->velocity*0.25;
 		
 		// animated sprite by entity hit
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );

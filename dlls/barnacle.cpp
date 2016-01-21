@@ -15,7 +15,7 @@
 //=========================================================
 // barnacle - stationary ceiling mounted 'fishing' monster
 //=========================================================
-
+/* 
 #include	"extdll.h"
 #include	"util.h"
 #include	"cbase.h"
@@ -427,3 +427,4 @@ CBaseEntity *CBarnacle :: TongueTouchEnt ( float *pflLength )
 
 	return NULL;
 }
+ */

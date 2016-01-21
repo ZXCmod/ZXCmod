@@ -140,19 +140,19 @@ void CHalfLifeMultiplay::RefreshSkillData( void )
 	gSkillData.plrDmgCrowbar = RANDOM_LONG(20,30);
 
 	// Glock Round
-	gSkillData.plrDmg9MM = RANDOM_LONG(7,11);
+	gSkillData.plrDmg9MM = RANDOM_LONG(12,20);
 
 	// 357 Round
 	gSkillData.plrDmg357 = RANDOM_LONG(47,87);
 
 	// MP5 Round
-	gSkillData.plrDmgMP5 = RANDOM_LONG(10,15);
+	gSkillData.plrDmgMP5 = RANDOM_LONG(11,19);
 
 	// M203 grenade
 	gSkillData.plrDmgM203Grenade = 105;
 
 	// Shotgun buckshot
-	gSkillData.plrDmgBuckshot = 15;
+	gSkillData.plrDmgBuckshot = 5;
 
 	// Crossbow
 	gSkillData.plrDmgCrossbowClient = 60;
@@ -403,14 +403,14 @@ BOOL CHalfLifeMultiplay :: ClientConnected( edict_t *pEntity, const char *pszNam
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
 	
-	if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
-	{
-	CLIENT_COMMAND(pPlayer->edict(), "rate 16000\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_resend 4\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_lw 1\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_updaterate 20\n");
-	CLIENT_COMMAND(pPlayer->edict(), "cl_cmdrate 20\n");
-	}
+	// if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
+	// {
+	// CLIENT_COMMAND(pPlayer->edict(), "rate 16000\n");
+	// CLIENT_COMMAND(pPlayer->edict(), "cl_resend 4\n");
+	// CLIENT_COMMAND(pPlayer->edict(), "cl_lw 1\n");
+	// CLIENT_COMMAND(pPlayer->edict(), "cl_updaterate 20\n");
+	// CLIENT_COMMAND(pPlayer->edict(), "cl_cmdrate 20\n");
+	// }
 
 
 	g_VoiceGameMgr.ClientConnected(pEntity);
@@ -472,8 +472,37 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 		// FIXME:  Probably don't need to cast this just to read m_iDeaths
 		CBasePlayer *plr = (CBasePlayer *)UTIL_PlayerByIndex( i );
 
+		//zaebat kod 
+		char  szText[64];
+		hudtextparms_t hText;
+		
+
+		sprintf(szText, "%s .\n", "Get latest zxc-mod here: www.Zxc-Server.Co.Cc"); //game text
+		memset(&hText, 0, sizeof(hText));
+		hText.channel = 1;
+
+		//range by 0.0 to 1.0
+		hText.x = 0.01;
+		hText.y = 0.01;
+		
+		hText.effect = 2; // Fade in/out
+		
+		hText.r1 = hText.g1 = hText.b1 = 255;
+		hText.a1 = 255;
+		
+		hText.r2 = hText.g2 = hText.b2 = 255;
+		hText.a2 = 255;
+		
+		hText.fadeinTime = 0.2;
+		hText.fadeoutTime = 7.4;
+		hText.holdTime = 30.0;
+		hText.fxTime = 16.0;
+		
+		
 		if ( plr )
 		{
+			UTIL_HudMessage(plr, hText, szText);
+		
 			MESSAGE_BEGIN( MSG_ONE, gmsgScoreInfo, NULL, pl->edict() );
 				WRITE_BYTE( i );	// client number
 				WRITE_SHORT( plr->pev->frags );
@@ -502,72 +531,20 @@ void CHalfLifeMultiplay :: ClientDisconnected( edict_t *pClient )
 
 		if ( pPlayer )
 		{
-		
-///////
-	edict_t *pFind; 
-	pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_sentry" );
-	while ( !FNullEnt( pFind ) )
-	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind );
-		if ( pEnt )
-		{
-			if ( pEnt->pev->owner == pPlayer->edict() )
-			{
-				//pEnt->SUB_Remove();
-				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 1000, 1 );
-			}
-		}
-		pFind = FIND_ENTITY_BY_CLASSNAME( pFind, "monster_sentry" );
-	}
-///////
-	edict_t *pFind2; 
-	pFind2 = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_turret" );
-	while ( !FNullEnt( pFind2 ) )
-	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind2 );
-		if ( pEnt )
-		{
-			if ( pEnt->pev->owner == pPlayer->edict() )
-			{
-				//pEnt->SUB_Remove();
-				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 1000, 1 );
-			}
-		}
-		pFind2 = FIND_ENTITY_BY_CLASSNAME( pFind2, "monster_turret" );
-	}
-/////// remover freeze bags
-	edict_t *pFind3; 
-	pFind3 = FIND_ENTITY_BY_CLASSNAME( NULL, "player_freeze" );
-	while ( !FNullEnt( pFind3 ) )
-	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind3 );
-		if ( pEnt )
-		{
-			if ( pEnt->pev->owner == pPlayer->edict() )
-			{
-				//pEnt->SUB_Remove();
-				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 900000, 1 );
-			}
-		}
-		pFind3 = FIND_ENTITY_BY_CLASSNAME( pFind3, "player_freeze" );
-	}	
-///////
-	edict_t *pFind4; 
-	pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_pipebomb" );
-	while ( !FNullEnt( pFind4 ) )
-	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind4 );
-		if ( pEnt )
-		{
-			if ( pEnt->pev->owner == pPlayer->edict() )
-			{
-				//pEnt->SUB_Remove();
-				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 1000, 1 );
-			}
-		}
-		pFind4 = FIND_ENTITY_BY_CLASSNAME( pFind4, "monster_pipebomb" );
-	}
-		
+
+			//worked better and simpled
+			CBaseEntity *pentEntity = NULL;
+			while ((pentEntity = UTIL_FindEntityInSphere( pentEntity, pPlayer->pev->origin, 20000 )) != NULL) //1600
+				{
+					if ( pentEntity->pev->owner == pPlayer->edict() )
+					{
+						if ( pentEntity->pev->health )
+							pentEntity->TakeDamage(pentEntity->pev, pentEntity->pev, 1000, 1 );
+						else
+							UTIL_Remove( pentEntity );
+					}
+				
+				}
 		
 			FireTargets( "game_playerleave", pPlayer, pPlayer, USE_TOGGLE, 0 );
 
@@ -682,6 +659,8 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		pPlayer->GiveNamedItem( "weapon_egon" );
 		pPlayer->GiveNamedItem( "weapon_gauss" );
 		pPlayer->GiveNamedItem( "weapon_egon" );
+		pPlayer->GiveNamedItem( "weapon_gauss" );
+		pPlayer->GiveNamedItem( "weapon_egon" );
 		pPlayer->GiveNamedItem( "weapon_shotgun" );
 		pPlayer->GiveNamedItem( "weapon_357" );
 		pPlayer->GiveNamedItem( "weapon_9mmAR" );
@@ -699,7 +678,7 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		pPlayer->GiveAmmo( 30, "buckshot", BUCKSHOT_MAX_CARRY );
 		pPlayer->GiveAmmo( 20, "bolts", BOLT_MAX_CARRY );
 		pPlayer->GiveAmmo( 9, "rockets", ROCKET_MAX_CARRY );
-		pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
+		//pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
 		pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );
 		pPlayer->GiveAmmo( 30, "Snarks", SNARK_MAX_CARRY );
 		pPlayer->GiveAmmo( 20, "ARgrenades", M203_GRENADE_MAX_CARRY );

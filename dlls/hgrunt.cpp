@@ -19,14 +19,8 @@
 //=========================================================
 // Hit groups!	
 //=========================================================
-/*
 
-  1 - Head
-  2 - Stomach
-  3 - Gun
-
-*/
-
+/* 
 
 #include	"extdll.h"
 #include	"plane.h"
@@ -1998,12 +1992,7 @@ Schedule_t *CHGrunt :: GetSchedule( void )
 				}
 				return GetScheduleOfType( SCHED_TAKE_COVER_FROM_BEST_SOUND );
 			}
-			/*
-			if (!HasConditions( bits_COND_SEE_ENEMY ) && ( pSound->m_iType & (bits_SOUND_PLAYER | bits_SOUND_COMBAT) ))
-			{
-				MakeIdealYaw( pSound->m_vecOrigin );
-			}
-			*/
+
 		}
 	}
 	switch	( m_MonsterState )
@@ -2381,10 +2370,7 @@ void CHGruntRepel::RepelUse ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 {
 	TraceResult tr;
 	UTIL_TraceLine( pev->origin, pev->origin + Vector( 0, 0, -4096.0), dont_ignore_monsters, ENT(pev), &tr);
-	/*
-	if ( tr.pHit && Instance( tr.pHit )->pev->solid != SOLID_BSP) 
-		return NULL;
-	*/
+
 
 	CBaseEntity *pEntity = Create( "monster_human_grunt", pev->origin, pev->angles );
 	CBaseMonster *pGrunt = pEntity->MyMonsterPointer( );
@@ -2490,3 +2476,4 @@ void CDeadHGrunt :: Spawn( void )
 
 	MonsterInitDead();
 }
+ */

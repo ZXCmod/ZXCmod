@@ -33,6 +33,7 @@
 
 extern DLL_GLOBAL Vector		g_vecAttackDir;
 extern DLL_GLOBAL int			g_iSkillLevel;
+extern float g_flWeaponCheat;
 
 extern Vector VecBModelOrigin( entvars_t* pevBModel );
 extern entvars_t *g_pevLastInflictor;
@@ -110,7 +111,7 @@ void CGib :: SpawnStickyGibs( entvars_t *pevVictim, Vector vecOrigin, int cGibs 
 
 			
 			pGib->pev->movetype = MOVETYPE_TOSS;
-			pGib->pev->solid = SOLID_BBOX;
+			pGib->pev->solid = SOLID_NOT;
 			UTIL_SetSize ( pGib->pev, Vector ( 0, 0 ,0 ), Vector ( 0, 0, 0 ) );
 			pGib->SetTouch ( StickyGibTouch );
 			pGib->SetThink (NULL);
@@ -598,18 +599,18 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 	}
 
 	Remember( bits_MEMORY_KILLED );
-//feature was removed from 1.26
-//cvar mp_fragmonsters added in 1.27 
-if (allowmonsters2.value != 0)
-{
- 	CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
-	if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
-		{
-		CBasePlayer *PK = (CBasePlayer*)pPlayer;
-		pPlayer->AddPoints(allowmonsters2.value, true); //dynamic values
+	//feature was removed from 1.26
+	//cvar mp_fragmonsters added in 1.27 
+	if (allowmonsters2.value != 0)
+	{
+		CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
+		if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
+			{
+			CBasePlayer *PK = (CBasePlayer*)pPlayer;
+			pPlayer->AddPoints(allowmonsters2.value, true); //dynamic values
 
-		} 
-}
+			} 
+	}
 	
 	// clear the deceased's sound channels.(may have been firing or reloading when killed)
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "common/null.wav", 1, ATTN_NORM);
@@ -654,7 +655,7 @@ if (allowmonsters2.value != 0)
 // SET A FUTURE THINK AND A RENDERMODE!!
 void CBaseEntity :: SUB_StartFadeOut ( void )
 {
-	if (pev->rendermode == kRenderNormal)
+ 	if (pev->rendermode == kRenderNormal)
 	{
 		pev->renderamt = 255;
 		pev->rendermode = kRenderTransTexture;
@@ -664,12 +665,14 @@ void CBaseEntity :: SUB_StartFadeOut ( void )
 	pev->avelocity = g_vecZero;
 
 	pev->nextthink = gpGlobals->time + 0.1;
-	SetThink ( SUB_FadeOut );
+	SetThink ( SUB_FadeOut ); \
+	
+	//UTIL_Remove( this );
 }
 
 void CBaseEntity :: SUB_FadeOut ( void  )
 {
-	if ( pev->renderamt > 7 )
+ 	if ( pev->renderamt > 7 )
 	{
 		pev->renderamt -= 7;
 		pev->nextthink = gpGlobals->time + 0.1;
@@ -782,6 +785,8 @@ void CGib :: StickyGibTouch ( CBaseEntity *pOther )
 //
 void CGib :: Spawn( const char *szGibModel )
 {
+
+
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->friction = 0.75; // deading the bounce a bit
 	
@@ -797,8 +802,9 @@ void CGib :: Spawn( const char *szGibModel )
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 
 	pev->nextthink = gpGlobals->time + 4;
-	m_lifeTime = 25;
-	SetThink ( WaitTillLand );
+	m_lifeTime = 1;
+	pev->nextthink = gpGlobals->time + 1.2;
+	SetThink ( SUB_Remove );
 	SetTouch ( BounceGibTouch );
 
 	m_material = matNone;
@@ -1017,7 +1023,6 @@ int CBaseMonster :: DeadTakeDamage( entvars_t *pevInflictor, entvars_t *pevAttac
 	return 1;
 }
 
-short m_LaserSprite2;
 
 void CBaseEntity :: TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType )
 {
@@ -1081,7 +1086,7 @@ float CBaseMonster :: DamageForce( float damage )
 // RadiusDamage - this entity is exploding, or otherwise needs to inflict damage upon entities within a certain range.
 // 
 // only damage ents that can clearly be seen by the explosion!
-short m_LaserSprite;
+unsigned short m_LaserSprite;
 	
 void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType )
 {
@@ -1155,11 +1160,7 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 					WRITE_BYTE( 16 ); // color r,g,b
 					WRITE_BYTE( 255 ); // brightness
 					WRITE_BYTE( 100 ); // scroll speed
-				MESSAGE_END();
-				
-				
-				
-				
+				MESSAGE_END();			
 				
 				
 				// decrease damage for an ent that's farther from the bomb.
@@ -1514,6 +1515,8 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 		vecEnd = vecSrc + vecDir * flDistance;
 		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev)/*pentIgnore*/, &tr);
 
+		UTIL_ParticleEffect ( tr.vecEndPos, g_vecZero, 64, 25 );
+		
 		tracer = 0;
 		if (iTracerFreq != 0 && (tracerCount++ % iTracerFreq) == 0)
 		{
@@ -1623,6 +1626,8 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 	Vector vecRight = gpGlobals->v_right;
 	Vector vecUp = gpGlobals->v_up;
 	float x, y, z;
+	
+	m_iSpriteTexture_s = PRECACHE_MODEL( "sprites/black_smoke4.spr" );
 
 	if ( pevAttacker == NULL )
 		pevAttacker = pev;  // the default attacker is ourselves
@@ -1645,6 +1650,20 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 
 		vecEnd = vecSrc + vecDir * flDistance;
 		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev)/*pentIgnore*/, &tr);
+
+
+		// lots of smoke fast_wallpuff1.spr
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SMOKE );
+			WRITE_COORD( tr.vecEndPos.x );
+			WRITE_COORD( tr.vecEndPos.y );
+			WRITE_COORD( tr.vecEndPos.z - 8 );
+			WRITE_SHORT( m_iSpriteTexture_s );
+			WRITE_BYTE( RANDOM_LONG(2,4) ); // scale * 10
+			WRITE_BYTE( 48  ); // framerate
+		MESSAGE_END();
+		
+		
 		
 		// do damage, paint decals
 		if (tr.flFraction != 1.0)
@@ -1689,11 +1708,13 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 					UTIL_DecalTrace( &tr, DECAL_GLASSBREAK1 + RANDOM_LONG(0,2) );
 				}
 
+				
 				break;
 			}
 		}
 		// make bullet trails
 		UTIL_BubbleTrail( vecSrc, tr.vecEndPos, (flDistance * tr.flFraction) / 64.0 );
+		UTIL_DecalTrace( &tr, DECAL_GUNSHOT1 + RANDOM_LONG(0,2) );
 	}
 	ApplyMultiDamage(pev, pevAttacker);
 
@@ -1708,7 +1729,7 @@ void CBaseEntity :: TraceBleed( float flDamage, Vector vecDir, TraceResult *ptr,
 	if (flDamage == 0)
 		return;
 
-	if (! (bitsDamageType & (DMG_CRUSH | DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB | DMG_MORTAR)))
+	if (! (bitsDamageType & (DMG_CRUSH | DMG_BULLET)))
 		return;
 	
 	// make blood decal on the wall! 

@@ -27,13 +27,6 @@ extern float g_flWeaponCheat;
 
 
 
-
-
-
-
-
-
-
 enum rpg_e {
 	RPG_IDLE = 0,
 	RPG_FIDGET,
@@ -48,7 +41,6 @@ enum rpg_e {
 };
 
 LINK_ENTITY_TO_CLASS( weapon_rpg, CRpg );
-//LINK_ENTITY_TO_CLASS( weapon_missile, CBlasterBeam3 );
 #ifndef CLIENT_DLL
 
 LINK_ENTITY_TO_CLASS( laser_spot, CLaserSpot );

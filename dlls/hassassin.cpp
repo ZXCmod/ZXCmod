@@ -12,6 +12,7 @@
 *   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
+/* 
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 
 //=========================================================
@@ -655,7 +656,7 @@ BOOL CHAssassin :: CheckMeleeAttack1 ( float flDot, float flDist )
 //=========================================================
 BOOL CHAssassin :: CheckRangeAttack1 ( float flDot, float flDist )
 {
-	if ( !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist > 64 && flDist <= 2048 /* && flDot >= 0.5 */ /* && NoFriendlyFire() */ )
+	if ( !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist > 64 && flDist <= 2048 )
 	{
 		TraceResult	tr;
 
@@ -688,7 +689,7 @@ BOOL CHAssassin :: CheckRangeAttack2 ( float flDot, float flDist )
 	if ( m_iFrustration <= 2)
 		return FALSE;
 
-	if ( m_flNextGrenadeCheck < gpGlobals->time && !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist <= 512 /* && flDot >= 0.5 */ /* && NoFriendlyFire() */ )
+	if ( m_flNextGrenadeCheck < gpGlobals->time && !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist <= 512 )
 	{
 		Vector vecToss = VecCheckThrow( pev, GetGunPosition( ), m_hEnemy->Center(), flDist, 0.5 ); // use dist as speed to get there in 1 second
 
@@ -1013,3 +1014,4 @@ Schedule_t* CHAssassin :: GetScheduleOfType ( int Type )
 }
 
 #endif
+ */

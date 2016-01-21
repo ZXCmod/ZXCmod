@@ -488,8 +488,7 @@ public:
 	void SecondaryAttack( void );
 	void ThirdAttack( void ); // 1.27 wp
 	void FourthAttack( void );
-	void GlockFire( float flSpread, float flCycleTime, BOOL fUseAutoAim );
-	void GlockFire2( float flSpread, float flCycleTime, BOOL fUseAutoAim );
+	void GlockFire( float flSpread, float flCycleTime);
 	BOOL Deploy( void );
 	void Reload( void );
 	void WeaponIdle( void );
@@ -508,6 +507,7 @@ public:
 
 private:
 	int m_iShell;
+	int m_typeG;
 	
 
 	unsigned short m_usFireGlock1;
@@ -536,8 +536,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	int m_iSwing;
 	TraceResult m_trHit;
-	int index;
-	int m_touch;
+
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -549,6 +548,8 @@ public:
 	}
 private:
 	unsigned short m_usCrowbar;
+	int index;
+	int m_touch;
 };
 
 class CPython : public CBasePlayerWeapon
@@ -561,6 +562,8 @@ public:
 	int AddToPlayer( CBasePlayer *pPlayer );
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
+	void FourthAttack( void );
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void Reload( void );
@@ -580,6 +583,7 @@ public:
 
 private:
 	unsigned short m_usFirePython;
+	unsigned short BSpr;
 };
 
 class CMP5 : public CBasePlayerWeapon
@@ -600,9 +604,7 @@ public:
 	void Reload( void );
 	void WeaponIdle( void );
 	float m_flNextAnimTime;
-	float   m_spread;
-	int m_iShell;
-	short BSpr;
+
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -616,6 +618,9 @@ public:
 private:
 	unsigned short m_usMP5;
 	unsigned short m_usMP52;
+	float   m_spread;
+	int m_iShell;
+	unsigned short BSpr;
 };
 
 class CCrossbow : public CBasePlayerWeapon
@@ -637,21 +642,26 @@ public:
 	void Holster( int skiplocal = 0 );
 	void Reload( void );
 	void WeaponIdle( void );
+	
 
 	int m_fInZoom; // don't save this
+	
+	CBeam		*m_pBeam;
+	float		m_flBeamLength;
 
 	virtual BOOL UseDecrement( void )
 	{ 
-#if defined( CLIENT_WEAPONS )
-		return TRUE;
-#else
-		return FALSE;
-#endif
+		#if defined( CLIENT_WEAPONS )
+				return TRUE;
+		#else
+				return FALSE;
+		#endif
 	}
 
 private:
 	unsigned short m_usCrossbow;
 	unsigned short m_usCrossbow2;
+	
 };
 
 class CShotgun : public CBasePlayerWeapon
@@ -680,8 +690,7 @@ public:
 	void WeaponIdle( void );
 	int m_fInReload;
 	float m_flNextReload;
-	int m_iShell;
-	short BSpr;
+
 	
 
 	virtual BOOL UseDecrement( void )
@@ -696,6 +705,8 @@ public:
 private:
 	unsigned short m_usDoubleFire;
 	unsigned short m_usSingleFire;
+	int m_iShell;
+	unsigned short BSpr;
 };
 
 class CLaserSpot : public CBaseEntity
@@ -743,8 +754,7 @@ public:
 	float m_flNextChatTime9; //delay
 	void UpdateSpot( void );
 	BOOL ShouldWeaponIdle( void ) { return TRUE; };
-	int m_flNextChatTime13;
-	int m_limit;
+
 
 
 	CLaserSpot *m_pSpot;
@@ -762,6 +772,8 @@ public:
 
 private:
 	unsigned short m_usRpg;
+	int m_flNextChatTime13;
+	int m_limit;
 
 };
 
@@ -841,13 +853,8 @@ public:
 	void StartFire( void );
 	void Fire( Vector vecOrigSrc, Vector vecDirShooting, float flDamage );
 	float GetFullChargeTime( void );
-	int m_iBalls;
-	int m_iGlow;
-	int m_iBeam;
 	int m_iSoundState; // don't save this
-	int m_flNextChatTime3;
-	int m_flNextChatTime;
-	short BSpr;
+
 
 
 	// was this weapon just fired primary or secondary?
@@ -870,6 +877,12 @@ public:
 private:
 	unsigned short m_usGaussFire;
 	unsigned short m_usGaussSpin;
+	int m_flNextChatTime3;
+	int m_flNextChatTime;
+	unsigned short BSpr;
+	int m_iBalls;
+	int m_iGlow;
+	int m_iBeam;
 };
 
 class CEgon : public CBasePlayerWeapon
@@ -907,11 +920,11 @@ public:
 	void WeaponIdle( void );
 
 	float m_flAmmoUseTime;// since we use < 1 point of ammo per update, we subtract ammo on a timer.
-	float XXX;
 	float GetPulseInterval( void );
 	float GetDischargeInterval( void );
 	float m_flNextChatTime10;
 	float m_flNextChatTime15;
+	
 
 	void Fire( const Vector &vecOrigSrc, const Vector &vecDir );
 
@@ -924,7 +937,6 @@ public:
 	CBeam				*m_pBeam;
 	CBeam				*m_pNoise;
 	CSprite				*m_pSprite;
-	short m_LaserSprite;
 	
 
 	virtual BOOL UseDecrement( void )
@@ -943,8 +955,11 @@ private:
 	EGON_FIREMODE		m_fireMode;
 	float				m_shakeTime;
 	BOOL				m_deployed;
+	float 				XXX;
 
 	unsigned short m_usEgonFire;
+	unsigned short m_LaserSprite;
+	
 };
 
 class CHgun : public CBasePlayerWeapon
@@ -968,13 +983,6 @@ public:
 	void WeaponIdle( void );
 	float m_flNextAnimTime;
 
-	float m_flRechargeTime;
-	float m_flNextChatTime8; //delay
-	int m_iFirePhase;// don't save me.
-	short BSpr;
-	float FTime1;
-	float m_flNextChatTime14;
-
 
 
 	virtual BOOL UseDecrement( void )
@@ -987,6 +995,12 @@ public:
 	}
 private:
 	unsigned short m_usHornetFire;
+	float m_flRechargeTime;
+	float m_flNextChatTime8; //delay
+	int m_iFirePhase;// don't save me.
+	unsigned short BSpr;
+	float FTime1;
+	float m_flNextChatTime14;
 };
 
 
@@ -1009,8 +1023,6 @@ public:
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 	void WriteBeamColor ( void );
-	int m_iTrail;
-	int m_type;
 	virtual BOOL UseDecrement( void )
 
 	{ 
@@ -1020,6 +1032,10 @@ public:
 		return FALSE;
 #endif
 	}
+private:
+	int m_iTrail;
+	int m_type;
+	
 };
 
 class CSatchel : public CBasePlayerWeapon
@@ -1049,8 +1065,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 	void Throw( void );
-	int m_flNextChatTime2; //delay c heal
-	int m_flNextChatTime4; //limit satchels
+
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -1060,6 +1075,9 @@ public:
 		return FALSE;
 #endif
 	}
+private:
+	int m_flNextChatTime2; //delay c heal
+	int m_flNextChatTime4; //limit satchels
 };
 
 
@@ -1080,9 +1098,11 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void );
+	void FourthAttack( void );
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
+	short g_sModelIndexLaser;
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -1113,7 +1133,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 	int m_fJustThrown;
-	int m_iSpriteTexture;
+	
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -1126,6 +1146,7 @@ public:
 
 private:
 	unsigned short m_usSnarkFire;
+	int m_iSpriteTexture;
 };
 
 

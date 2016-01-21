@@ -24,6 +24,8 @@
 #include "hornet.h"
 #include "gamerules.h"
 #include "shake.h"
+#include "hornetgun.h"
+
 extern float g_flWeaponCheat;
 
 enum hgun_e {
@@ -357,11 +359,11 @@ void CHgun::SecondaryAttack( void )
         pPlayer->EnableControl(FALSE);
 		
 		if (pPlayer->pev->renderfx != kRenderFxGlowShell)
-			pPlayer->FTime2 = gpGlobals->time + 1.35; //1.25 old. 
+			pPlayer->FTime2 = gpGlobals->time + 1.75; //1.25 old. 
 		else
 			pPlayer->FTime2 = gpGlobals->time += 0.95; //added some freeze time to current, dont set
 			
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.85; //delay 1.29. No evil activity.
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.95; //delay 1.29. No evil activity.
 
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 	}
@@ -620,50 +622,6 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 #endif
 
 
-
-
-
-
-
-
-
-//////////////NEWWW Flash can (i was dont know, how create freeze effect)
-
-class   CFreeze : public CBaseEntity
-{
-        public:
-
-        void    Spawn			( );
-		void Precache			( );
-        void EXPORT MoveThink	( );
-		void EXPORT MoveTouch	( CBaseEntity *pOther );
-		int 	m_flDie;
-		int 	m_flDie2;
-		int     BeamSprite;
-		int 	m_iSpriteTexture;
-		short	m_LaserSprite;
-};
-
-//////////////1.28 new Freeze bomb. Need 10 ammo for launch, big freeze effect. 
-
-class   CFreezeBomb : public CGrenade
-{
-        public:
-
-        void    Spawn           ( );
-        void    MoveThink       ( );
-        void    Explode         ( );
-		void 	EXPORT Touch( CBaseEntity *pOther );
-		void  	Exp( void );
-		int 	m_flDie;
-		
-		
-};
-
-LINK_ENTITY_TO_CLASS( weapon_clip_generic, CFreeze );
-LINK_ENTITY_TO_CLASS( player_freeze, CFreezeBomb);
-
-
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -853,7 +811,7 @@ void    CFreezeBomb :: Spawn( void )
 	SET_MODEL( ENT(pev), "models/bag.mdl" );
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
+	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	UTIL_SetOrigin( pev, pev->origin );
 	m_flDie = gpGlobals->time + 180;
 	pev->takedamage = DAMAGE_YES;
@@ -1041,7 +999,7 @@ void  CFreezeBomb::Exp( )
 		
 		
 		//freeze action
-		while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 450 )) != NULL)
+		while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 300 )) != NULL)
 			{
 				if (pEntity != NULL && pEntity->pev->takedamage != pEntity->IsPlayer()) //in 1.26 allow to freeze monsters
 				{
@@ -1053,7 +1011,7 @@ void  CFreezeBomb::Exp( )
 					pEntity->pev->rendercolor.y = 200;  // green
 					pEntity->pev->rendercolor.z = 255; // blue
 					pEntity->pev->renderamt = 70;
-					pEntity->FTime2 = gpGlobals->time + 60; //big freeze
+					pEntity->FTime2 = gpGlobals->time + 10; //big freeze
 					
 					if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer()) //check only player
 						{
@@ -1134,7 +1092,7 @@ void  CFreezeBomb::Exp( )
 		pev->nextthink = gpGlobals->time + 0.1;
 		pev->takedamage = DAMAGE_NO;
 		
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 200, 450, CLASS_NONE, DMG_MORTAR  );
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 325, 475, CLASS_NONE, DMG_MORTAR  );
 		
 		//explode
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );

@@ -15,7 +15,7 @@
 //=========================================================
 // Agrunt - Dominant, warlike alien grunt monster
 //=========================================================
-
+/* 
 #include	"extdll.h"
 #include	"util.h"
 #include	"cbase.h"
@@ -1183,4 +1183,4 @@ Schedule_t* CAGrunt :: GetScheduleOfType ( int Type )
 
 	return CSquadMonster :: GetScheduleOfType( Type );
 }
-
+ */

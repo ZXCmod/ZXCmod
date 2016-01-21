@@ -26,65 +26,7 @@
 #include "func_break.h"
 #include "decals.h"
 #include "game.h"
-
-#define	CROWBAR_BODYHIT_VOLUME 128
-#define	CROWBAR_WALLHIT_VOLUME 512
-
-
-
-#define BLASTER_BEAM_RED                30
-#define BLASTER_BEAM_GREEN              30
-#define BLASTER_BEAM_BLUE               255
-#define BLASTER_BEAM_BRIGHTNESS 255
-#define BLASTER_BEAM_WIDTH      4
-#define BLASTER_BEAM_SPRITE     "sprites/smoke.spr"
-#define BLASTER_BEAM_SPEED      854
-#define BLASTER_BEAM_LENGTH     10
-#define BLASTER_BEAM_RANDOMNESS 1
-#define BLASTER_OFFSET_FORWARD  0
-#define BLASTER_OFFSET_RIGHT    7
-#define BLASTER_OFFSET_UP               0
-
-extern float g_flWeaponCheat3; //teamplay mode
-
-
-class   CBlasterBeam : public CGrenade
-{
-        public:
-
-        void    Spawn           ( );
-        void    Precache        ( );
-        void    MoveThink       ( );
-        void 	EXPORT Hit      ( CBaseEntity* );
-        void    Explode         ( TraceResult*, int);
-        static  CBlasterBeam* Create( Vector, Vector, CBaseEntity* );
-		int 	m_iSpriteTexture;
-		int 	m_iSpriteTexture2;
-        int     BeamSprite;
-		int 	m_flDie;
-		
-
-};
-
-
-class   CRc2 : public CGrenade
-{
-        public:
-        void    Spawn           		 ( );
-        void    Precache       			 ( );
-        void    EXPORT MoveThink		 ( );
-		void    MoveThink2      		 ( );
-        void 	EXPORT Hit        		 ( CBaseEntity* );
-        void    Explode         		 ( TraceResult*, int);
-        static 	CRc2* Create( Vector, Vector, CBaseEntity* );
-        int     BeamSprite;
-		int 	m_iSpriteTexture;
-		int 	m_iSpriteTexture2;
-		int 	m_flDie;
-};
-
-LINK_ENTITY_TO_CLASS( weapon_rocketlauncher, CRc2 );
-LINK_ENTITY_TO_CLASS( weapon_crowbar, CCrowbar );
+#include "crowbar.h"
 
 
 
@@ -239,18 +181,16 @@ void CCrowbar::SecondaryAttack()
 		{
 			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
 			Vector GunPosition = m_pPlayer->GetGunPosition( );
-			GunPosition = GunPosition + gpGlobals->v_forward * BLASTER_OFFSET_FORWARD;
-			GunPosition = GunPosition + gpGlobals->v_right   * BLASTER_OFFSET_RIGHT;
-			GunPosition = GunPosition + gpGlobals->v_up      * BLASTER_OFFSET_UP;
-			CBlasterBeam* Beam = CBlasterBeam :: Create( GunPosition,
+			GunPosition = GunPosition + gpGlobals->v_forward * 0;
+			GunPosition = GunPosition + gpGlobals->v_right   * 7;
+			GunPosition = GunPosition + gpGlobals->v_up      * 0;
+			CRC* Beam = CRC :: Create( GunPosition,
 													 m_pPlayer->pev->v_angle,
 													 m_pPlayer );
 
 
-			float RandomX = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );
-			float RandomY = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );
-			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right * RandomX;
-			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up    * RandomY;
+			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right;
+			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up;
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
 			
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0; 
@@ -318,6 +258,16 @@ void CCrowbar::ThirdAttack()
 	if (FNullEnt(pentTarget)) //not execute, if singleplayer (?)
 	   return;	
 	
+	// vis effects #1
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_TELEPORT );
+		WRITE_COORD( m_pPlayer->pev->origin.x );
+		WRITE_COORD( m_pPlayer->pev->origin.y );
+		WRITE_COORD( m_pPlayer->pev->origin.z );
+	MESSAGE_END();
+	
+	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 0.9, ATTN_NORM); //play sound 1st
+	
 	Vector tmp = VARS( pentTarget )->origin; //teleport to the point
 
 	tmp.z++;
@@ -338,11 +288,18 @@ void CCrowbar::ThirdAttack()
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=10;
-	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 0.9, ATTN_NORM); //play sound
+	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 0.8, ATTN_NORM); //play sound 2nd
 	if (m_pPlayer->pev->friction != 1.0) //1.31 3rd antifriction feature
 		m_pPlayer->pev->friction = 1.0;
 	
-
+	// vis effects #2 in destin...
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_TELEPORT );
+		WRITE_COORD( m_pPlayer->pev->origin.x );
+		WRITE_COORD( m_pPlayer->pev->origin.y );
+		WRITE_COORD( m_pPlayer->pev->origin.z );
+	MESSAGE_END();
+	
 }
 
 
@@ -408,7 +365,7 @@ int CCrowbar::Swing( int fFirst )
 	}
 #endif
 
-	PLAYBACK_EVENT_FULL( FEV_GLOBAL| FEV_RELIABLE, m_pPlayer->edict(), m_usCrowbar, 
+	PLAYBACK_EVENT_FULL( FEV_GLOBAL| FEV_GLOBAL, m_pPlayer->edict(), m_usCrowbar, 
 	0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, 0,
 	0.0, 0, 0.0 );
 
@@ -556,7 +513,7 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 		
 			int flags;
 			#ifdef CLIENT_WEAPONS
-				flags = FEV_NOTHOST;
+				flags = FEV_GLOBAL;
 			#else
 				flags = 0;
 			#endif
@@ -595,7 +552,7 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 
 
 
-void    CBlasterBeam :: Spawn( )
+void    CRC :: Spawn( )
 {
 	Precache( );
 	SET_MODEL( ENT(pev), "models/rpgrocket.mdl" );
@@ -614,7 +571,7 @@ void    CBlasterBeam :: Spawn( )
 
 }
 
-void    CBlasterBeam :: Precache( )
+void    CRC :: Precache( )
 {
 	BeamSprite = PRECACHE_MODEL( BLASTER_BEAM_SPRITE );
 	PRECACHE_MODEL( "models/rpgrocket.mdl" );
@@ -623,7 +580,7 @@ void    CBlasterBeam :: Precache( )
 	m_iSpriteTexture2 = PRECACHE_MODEL( "sprites/blast.spr" );
 }
 
-void    CBlasterBeam :: Hit( CBaseEntity* Target )
+void    CRC :: Hit( CBaseEntity* Target )
 {
 	TraceResult TResult;
 	Vector      StartPosition;
@@ -636,10 +593,10 @@ void    CBlasterBeam :: Hit( CBaseEntity* Target )
 					ENT( pev ),
 					&TResult );
 					
-	Explode( &TResult, DMG_SLASH|DMG_CRUSH|DMG_MORTAR|DMG_BURN );
+	Explode( &TResult, DMG_BURN );
 }
 
-void    CBlasterBeam :: Explode( TraceResult* TResult, int DamageType )
+void    CRC :: Explode( TraceResult* TResult, int DamageType )
 {
 	// Pull out of the wall a bit
 	if ( TResult->flFraction != 1.0 )
@@ -689,24 +646,24 @@ void    CBlasterBeam :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_BYTE( 0 );		// speed
 	MESSAGE_END();
 
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 128, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 128, CLASS_NONE, DMG_MORTAR|DMG_BLAST  ); //DMG
 
 	UTIL_Remove( this );
 }
 
-CBlasterBeam* CBlasterBeam :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
+CRC* CRC :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 {
-        CBlasterBeam* Beam = GetClassPtr( (CBlasterBeam*)NULL );
+        CRC* Beam = GetClassPtr( (CRC*)NULL );
 
         UTIL_SetOrigin( Beam->pev, Pos );
         Beam->pev->angles = Aim;
         Beam->Spawn( );
-        Beam->SetTouch( CBlasterBeam :: Hit );
+        Beam->SetTouch( CRC :: Hit );
         Beam->pev->owner = Owner->edict( );
         return Beam;
 }
 
-void    CBlasterBeam :: MoveThink( )
+void    CRC :: MoveThink( )
 {
 	MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE      ( TE_BEAMFOLLOW );
@@ -714,10 +671,10 @@ void    CBlasterBeam :: MoveThink( )
 			WRITE_SHORT     ( BeamSprite );
 			WRITE_BYTE      ( BLASTER_BEAM_LENGTH );
 			WRITE_BYTE      ( BLASTER_BEAM_WIDTH );
-			WRITE_BYTE      ( BLASTER_BEAM_RED );
-			WRITE_BYTE      ( BLASTER_BEAM_GREEN );
-			WRITE_BYTE      ( BLASTER_BEAM_BLUE );
-			WRITE_BYTE      ( BLASTER_BEAM_BRIGHTNESS );
+			WRITE_BYTE      ( 30 );
+			WRITE_BYTE      ( 30 );
+			WRITE_BYTE      ( 255 );
+			WRITE_BYTE      ( 200 );
 	MESSAGE_END    			( );
 	
 	//delete object after 2.5 sec
@@ -812,7 +769,7 @@ void    CRc2 :: Explode( TraceResult* TResult, int DamageType )
 	
 	//explode
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
-		WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+		WRITE_BYTE( TE_EXPLOSION );		// This just makes a dynamic light now
 		WRITE_COORD( pev->origin.x);
 		WRITE_COORD( pev->origin.y + 16);
 		WRITE_COORD( pev->origin.z);
@@ -845,7 +802,7 @@ void    CRc2 :: Explode( TraceResult* TResult, int DamageType )
 	MESSAGE_END();
 	
 	//dmg 100 old
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 120, 160, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 120, 160, CLASS_NONE, DMG_MORTAR  ); //DMG
 
 	UTIL_Remove( this );
 }
@@ -879,7 +836,7 @@ void    CRc2 :: MoveThink( )
 				WRITE_BYTE( TE_EXPLFLAG_NONE );
 			MESSAGE_END();
 			
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 400, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 400, CLASS_NONE, DMG_BLAST  ); //DMG
 			UTIL_Remove( this );
 		}
 
@@ -895,6 +852,8 @@ void    CRc2 :: MoveThink( )
 	pev->velocity.x = (pev->velocity.x + RANDOM_LONG(-100,100));
 	pev->velocity.z = (pev->velocity.z + RANDOM_LONG(-30,30));
 	pev->angles = UTIL_VecToAngles (pev->velocity);
+	
+	UTIL_Sparks( pev->origin );
 	
 	pev->nextthink = gpGlobals->time + 0.1;
 			
