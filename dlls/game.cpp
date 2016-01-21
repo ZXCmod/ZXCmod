@@ -41,6 +41,8 @@ cvar_t	allowmonsters={"mp_allowmonsters","0", FCVAR_SERVER };
 cvar_t	allowmonsters2={"mp_fragmonsters","1", FCVAR_SERVER };
 cvar_t	allowmonsters3={"mp_crowbar","1", FCVAR_SERVER };
 cvar_t	allowmonsters4={"mp_dmode","1", FCVAR_SERVER }; //1.29, regeneration mod
+cvar_t	allowmonsters5={"mp_python","1", FCVAR_SERVER }; //1.30a, python
+cvar_t	allowmonsters6={"mp_gauss","1", FCVAR_SERVER }; //1.30a, gauss
 
 	// CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	// CVAR_SET_STRING("sv_stepsize", "18");
@@ -487,6 +489,8 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&allowmonsters2); //1.27
 	CVAR_REGISTER (&allowmonsters3); //1.28
 	CVAR_REGISTER (&allowmonsters4); //1.29
+	CVAR_REGISTER (&allowmonsters5); //python
+	CVAR_REGISTER (&allowmonsters6); //gauss
 
 	CVAR_REGISTER (&mp_chattime);
 

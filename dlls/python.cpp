@@ -22,7 +22,7 @@
 #include "player.h"
 #include "decals.h"
 #include "gamerules.h"
-
+#include "game.h"
 
 
 
@@ -231,7 +231,7 @@ void CPython::PrimaryAttack()
 void CPython::SecondaryAttack( void )
 {
 //removed old code, now create new weapon
-	if (m_iClip == 6)
+	if (m_iClip == 6 && allowmonsters5.value != 0)
 		{
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound

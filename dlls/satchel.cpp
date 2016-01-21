@@ -692,6 +692,9 @@ void    CBlasterBeam4:: Explode(int DamageType)
 	CBaseEntity *pEntity = NULL;
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 250 )) != NULL)
        	{
+		if (pEntity->pev->friction != 1.0) //1.30a antifriction
+			pEntity->pev->friction = 1.0;
+		
 		if (pEntity->pev->takedamage==DAMAGE_AIM || pEntity->pev->movetype==MOVETYPE_WALK) ///check only players
 			{
 			pEntity->TakeHealth(7, DMG_GENERIC); //give health all around

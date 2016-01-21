@@ -158,7 +158,7 @@ void CHalfLifeMultiplay::RefreshSkillData( void )
 	gSkillData.plrDmgCrossbowClient = 60;
 
 	// RPG RANDOM_LONG(99,197)
-	gSkillData.plrDmgRPG = 125;
+	gSkillData.plrDmgRPG = 120;
 
 	// Egon
 	gSkillData.plrDmgEgonWide = 12;

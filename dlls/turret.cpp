@@ -1026,7 +1026,8 @@ void CBaseTurret::AutoSearchThink(void)
 
 void CBaseTurret ::	TurretDeath( void )
 {
-
+	CBaseEntity *pEntity = NULL;
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
 
 
 
@@ -1094,12 +1095,14 @@ void CBaseTurret ::	TurretDeath( void )
 		SetThink( NULL );
 	}
 		//1.28 limit reset for big guns
-		CBaseEntity *pEntity = NULL;
-		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
+		//bug - crash without initaly player
+
+
+	if (pl != NULL && (pl->edict() == pev->owner))
 		pl->m_flNextChatTime13 -= 1;
 		
-	
-	SetThink( SUB_Remove );
+	UTIL_Remove( this );
+	//SetThink( SUB_Remove );
 }
 
 
@@ -1455,7 +1458,8 @@ void CSentry ::	SentryDeath( void )
 		pev->solid = SOLID_NOT;
 		pev->angles.y = UTIL_AngleMod( pev->angles.y + RANDOM_LONG( 0, 2 ) * 120 );
 		EyeOn( );
-		SetThink( SUB_Remove );
+		UTIL_Remove( this );
+		//SetThink( SUB_Remove );
 	}
 
 	EyeOff( );
@@ -1498,7 +1502,7 @@ void CSentry ::	SentryDeath( void )
 		SetThink( NULL );
 	}
 	
-	if (pl != NULL)
+	if (pl != NULL && (pl->edict() == pev->owner))
 		pl->m_flNextChatTime13 -= 1;
 	
 }

@@ -833,7 +833,7 @@ if (gpGlobals->time <= m_flDie - 6) //14 sec
 				if (pEntity->IsPlayer() && !(pEntity->pev->health <= 3))
 					{
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 40 ) - Center() ).Normalize();
-					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->dmg + 64 + value/flDistToEnemy*36); //600 700/16
+					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->dmg + 58 + value/flDistToEnemy*30); //600 700/16
 					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 40, 40, CLASS_NONE, DMG_MORTAR  );
 					pev->dmg += 1; //increase grav. power
 					} 

@@ -2765,9 +2765,10 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 		if ( !FNullEnt(pSpot) )
 			goto ReturnSpot;
 	}
-	else
+	else //changes to classname, no more spawn in coord 0 0 0
 	{
-		pSpot = UTIL_FindEntityByTargetname( NULL, STRING(gpGlobals->startspot) );
+		pSpot = UTIL_FindEntityByClassname(pSpot, "info_player_deathmatch");
+		//pSpot = UTIL_FindEntityByTargetname( NULL, STRING(gpGlobals->startspot) );
 		if ( !FNullEnt(pSpot) )
 			goto ReturnSpot;
 	}

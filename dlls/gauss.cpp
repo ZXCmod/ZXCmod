@@ -24,6 +24,7 @@
 #include "soundent.h"
 #include "shake.h"
 #include "gamerules.h"
+#include "game.h"
 #define	GAUSS_PRIMARY_CHARGE_VOLUME	256// how loud gauss is while charging
 #define GAUSS_PRIMARY_FIRE_VOLUME	450// how loud gauss is when discharged
 
@@ -509,7 +510,7 @@ void CGauss::StartFire( void )
 #ifndef CLIENT_DLL
 		float flZVel = m_pPlayer->pev->velocity.z;
 
-		if ( !m_fPrimaryFire )
+		if ( !m_fPrimaryFire && allowmonsters6.value != 0 ) // added in 1.30a
 		{
 			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * (flDamage+50) * 5;
 		}

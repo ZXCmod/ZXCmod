@@ -110,6 +110,7 @@ void CEgon::Precache( void )
 	PRECACHE_SOUND ("weapons/357_cock1.wav");
 	PRECACHE_SOUND ("debris/beamstart5.wav");
 	PRECACHE_SOUND ("debris/beamstart15.wav");
+	PRECACHE_SOUND ("debris/beamstart1.wav");
 	m_LaserSprite = PRECACHE_MODEL( "sprites/bolt1.spr" );
 
 	m_usEgonFire = PRECACHE_EVENT ( 1, "events/egon_fire.sc" );
@@ -871,7 +872,7 @@ void    CBfb :: Hit( CBaseEntity* Target )
 			WRITE_COORD( pev->origin.z + TResult.vecPlaneNormal.z*3  );
 			WRITE_SHORT( m_iBalls );		// model
 			WRITE_BYTE( 20  );				// count
-			WRITE_BYTE( 7 );				// life * 10
+			WRITE_BYTE( 1 );				// life * 10
 			WRITE_BYTE( RANDOM_LONG( 1, 2 ) );				// size * 10
 			WRITE_BYTE( 90 );				// amplitude * 0.1
 			WRITE_BYTE( 2 );				// speed * 100
@@ -895,7 +896,7 @@ void    CBfb :: Hit( CBaseEntity* Target )
 	
 	pev->movetype = MOVETYPE_BOUNCE;
 	
-	pev->dmg -= 15;
+	pev->dmg -= 20;
 	
 	if (pev->dmg < 25)
 	{
@@ -924,7 +925,7 @@ void    CBfb:: Explode( void )
 
 
 
-	pev->nextthink = gpGlobals->time + 0.25;
+	pev->nextthink = gpGlobals->time + 0.5;
 	pev->effects |= EF_LIGHT;
 	SetThink(MoveThink);
 }
@@ -942,7 +943,7 @@ void    CBfb :: MoveThink( )
 			WRITE_COORD( pev->origin.y );
 			WRITE_COORD( pev->origin.z );
 			WRITE_SHORT( m_iBalls );		// model
-			WRITE_BYTE( 3  );				// count
+			WRITE_BYTE( 1  );				// count
 			WRITE_BYTE( 2 );				// life * 10
 			WRITE_BYTE( 1 );				// size * 10
 			WRITE_BYTE( 24 );				// amplitude * 0.1
