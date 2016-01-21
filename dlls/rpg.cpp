@@ -24,46 +24,15 @@
 #include "gamerules.h"
 #include	"schedule.h"
 
-#define BLASTER_BEAM_RED                192
-#define BLASTER_BEAM_GREEN              0
-#define BLASTER_BEAM_BLUE               255
-#define BLASTER_BEAM_BRIGHTNESS 255
-#define BLASTER_BEAM_WIDTH      2
-#define BLASTER_BEAM_SPRITE     "sprites/smoke.spr"
-#define BLASTER_BEAM_SPEED 100
-#define BLASTER_BEAM_LENGTH     130
-#define BLASTER_BEAM_RANDOMNESS 15.0
-//Hack to get the beam to come out of the gun ;)
-#define BLASTER_OFFSET_FORWARD  0
-#define BLASTER_OFFSET_RIGHT    7
-#define BLASTER_OFFSET_UP               0
-
-class CHider : public CBaseMonster
-{
-public:
-	void Spawn( void );
-	void Precache( void );
-};
 
 
 
 
 
-class   CBlasterBeam3 : public CBaseMonster //CGrenade
-{
-        public:
-        void    Spawn           ( );
-        void    Precache        ( );
-        void    MoveThink       ( );
-        void EXPORT Hit         ( CBaseEntity* );
-        void    Explode         ( TraceResult*, int);
-        int     BeamSprite;
-		int m_iSpriteTexture;
-		void  TrackTarget ( void );
-		void EXPORT StartTrack ( void );
-		Vector m_vecTarget;
-		Vector m_posPrev;
-};
+
+
+
+
 
 enum rpg_e {
 	RPG_IDLE = 0,
@@ -368,6 +337,7 @@ void CRpg::Spawn( )
 	Precache( );
 	m_flNextChatTime9 = gpGlobals->time;
 	m_iId = WEAPON_RPG;
+	m_flNextChatTime13;
 
 	SET_MODEL(ENT(pev), "models/w_rpg.mdl");
 	m_fSpotActive = 1;
@@ -440,6 +410,9 @@ int CRpg::AddToPlayer( CBasePlayer *pPlayer )
 
 BOOL CRpg::Deploy( )
 {
+	if (m_pPlayer->m_flNextChatTime13 < 0)
+		m_pPlayer->m_flNextChatTime13 = 0;
+	
 	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
 	if ( m_iClip == 0 )
 	{
@@ -546,6 +519,8 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	//UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
 
 	//experiment with trace hull 
+	if (m_pPlayer->m_flNextChatTime13 < 5)
+	{
 	UTIL_TraceHull( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, ignore_monsters, head_hull, edict(), &tr );
 	if ( !tr.fStartSolid ) //if ( tr.fStartSolid ) - sentry be created only in walls, use negative '!'
 	{
@@ -572,6 +547,8 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+	m_pPlayer->m_flNextChatTime13 ++;
+	}
 	}
 else
 	{
@@ -588,6 +565,8 @@ void CRpg::WeaponIdle( void )
 {
 UpdateSpot( );
 //start new weapon
+
+
 
 if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
@@ -623,7 +602,8 @@ if (m_iClip >= 1)
 
 	if ( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
 	{
-
+	if (m_pPlayer->m_flNextChatTime13 < 5)
+	{
 	{
 	if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
 		{
@@ -636,7 +616,9 @@ if (m_iClip >= 1)
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		Vector vecThrow = gpGlobals->v_forward;
+		m_pPlayer->m_flNextChatTime13 ++;
 		CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
+		//m_flNextChatTime13
 	#endif
 int flags;
 #if defined( CLIENT_WEAPONS )
@@ -661,6 +643,7 @@ int flags;
 	}
 	UpdateSpot( );
 	return;
+	}
 	}
 	}
 	}
@@ -808,138 +791,6 @@ LINK_ENTITY_TO_CLASS( ammo_rpgclip, CRpgAmmo );
 #endif
 
 
-
-
-
-
-void    CBlasterBeam3 :: Spawn( )
-{
-		Precache( );
-        SET_MODEL( ENT(pev), "models/rpgrocket.mdl" );
-        pev->movetype = MOVETYPE_FLY; //So gravity affects it a *tad*
-        pev->solid = SOLID_BBOX;
-        UTIL_SetSize( pev, Vector( -4, -4, -4 ), Vector( 4, 4, 4 ) );//Point sized bounding box
-        UTIL_SetOrigin( pev, pev->origin );
-        pev->classname = MAKE_STRING( "missile" );
-        SetThink( MoveThink );
-        SetTouch( Hit );
-        //pev->angles.x = 0;
-        //pev->velocity = gpGlobals->v_forward * 50;
-        // pev->angles.x = -(pev->angles.x);
-        //pev->gravity = 0.1;//A SMIDGEN of gravity. Can you HAVE a smidgen of gravity??
-        pev->dmg = 110;
-		pev->effects = EF_MUZZLEFLASH;
-		//MoveThink();
-		pev->flags		|= FL_MONSTER;
-		pev->health		= 1;// weak!
-        pev->nextthink = gpGlobals->time + 0.3;//10 times a second
-		ResetSequenceInfo( );
-
-
-	
-	
-	
-	
-}
-
-void    CBlasterBeam3 :: Precache( )
-{
-        BeamSprite = PRECACHE_MODEL( BLASTER_BEAM_SPRITE );
-        PRECACHE_MODEL( "models/rpgrocket.mdl" );
-		PRECACHE_SOUND ("weapons/rocket1.wav");
-		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
-		
-}
-
-
-
-
-
-
-
-
-
-//We hit something (yay)
-void    CBlasterBeam3 :: Hit( CBaseEntity* Target )
-{
-
-}
-
-
-void    CBlasterBeam3 :: Explode( TraceResult* TResult, int DamageType )
-{
-
-}
-
-
-void    CBlasterBeam3 :: MoveThink( )
-{
-
-}
-
-
-
-
-
-//=========================================================
-// StartTrack - starts a hornet out tracking its target
-//=========================================================
-void CBlasterBeam3 :: StartTrack ( void )
-{
-	//MoveThink();
-
-	//SetThink( TrackTarget );
-
-	//pev->nextthink = gpGlobals->time + 0.1;
-}
-
-//=========================================================
-// Hornet is flying, gently tracking target
-//=========================================================
-void CBlasterBeam3 :: TrackTarget ( void )
-{
-
-////////////////////////////////////////////
-/*
-	CBaseEntity *pOther = NULL;
-	Vector vecDir;
-	TraceResult tr;
-
-	Vector vecFlat = pev->velocity;
-	vecFlat.z = 0;
-	vecFlat = vecFlat.Normalize( );
-
-	UTIL_MakeVectors( pev->angles );
-
-	if (m_hEnemy == NULL || !m_hEnemy->IsAlive())
-	{
-		// find target, bounce a bit towards it.
-		Look( 512 );
-		m_hEnemy = BestVisibleEnemy( );
-	}
-
-		if (FVisible( m_hEnemy ))
-		{
-			vecDir = m_hEnemy->EyePosition() - pev->origin;
-			m_vecTarget = vecDir.Normalize( );
-				pev->velocity = gpGlobals->v_forward * 100;
-}
-
-		float flVel = pev->velocity.Length();
-		//float flAdj = 50.0 / (flVel + 10.0);
-
-		//if (flAdj > 1.2)
-		//	flAdj = 1.2;
-
-		pev->velocity = pev->velocity + m_vecTarget * 1300;
-
-*/
-
-
-
-	//StartTrack();
-	//pev->nextthink = gpGlobals->time + 0.5;
-}
 
 
 

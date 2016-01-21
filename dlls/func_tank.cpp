@@ -1082,7 +1082,7 @@ void CFuncTankMortar::Fire2( const Vector &barrelEnd, const Vector &forward, ent
 			for ( i = 0; i < bulletCount; i++ )
 			{
 				CBaseEntity *pRocket = CBaseEntity::Create( "weapon_minigun", barrelEnd + forward * 64, pev->angles, ENT( pevAttacker ) );
-				pRocket->pev->velocity = gpGlobals->v_forward * 840;
+				pRocket->pev->velocity = gpGlobals->v_forward * 680;
 				pRocket->pev->dmg = pev->impulse; // can been *2 ?
 			}
 			CFuncTank::Fire( barrelEnd, forward, pevAttacker );
@@ -1131,7 +1131,7 @@ int i;
 			for ( i = 0; i < bulletCount; i++ )
 			{
 
-					FireBullets( 1, barrelEnd, forward, gTankSpread[m_spread], 4096, BULLET_MONSTER_12MM, 1, pev->impulse, pevAttacker );
+					FireBullets( 1, barrelEnd, forward, gTankSpread[m_spread], 4096, BULLET_MONSTER_12MM, 1, pev->impulse/2, pevAttacker );
 
 			}
 			CFuncTank::Fire2( barrelEnd, forward, pevAttacker );

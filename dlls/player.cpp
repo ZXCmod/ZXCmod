@@ -887,7 +887,7 @@ entvars_t *g_pevLastInflictor;  // Set in combat.cpp.  Used to pass the damage i
 void CBasePlayer::Killed( entvars_t *pevAttacker, int iGib )
 {
 	CSound *pSound;
-
+	
 	// Holster weapon immediately, to allow it to cleanup
 	if ( m_pActiveItem )
 		m_pActiveItem->Holster( );
@@ -1288,23 +1288,6 @@ BOOL CBasePlayer::IsOnLadder( void )
 void CBasePlayer::PlayerDeathThink(void)
 {
 	float flForward;
-
-//freeze
-/* 	if (FTime2 > 0)
-	{
-		EnableControl(TRUE);
-		pev->rendermode = kRenderNormal;
-		pev->renderfx = kRenderFxNone;
-		pev->renderamt = 0;
-		FTime2 = 0;
-	} */
-
-	
-	
-	
-	
-	
-	
 	
 	if (FBitSet(pev->flags, FL_ONGROUND))
 	{
@@ -1351,6 +1334,7 @@ void CBasePlayer::PlayerDeathThink(void)
 	pev->rendermode = kRenderNormal;
 	pev->renderfx = kRenderFxNone;
 	pev->renderamt = 0;
+	
 
 	BOOL fAnyButtonDown = (pev->button & ~IN_SCORE );
 	
@@ -1380,29 +1364,24 @@ void CBasePlayer::PlayerDeathThink(void)
 	
 // wait for any button down,  or mp_forcerespawn is set and the respawn time is up
 		//freeze fix 1
-	if (FTime2 == 0)
-	{
+	//if (FTime2 == 0)
+	//{
 	//pev->nextthink = gpGlobals->time + 0.1; //freeze
 		//EnableControl(TRUE);
 		//pev->rendermode = kRenderNormal;
 		//pev->renderfx = kRenderFxNone;
 		//pev->renderamt = 0;
 		//FTime2 = 0;
-	if ( pev->button & IN_ATTACK || pev->button & IN_ATTACK2 
-		&& !( g_pGameRules->IsMultiplayer() && (gpGlobals->time > (m_fDeadTime + 5))) )
-
-		
-{
+	if ( pev->button & IN_ATTACK || pev->button & IN_ATTACK2 && !( g_pGameRules->IsMultiplayer() && (gpGlobals->time > (m_fDeadTime + 5))) )
+	{
 	pev->button = 0;
 	m_iRespawnFrames = 0;
 	CopyToBodyQue( pev );
-	//ALERT(at_console, "Respawn\n");
-
 	respawn(pev, !(m_afPhysicsFlags & PFLAG_OBSERVER) );// don't copy a corpse if we're in deathcam.
 	pev->nextthink = -1;
 	return;
 	}
-	}
+	//}
 
 }
 
@@ -1486,6 +1465,10 @@ void CBasePlayer::StartObserver( Vector vecPosition, Vector vecViewAngle )
 	pev->health = 1;
 	m_fInitHUD = TRUE;
 	UTIL_SetOrigin( pev, vecPosition );
+	EnableControl(TRUE);
+    pev->renderamt = 0;
+    FTime2 = 0; 
+	CopyToBodyQue( pev );
 
 
 
@@ -2942,6 +2925,7 @@ void CBasePlayer::Spawn( void )
 	//CLIENT_COMMAND(edict(), "cl_lw 1\n");
 	//CLIENT_COMMAND(edict(), "cl_updaterate 20\n");
 	//CLIENT_COMMAND(edict(), "cl_cmdrate 20\n");
+	
 	
 	
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
@@ -4646,6 +4630,8 @@ void CBasePlayer::DropPlayerItem ( char *pszItemName )
 			pWeaponBox->pev->angles.z = 0;
 			pWeaponBox->PackWeapon( pWeapon );
 			pWeaponBox->pev->velocity = gpGlobals->v_forward * 400 + gpGlobals->v_forward * 200;
+			pWeaponBox->pev->nextthink = gpGlobals->time + 4.5; //no spam (1.28)
+			pWeaponBox->SetThink( SUB_Remove );
 			
 			// drop half of the ammo for this weapon.
 			int	iAmmoIndex;

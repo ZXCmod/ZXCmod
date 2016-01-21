@@ -525,7 +525,7 @@ public:
 	void KeyValue( KeyValueData *pkvd );
 	void EXPORT MultiTouch( CBaseEntity *pOther );
 	void EXPORT HurtTouch ( CBaseEntity *pOther );
-	void EXPORT CDAudioTouch ( CBaseEntity *pOther );
+	//void EXPORT CDAudioTouch ( CBaseEntity *pOther );
 	void ActivateMultiTrigger( CBaseEntity *pActivator );
 	void EXPORT MultiWaitOver( void );
 	void EXPORT CounterUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
@@ -657,6 +657,8 @@ void CTriggerMonsterJump :: Touch( CBaseEntity *pOther )
 //
 // trigger_cdaudio - starts/stops cd audio tracks
 //
+
+/* 
 class CTriggerCDAudio : public CBaseTrigger
 {
 public:
@@ -798,7 +800,7 @@ void CTargetCDAudio::Play( void )
 	PlayCDTrack( (int)pev->health );
 	UTIL_Remove(this); 
 }
-
+ */
 //=====================================
 
 //

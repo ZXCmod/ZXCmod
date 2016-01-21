@@ -71,7 +71,12 @@ void CHgun::Precache( void )
 	PRECACHE_MODEL( "models/can.mdl" );
 	PRECACHE_SOUND( "weapons/glauncher.wav" );
 	PRECACHE_SOUND( "weapons/glauncher2.wav" );
+	PRECACHE_SOUND( "debris/beamstart9.wav" );
+	PRECACHE_SOUND( "debris/bustconcrete1.wav" );
+	PRECACHE_SOUND( "items/medcharge4.wav" );
 	BSpr = PRECACHE_MODEL("sprites/lgtning.spr");
+	PRECACHE_MODEL("models/bag.mdl");
+	
 
 	m_usHornetFire = PRECACHE_EVENT ( 1, "events/firehornet.sc" );
 
@@ -119,6 +124,7 @@ int CHgun::GetItemInfo(ItemInfo *p)
 
 BOOL CHgun::Deploy( )
 {
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 1; //ammo set to 1. 
 	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
 	return DefaultDeploy( "models/v_hgun.mdl", "models/p_hgun.mdl", HGUN_UP, "hive" );
 }
@@ -187,6 +193,12 @@ void CHgun::PrimaryAttack()
 
 
 
+
+
+
+
+
+
 void CHgun::SecondaryAttack( void )
 {
 	Reload();
@@ -194,36 +206,26 @@ void CHgun::SecondaryAttack( void )
 	{
 		return;
 	}
-	//Wouldn't be a bad idea to completely predict these, since they fly so fast...
+
 #ifndef CLIENT_DLL
-/* 	CBaseEntity *pHornet;
-	Vector vecSrc;
-	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-	vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12;
-	pHornet = CBaseEntity::Create( "hornet", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-	pHornet->pev->velocity = gpGlobals->v_forward * 2400;
-	pHornet->pev->angles = UTIL_VecToAngles( pHornet->pev->velocity );
-	pHornet->SetThink( CHornet::StartDart );
-	m_flRechargeTime = gpGlobals->time + 0.5; */
-	
+
 ///////////neew
 
     Vector vecSrc, vecAim, vecOrig;
     TraceResult tr;
 	Vector vecDir;
     CBaseEntity *pEntity;
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+	//float speed = m_pPlayer->pev->velocity.Length();
     vecOrig = m_pPlayer->GetGunPosition( );
     vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12;
-    vecAim = gpGlobals->v_forward;
+    vecAim = gpGlobals->v_forward * (RANDOM_LONG(1,9) ); //RANDOM_LONG(-10,10)  speed/20
     UTIL_TraceLine ( vecOrig, vecOrig + vecAim * 2048, dont_ignore_monsters, ENT( m_pPlayer->pev ), &tr);
-
 	
 	
-//freeze random 1/2
+	
+//freeze 
 
-switch(RANDOM_LONG(1,2))
-	{
-	case 1: 
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
             WRITE_BYTE( TE_BEAMPOINTS );
             WRITE_COORD(vecSrc.x);
@@ -245,6 +247,18 @@ switch(RANDOM_LONG(1,2))
             WRITE_BYTE( 70 ); // scroll speed
     MESSAGE_END();
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 2; // -2 ammo
+	
+	if (!(m_pPlayer->pev->button & IN_DUCK))
+	{
+	m_pPlayer->pev->punchangle.x -= 7;
+	m_pPlayer->pev->punchangle.y += RANDOM_LONG(-5,4);
+	}
+	else
+	{
+	m_pPlayer->pev->punchangle.x -= 4;
+	m_pPlayer->pev->punchangle.y += RANDOM_LONG(-4,2);
+	}
+	
 	//Reload( );
 	m_flRechargeTime = gpGlobals->time + 0.5;
     pEntity = CBaseEntity::Instance(tr.pHit);
@@ -271,45 +285,11 @@ switch(RANDOM_LONG(1,2))
         pPlayer->pev->rendercolor.z = 255; // blue
         pPlayer->pev->renderamt = 70;
         pPlayer->EnableControl(FALSE);
-        pPlayer->FTime2 = gpGlobals->time + 2.05; //1.25 old. Changed in v1.26 to 2.05
+		//if (pPlayer->FTime2 <= 5)
+        pPlayer->FTime2 = gpGlobals->time + 1.75; //1.25 old. Changed in v1.26 to 2.05 //RANDOM_LONG(1.12,2.25)
 		}
     }
 
-	break;
-	/////////////2
-	case 2:
-	{
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-            WRITE_BYTE( TE_BEAMPOINTS );
-            WRITE_COORD(vecSrc.x);
-            WRITE_COORD(vecSrc.y);
-            WRITE_COORD(vecSrc.z);
-            WRITE_COORD( tr.vecEndPos.x);
-            WRITE_COORD( tr.vecEndPos.y);
-            WRITE_COORD( tr.vecEndPos.z);
-            WRITE_SHORT( BSpr );
-            WRITE_BYTE( 0 ); // Starting frame
-            WRITE_BYTE( 0  ); // framerate * 0.1
-            WRITE_BYTE( 2 ); // life * 0.1
-            WRITE_BYTE( 64 ); // width
-            WRITE_BYTE( 3 ); // noise
-            WRITE_BYTE( 255 ); // color r,g,b
-            WRITE_BYTE( 0 ); // color r,g,b
-            WRITE_BYTE( 0 ); // color r,g,b
-            WRITE_BYTE( 240 ); // brightness
-            WRITE_BYTE( 12 ); // scroll speed
-    MESSAGE_END();
-	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecOrig, vecAim, Vector( 0, 0, 0 ), 2048, 35, 1, RANDOM_LONG(3,14), m_pPlayer->pev, m_pPlayer->random_seed ); //shot
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1; // -1 ammo
-	//Reload( );
-	m_flRechargeTime = gpGlobals->time + 0.5;
-	
-	break;
-	}
-	//////////////3
-
-	}
-	
 //////////// end freeze
 	
 	
@@ -334,6 +314,61 @@ switch(RANDOM_LONG(1,2))
 
 
 }
+	
+
+	//////////////3
+
+void CHgun::ThirdAttack( void )
+{
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 16)
+	{
+
+		//play sounds
+			switch(RANDOM_LONG(0,1))
+			{
+			case 0: 
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/glauncher.wav", 0.9, ATTN_NORM);
+			break;
+			case 1: 
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/glauncher2.wav", 0.9, ATTN_NORM);
+			break;
+			}
+
+		
+		
+		
+		
+		
+		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		//dont create another reload void, reload() used by hornet 
+
+		int iAnim;
+		Vector vecSrc = m_pPlayer->pev->origin;
+		Vector vecThrow = gpGlobals->v_forward * 512;
+
+		#ifndef CLIENT_DLL
+			CBaseEntity *pSatchel = Create( "player_freeze", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+			pSatchel->pev->velocity = vecThrow;
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			iAnim = HGUN_FIDGETSHAKE;
+			SendWeaponAnim( iAnim );
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 16;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+			m_flRechargeTime = gpGlobals->time + 0.5;
+			Reload( );
+		#endif
+
+		return;
+	}
+
+
+}
+	
+
+
+
+
 
 
 void CHgun::Reload( void )
@@ -456,7 +491,23 @@ class   CFreeze : public CBaseEntity
 		short		m_LaserSprite;
 };
 
+//////////////1.28 new Freeze bomb. Need 16 ammo for launch, big freeze effect. 
+
+class   CFreezeBomb : public CBaseEntity
+{
+        public:
+
+        void    Spawn           ( );
+        void    MoveThink       ( );
+        void    Explode         ( );
+		void EXPORT Touch( CBaseEntity *pOther );
+		void  Exp( void );
+		int m_flDie;
+};
+
 LINK_ENTITY_TO_CLASS( weapon_clip_generic, CFreeze );
+LINK_ENTITY_TO_CLASS( player_freeze, CFreezeBomb);
+
 
 
 
@@ -621,12 +672,237 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 
 
 
-///////NEW WEAPON - TRUE FREEZE GUN
+///////NEW WEAPON - TRUE FREEZE BOMB
 ///////////////////////
 ///////////////////////
-//////////////NEW weapon
+
+
+void    CFreezeBomb :: Spawn( )
+{
+		Precache( );
+        SET_MODEL( ENT(pev), "models/bag.mdl" );
+        pev->movetype = MOVETYPE_BOUNCE;
+        pev->solid = SOLID_BBOX;
+        UTIL_SetSize( pev, Vector( 0, 0, 0), Vector(0, 0, 0) );
+        UTIL_SetOrigin( pev, pev->origin );
+		m_flDie = gpGlobals->time + 180;
+		pev->dmg = 0;
+		pev->takedamage = DAMAGE_YES;
+		pev->gravity			= 0.35;
+		pev->friction			= 0.35;
+		pev->health			= 100;
+		pev->dmg = 10;
+
+		
+		pev->nextthink = gpGlobals->time + 3;
+		SetTouch( Touch );
+		SetThink( MoveThink );
+}
+
+
+void    CFreezeBomb :: Explode( )
+{
+if (pev->dmg == 10)
+	{
+	pev->nextthink = gpGlobals->time + 1.35; //slow update
+	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/bustconcrete1.wav", 0.5, ATTN_NORM);
+	pev->velocity.z = 125; //jump
+	pev->angles.y += 30; //rotate
+	}
+else
+	{
+	pev->nextthink = gpGlobals->time + 0.02; //fast
+	EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "items/medcharge4.wav", 1, ATTN_NORM, 0, pev->dmg*3);
+	}
+	
+	SetThink(MoveThink);
+}
+
+
+void    CFreezeBomb :: MoveThink( )
+{
+
+	CBaseEntity *pEntity = NULL;
+
+
+	Explode();
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 300 )) != NULL && (pev->dmg == 10))
+       	{
+		if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP)
+			{
+			if (FVisible( pEntity ) && (pev->flags & FL_ONGROUND))
+				{
+				pev->dmg = 11;
+				pev->velocity.z = 275; //jump strong
+				pev->nextthink = gpGlobals->time + 0.25;
+				//UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
+				//UTIL_SetOrigin( pev, pev->origin );
+				//return;
+				}
+			}
+		}
+		
+		//check for reaction
+		if (pev->dmg != 10)
+			{
+			pev->dmg += 1;
+			Exp();
+			}
+				
 
 
 
 
 
+
+
+
+
+/////////////////
+///////////////////////////
+	
+	
+	
+	
+	
+	 
+if (gpGlobals->time >= m_flDie) //full explode and self destroy
+	{
+		// random explosions
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( RANDOM_LONG(8,16) + 7  ); // scale * 10
+			WRITE_BYTE( RANDOM_LONG(8,10)  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+	pev->takedamage = DAMAGE_NO;
+	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/beamstart9.wav", 1.0, ATTN_NORM);
+	SetThink( SUB_Remove );
+	} 
+
+
+
+}
+
+
+
+void  CFreezeBomb::Touch( CBaseEntity *pOther )
+{
+	//stop moving
+
+		pev->movetype = MOVETYPE_TOSS;
+		SetTouch( NULL );
+		pev->nextthink = gpGlobals->time + 0.25;
+		
+}
+
+void  CFreezeBomb::Exp( )
+{
+
+	if (pev->dmg > 75) //delete object time
+		{
+//////////////effects
+Vector direction = Vector(0,0,1);
+
+//spark effects
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_STREAK_SPLASH );
+		WRITE_COORD( pev->origin.x );		// origin
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_COORD( direction.x );	//// direction
+		WRITE_COORD( direction.y );
+		WRITE_COORD( direction.z );
+		WRITE_BYTE( 255 );	// Streak color 6
+		WRITE_SHORT( 512 );	// count
+		WRITE_SHORT( 1024 );
+		WRITE_SHORT( 2600 );	// Random velocity modifier
+	MESSAGE_END();
+
+	
+	
+	
+	
+	
+	
+	
+	
+	//action
+	CBaseEntity *pEntity = NULL;
+
+
+	Explode();
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 460 )) != NULL)
+       	{
+		//if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP && pev->movetype == MOVETYPE_TOSS)
+			//{
+		    if (pEntity != NULL && pEntity->pev->takedamage != pEntity->IsPlayer()) //in 1.26 allow to freeze monsters
+			{
+			if (FVisible( pEntity )) //anyone entity
+				{
+				pEntity->pev->rendermode = kRenderNormal;
+				pEntity->pev->renderfx = kRenderFxGlowShell;
+				pEntity->pev->rendercolor.x = 200;  // red
+				pEntity->pev->rendercolor.y = 200;  // green
+				pEntity->pev->rendercolor.z = 255; // blue
+				pEntity->pev->renderamt = 70;
+				pEntity->FTime2 = gpGlobals->time + 60; //big freeze
+				
+			    if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer()) //check only player
+					{
+					CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+					UTIL_ScreenFade( pPlayer, Vector(0,0,255), 5.0, 1.0, 140, FFADE_IN );
+					pPlayer->pev->rendermode = kRenderNormal;
+					pPlayer->pev->renderfx = kRenderFxGlowShell;
+					pPlayer->pev->rendercolor.x = 200;  // red
+					pPlayer->pev->rendercolor.y = 200;  // green
+					pPlayer->pev->rendercolor.z = 255; // blue
+					pPlayer->pev->renderamt = 70;
+					pPlayer->EnableControl(FALSE);
+					pPlayer->FTime2 = gpGlobals->time + 3.25;
+					}
+				}
+			}
+		
+		}
+		
+		
+
+		
+		
+		
+		
+		
+		
+		//owtheers
+		SetTouch( NULL );
+		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/beamstart9.wav", 1.0, ATTN_NORM);
+		//STOP_SOUND( ENT(pev), CHAN_ITEM, "items/medcharge4.wav" );
+		EMIT_SOUND( ENT(pev), CHAN_ITEM, "debris/beamstart9.wav", 1.0, ATTN_NORM );
+		//lights
+		Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(vecSrc.x);	// X
+		WRITE_COORD(vecSrc.y);	// Y
+		WRITE_COORD(vecSrc.z);	// Z
+		WRITE_BYTE( 24 );		// radius * 0.1
+		WRITE_BYTE( 0 );		// r
+		WRITE_BYTE( 92 );		// g
+		WRITE_BYTE( 92 );		// b
+		WRITE_BYTE( 64 );		// life * 10
+		WRITE_BYTE( 0 );		// decay * 0.1
+	MESSAGE_END( );
+	
+	pev->nextthink = gpGlobals->time + 0.1;
+	pev->takedamage = DAMAGE_NO;
+	SetThink( SUB_Remove );
+		}
+		
+		pev->angles.y += 30; //rotate
+
+}

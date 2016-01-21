@@ -90,15 +90,15 @@ public:
 
 
 // weapon weight factors (for auto-switching)   (-1 = noswitch)
-#define CROWBAR_WEIGHT		0
+#define CROWBAR_WEIGHT		25
 #define GLOCK_WEIGHT		10
 #define PYTHON_WEIGHT		15
 #define MP5_WEIGHT			15
 #define SHOTGUN_WEIGHT		15
 #define CROSSBOW_WEIGHT		10
-#define RPG_WEIGHT			20
-#define GAUSS_WEIGHT		20
-#define EGON_WEIGHT			20
+#define RPG_WEIGHT			30
+#define GAUSS_WEIGHT		30
+#define EGON_WEIGHT			30
 #define HORNETGUN_WEIGHT	10
 #define HANDGRENADE_WEIGHT	5
 #define SNARK_WEIGHT		5
@@ -581,12 +581,14 @@ public:
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
 	int SecondaryAmmoIndex( void );
 	BOOL Deploy( void );
 	void Reload( void );
 	void WeaponIdle( void );
 	float m_flNextAnimTime;
 	int m_iShell;
+short BSpr;
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -720,6 +722,8 @@ public:
 	float m_flNextChatTime9; //delay
 	void UpdateSpot( void );
 	BOOL ShouldWeaponIdle( void ) { return TRUE; };
+	float m_flNextChatTime13;
+
 
 	CLaserSpot *m_pSpot;
 	int m_fSpotActive;
@@ -916,12 +920,14 @@ class CHgun : public CBasePlayerWeapon
 public:
 	void Spawn( void );
 	void Precache( void );
+	void ThirdAttack( void );
 	int iItemSlot( void ) { return 4; }
 	int GetItemInfo(ItemInfo *p);
 	int AddToPlayer( CBasePlayer *pPlayer );
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	
 	BOOL Deploy( void );
 	BOOL IsUseable( void );
 	void Holster( int skiplocal = 0 );
@@ -968,8 +974,9 @@ public:
 	void WeaponIdle( void );
 	void WriteBeamColor ( void );
 	int m_iTrail;
+	void ThirdAttack( void ); //3 attack
 	virtual BOOL UseDecrement( void )
-	
+
 	{ 
 #if defined( CLIENT_WEAPONS )
 		return TRUE;

@@ -254,7 +254,9 @@ void CBaseTurret::KeyValue( KeyValueData *pkvd )
 
 void CBaseTurret::Spawn()
 { 
-
+//CBaseEntity *pEntity = NULL;
+	
+	
 	Precache( );
 	pev->nextthink		= gpGlobals->time + 1;
 	pev->movetype		= MOVETYPE_STEP;
@@ -279,6 +281,13 @@ void CBaseTurret::Spawn()
 	SetBoneController( 1, 0 );
 	m_flFieldOfView = VIEW_FIELD_FULL;
 	// m_flSightRange = TURRET_RANGE;
+	
+	
+/* 	    if (pEntity != NULL)
+		{
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+		pPlayer->m_flNextChatTime13 ++; //limit
+		} */
 	
 }
 
@@ -592,7 +601,7 @@ if ( g_pGameRules->PlayerRelationship( pOwner, m_hEnemy ) == GR_TEAMMATE)
 	{
 	
 	//////////////fix fire rate for internet///////////////
-	switch(RANDOM_LONG(0,2))
+	switch(RANDOM_LONG(0,1))
 	{
 	case 0: 
 		Vector vecSrc, vecAng;
@@ -1019,7 +1028,11 @@ void CBaseTurret::AutoSearchThink(void)
 void CBaseTurret ::	TurretDeath( void )
 {
 	BOOL iActive = FALSE;
-
+	
+	//1.28 limit reset for big guns
+	CBaseEntity *pEntity = NULL;
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
+	
 	StudioFrameAdvance( );
 	pev->nextthink = gpGlobals->time + 0.1;
 
@@ -1080,6 +1093,11 @@ void CBaseTurret ::	TurretDeath( void )
 		pev->framerate = 0;
 		SetThink( NULL );
 	}
+	
+
+		pl->m_flNextChatTime13 --;
+		
+	
 	SetThink( SUB_Remove );
 }
 
@@ -1404,7 +1422,10 @@ void CSentry::SentryTouch( CBaseEntity *pOther )
 
 void CSentry ::	SentryDeath( void )
 {
-
+	//1.28 limit reset 
+	CBaseEntity *pEntity = NULL;
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );
+	
 	BOOL iActive = FALSE;
 
 	StudioFrameAdvance( );
@@ -1432,7 +1453,7 @@ void CSentry ::	SentryDeath( void )
 
 		pev->solid = SOLID_NOT;
 		pev->angles.y = UTIL_AngleMod( pev->angles.y + RANDOM_LONG( 0, 2 ) * 120 );
-
+		pl->m_flNextChatTime13 --;
 		EyeOn( );
 		SetThink( SUB_Remove );
 	}
@@ -1450,7 +1471,7 @@ void CSentry ::	SentryDeath( void )
 			WRITE_COORD( vecSrc.x + RANDOM_FLOAT( -16, 16 ) );
 			WRITE_COORD( vecSrc.y + RANDOM_FLOAT( -16, 16 ) );
 			WRITE_COORD( vecSrc.z - 32 );
-			WRITE_SHORT( g_sModelIndexSmoke );
+			WRITE_SHORT( g_sModelIndexSmoke ); //PRECACHE_MODEL ("sprites/steam1.spr");// smoke
 			WRITE_BYTE( 15 ); // scale * 10
 			WRITE_BYTE( 8 ); // framerate
 		MESSAGE_END();

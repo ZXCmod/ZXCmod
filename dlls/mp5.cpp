@@ -22,6 +22,7 @@
 #include "player.h"
 #include "soundent.h"
 #include "gamerules.h"
+#include "decals.h"
 
 enum mp5_e
 {
@@ -35,10 +36,18 @@ enum mp5_e
 	MP5_FIRE3,
 };
 
+//zap
+ class   CZap : public CGrenade
+{
+        public:
+        void    Spawn           ( );
+		short		m_LaserSprite;
+}; 
 
 
 LINK_ENTITY_TO_CLASS( weapon_mp5, CMP5 );
 LINK_ENTITY_TO_CLASS( weapon_9mmAR, CMP5 );
+LINK_ENTITY_TO_CLASS( blaster_bolt, CZap );
 
 
 //=========================================================
@@ -60,7 +69,6 @@ void CMP5::Spawn( )
 	FallInit();// get ready to fall down.
 }
 
-
 void CMP5::Precache( void )
 {
 	PRECACHE_MODEL("models/v_9mmAR.mdl");
@@ -80,6 +88,7 @@ void CMP5::Precache( void )
 	PRECACHE_SOUND ("weapons/hks1.wav");// H to the K
 	PRECACHE_SOUND ("weapons/hks2.wav");// H to the K
 	PRECACHE_SOUND ("weapons/hks3.wav");// H to the K
+	PRECACHE_SOUND ("debris/beamstart11.wav");
 
 	PRECACHE_SOUND( "weapons/glauncher.wav" );
 	PRECACHE_SOUND( "weapons/glauncher2.wav" );
@@ -88,6 +97,7 @@ void CMP5::Precache( void )
 
 	m_usMP5 = PRECACHE_EVENT( 1, "events/mp5.sc" );
 	m_usMP52 = PRECACHE_EVENT( 1, "events/mp52.sc" );
+	BSpr = PRECACHE_MODEL("sprites/bolt1.spr");
 }
 
 int CMP5::GetItemInfo(ItemInfo *p)
@@ -129,7 +139,7 @@ BOOL CMP5::Deploy( )
 void CMP5::PrimaryAttack()
 {
 
-Vector accuracy;
+
 float speed = m_pPlayer->pev->velocity.Length();
 
 	// don't fire underwater
@@ -239,6 +249,125 @@ void CMP5::SecondaryAttack( void )
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 }
+
+/////zap-lasers (1.28)
+
+
+
+
+void CMP5::ThirdAttack( void )
+{
+	// don't fire underwater
+	if (m_pPlayer->pev->waterlevel >= 2)
+	{
+		PlayEmptySound( );
+		m_flNextPrimaryAttack = 0.15;
+		return;
+	}
+
+
+		TraceResult	tr;	
+		Vector vecSrc;
+		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+		UTIL_MakeVectors( anglesAim );
+		vecSrc = m_pPlayer->GetGunPosition( )  + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
+		Vector vecDir = gpGlobals->v_forward;
+		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 4096, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+		
+	//if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
+	if (m_iClip >= 1)
+    {
+
+
+	
+		/////beam ray 1
+			// MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+            // WRITE_BYTE( TE_BEAMPOINTS );
+            // WRITE_COORD(vecSrc.x);
+            // WRITE_COORD(vecSrc.y);
+            // WRITE_COORD(vecSrc.z);
+            // WRITE_COORD( tr.vecEndPos.x ); //tr.vecEndPos.
+            // WRITE_COORD( tr.vecEndPos.y );
+            // WRITE_COORD( tr.vecEndPos.z );
+            // WRITE_SHORT( BSpr ); //sprite
+            // WRITE_BYTE( 1 ); // Starting frame
+            // WRITE_BYTE( 0  ); // framerate * 0.1
+            // WRITE_BYTE( 1 ); // life * 0.1
+            // WRITE_BYTE( 30 ); // width
+            // WRITE_BYTE( 8 ); // noise
+            // WRITE_BYTE( 128 ); // color r,g,b
+            // WRITE_BYTE( 128 ); // color r,g,b
+            // WRITE_BYTE( 200 ); // color r,g,b
+            // WRITE_BYTE( 110 ); // brightness
+            // WRITE_BYTE( 100 ); // scroll speed
+			// MESSAGE_END();
+			
+		/////beam ray 2
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+            WRITE_BYTE( TE_BEAMPOINTS );
+            WRITE_COORD(vecSrc.x);
+            WRITE_COORD(vecSrc.y);
+            WRITE_COORD(vecSrc.z);
+            WRITE_COORD( tr.vecEndPos.x ); //tr.vecEndPos.
+            WRITE_COORD( tr.vecEndPos.y );
+            WRITE_COORD( tr.vecEndPos.z );
+            WRITE_SHORT( BSpr ); //sprite
+            WRITE_BYTE( 1 ); // Starting frame
+            WRITE_BYTE( 0  ); // framerate * 0.1
+            WRITE_BYTE( 1 ); // life * 0.1
+            WRITE_BYTE( 30 ); // width
+            WRITE_BYTE( 9 ); // noise
+            WRITE_BYTE( 128 ); // color r,g,b
+            WRITE_BYTE( 100 ); // color r,g,b
+            WRITE_BYTE( 255 ); // color r,g,b
+            WRITE_BYTE( 120 ); // brightness
+            WRITE_BYTE( 100 ); // scroll speed
+			MESSAGE_END();
+			
+		/////beam ray 3
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+            WRITE_BYTE( TE_BEAMPOINTS );
+            WRITE_COORD(vecSrc.x);
+            WRITE_COORD(vecSrc.y);
+            WRITE_COORD(vecSrc.z);
+            WRITE_COORD( tr.vecEndPos.x ); //tr.vecEndPos.
+            WRITE_COORD( tr.vecEndPos.y );
+            WRITE_COORD( tr.vecEndPos.z );
+            WRITE_SHORT( BSpr ); //sprite
+            WRITE_BYTE( 1 ); // Starting frame
+            WRITE_BYTE( 0  ); // framerate * 0.1
+            WRITE_BYTE( 1 ); // life * 0.1
+            WRITE_BYTE( 30 ); // width
+            WRITE_BYTE( 10 ); // noise
+            WRITE_BYTE( 100 ); // color r,g,b
+            WRITE_BYTE( 128 ); // color r,g,b
+            WRITE_BYTE( 255 ); // color r,g,b
+            WRITE_BYTE( 130 ); // brightness
+            WRITE_BYTE( 100 ); // scroll speed
+			MESSAGE_END();
+	
+	m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecDir, Vector( 0, 0, 0 ), 4096, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	UTIL_DecalTrace( &tr, DECAL_BIGSHOT1 + RANDOM_LONG(1,4) ); // + RANDOM_LONG(1,4)
+	UTIL_Sparks( tr.vecEndPos );
+			
+		
+	//UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	m_iClip--;
+	EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart11.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
+	CBaseEntity *pZap = Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+	
+			SendWeaponAnim( 5 );
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.12;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.12;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.12;
+	}
+	
+
+}
+
+
+
 
 void CMP5::Reload( void )
 {
@@ -361,6 +490,53 @@ LINK_ENTITY_TO_CLASS( ammo_ARgrenades, CMP5AmmoGrenade );
 
 
 
+
+
+
+
+void CZap::Spawn( )
+{
+		m_LaserSprite = PRECACHE_MODEL( "sprites/bolt1.spr" );
+        UTIL_SetSize( pev, Vector(0,0,0), Vector(0,0,0) );
+        UTIL_SetOrigin( pev, pev->origin );
+        pev->classname = MAKE_STRING( "weapon_9mmAR" );
+		CBaseEntity *pEntity = NULL;
+
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 80 )) != NULL)
+       		 {
+				
+		if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+				{
+		
+		
+		/////beam ray
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+            WRITE_BYTE( TE_BEAMPOINTS );
+            WRITE_COORD(pev->origin.x);
+            WRITE_COORD(pev->origin.y);
+            WRITE_COORD(pev->origin.z);
+            WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+            WRITE_COORD( pEntity->pev->origin.y );
+            WRITE_COORD( pEntity->pev->origin.z );
+            WRITE_SHORT( m_LaserSprite ); //sprite
+            WRITE_BYTE( 1 ); // Starting frame
+            WRITE_BYTE( 0  ); // framerate * 0.1
+            WRITE_BYTE( 1 ); // life * 0.1
+            WRITE_BYTE( 25 ); // width
+            WRITE_BYTE( 10 ); // noise
+            WRITE_BYTE( 20 ); // color r,g,b
+            WRITE_BYTE( 200 ); // color r,g,b
+            WRITE_BYTE( 255 ); // color r,g,b
+            WRITE_BYTE( 255 ); // brightness
+            WRITE_BYTE( 0 ); // scroll speed
+		MESSAGE_END();
+		
+		pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(3,14), DMG_GENERIC);		
+		 } 
+	}
+		pev->nextthink = gpGlobals->time + 0.12;
+		SetThink( SUB_Remove );
+}
 
 
 

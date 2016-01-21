@@ -809,7 +809,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.27";
+		return "Half-Life zxc mod 1.28";
 }
 
 /*

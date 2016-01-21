@@ -484,12 +484,48 @@ void CHalfLifeMultiplay :: ClientDisconnected( edict_t *pClient )
 
 		if ( pPlayer )
 		{
+		
+///////
+	edict_t *pFind; 
+	pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_sentry" );
+	while ( !FNullEnt( pFind ) )
+	{
+		CBaseEntity *pEnt = CBaseEntity::Instance( pFind );
+		if ( pEnt )
+		{
+			if ( pEnt->pev->owner == pPlayer->edict() )
+			{
+				//pEnt->SUB_Remove();
+				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 1000, 1000 );;
+			}
+		}
+		pFind = FIND_ENTITY_BY_CLASSNAME( pFind, "monster_sentry" );
+	}
+///////
+	edict_t *pFind2; 
+	pFind2 = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_turret" );
+	while ( !FNullEnt( pFind2 ) )
+	{
+		CBaseEntity *pEnt = CBaseEntity::Instance( pFind2 );
+		if ( pEnt )
+		{
+			if ( pEnt->pev->owner == pPlayer->edict() )
+			{
+				//pEnt->SUB_Remove();
+				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 1000, 1000 );;
+			}
+		}
+		pFind2 = FIND_ENTITY_BY_CLASSNAME( pFind2, "monster_turret" );
+	}
+		
+		
+		
 			FireTargets( "game_playerleave", pPlayer, pPlayer, USE_TOGGLE, 0 );
 
 			// team match?
 			if ( g_teamplay )
 			{
-				UTIL_LogPrintf( "\"%s<%i><%s><%s>\" disconnected xD\n",  
+				UTIL_LogPrintf( "\"%s<%i><%s><%s>\" disconnected\n",  
 					STRING( pPlayer->pev->netname ), 
 					GETPLAYERUSERID( pPlayer->edict() ),
 					GETPLAYERAUTHID( pPlayer->edict() ),
@@ -497,7 +533,7 @@ void CHalfLifeMultiplay :: ClientDisconnected( edict_t *pClient )
 			}
 			else
 			{
-				UTIL_LogPrintf( "\"%s<%i><%s><%i>\" disconnected xD\n",  
+				UTIL_LogPrintf( "\"%s<%i><%s><%i>\" disconnected\n",  
 					STRING( pPlayer->pev->netname ), 
 					GETPLAYERUSERID( pPlayer->edict() ),
 					GETPLAYERAUTHID( pPlayer->edict() ),
@@ -559,14 +595,14 @@ void CHalfLifeMultiplay :: PlayerThink( CBasePlayer *pPlayer )
 {
 	if ( g_fGameOver )
 	{
-		// check for button presses
+		 //check for button presses
 		if ( pPlayer->m_afButtonPressed & ( IN_DUCK | IN_ATTACK | IN_ATTACK2 | IN_USE | IN_JUMP ) )
 			m_iEndIntermissionButtonHit = TRUE;
 
-		// clear attack/use commands from player
-	//	pPlayer->m_afButtonPressed = 0;
-		//pPlayer->pev->button = 0;
-		//pPlayer->m_afButtonReleased = 0;
+		//clear attack/use commands from player
+	pPlayer->m_afButtonPressed = 0;
+		pPlayer->pev->button = 0;
+		pPlayer->m_afButtonReleased = 0;
 	}
 }
 

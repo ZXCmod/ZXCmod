@@ -166,72 +166,6 @@ void CPython::Holster( int skiplocal /* = 0 */ )
 	SendWeaponAnim( PYTHON_HOLSTER );
 }
 
-void CPython::SecondaryAttack( void )
-{
-//removed old code, now create new weapon
-
-	if (m_iClip == 6)
-		{
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
-		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-		m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-	
-        UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-        Vector GunPosition = m_pPlayer->GetGunPosition( );
-        GunPosition = GunPosition + gpGlobals->v_forward * BLASTER_OFFSET_FORWARD;
-        GunPosition = GunPosition + gpGlobals->v_right   * BLASTER_OFFSET_RIGHT;
-        GunPosition = GunPosition + gpGlobals->v_up      * BLASTER_OFFSET_UP;
-        CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
-
-		float RandomX = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );//shot pos
-		float RandomY = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );//shot pos
-        Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right * RandomX; //shot pos
-        Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up    * RandomY; //shot pos
-		m_iClip-=6; //-6 bullets
-		
-			//LIGHT_STYLE(11, "abcdefghijklmnopqrrqponmlkjihgfedcba");
-			
-#ifndef CLIENT_DLL
-		float flZVel = m_pPlayer->pev->velocity.z; 
-		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 1500; 
-#endif
-	}
-else //here old code
-	{
-	if ( m_pPlayer->pev->fov != 0 )
-	{
-		m_fInZoom = FALSE;
-		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;  // 0 means reset to default fov
-		m_flNextSecondaryAttack = 0.3;
-		//return;
-	}
-	else if ( m_pPlayer->pev->fov != 40 )
-	{
-		m_fInZoom = TRUE;
-		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 40;
-		m_flNextSecondaryAttack = 0.3;
-		//return;
-	}
-
-
-		PlayEmptySound( );
-		m_flNextSecondaryAttack = 0.3;
-		return;
-	}
-
-	
-	
-	
-	
-	
-	
-	
-	m_flNextSecondaryAttack = 0.5;
-}
-
-
 
 void CPython::PrimaryAttack()
 {
@@ -291,6 +225,68 @@ void CPython::PrimaryAttack()
 	m_flNextPrimaryAttack = 0.75;
 	m_flTimeWeaponIdle = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 }
+
+
+
+void CPython::SecondaryAttack( void )
+{
+//removed old code, now create new weapon
+	if (m_iClip == 6)
+		{
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
+		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+		m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	
+        UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+        Vector GunPosition = m_pPlayer->GetGunPosition( );
+        GunPosition = GunPosition + gpGlobals->v_forward * BLASTER_OFFSET_FORWARD;
+        GunPosition = GunPosition + gpGlobals->v_right   * BLASTER_OFFSET_RIGHT;
+        GunPosition = GunPosition + gpGlobals->v_up      * BLASTER_OFFSET_UP;
+        CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
+
+		float RandomX = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );//shot pos
+		float RandomY = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );//shot pos
+        Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right * RandomX; //shot pos
+        Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up    * RandomY; //shot pos
+		m_iClip-=6; //-6 bullets
+
+#ifndef CLIENT_DLL
+		float flZVel = m_pPlayer->pev->velocity.z; 
+		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 1500; 
+#endif
+	}
+else //here old code
+	{
+	if ( m_pPlayer->pev->fov != 0 )
+	{
+		m_fInZoom = FALSE;
+		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;  // 0 means reset to default fov
+		m_flNextSecondaryAttack = 0.3;
+		//return;
+	}
+	else if ( m_pPlayer->pev->fov != 40 )
+	{
+		m_fInZoom = TRUE;
+		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 40;
+		m_flNextSecondaryAttack = 0.3;
+		//return;
+	}
+		PlayEmptySound( );
+		m_flNextSecondaryAttack = 0.3;
+		return;
+	}
+
+	m_flNextSecondaryAttack = 0.5;
+}
+
+
+
+
+
+
+
 
 
 void CPython::Reload( void )

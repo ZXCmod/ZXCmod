@@ -63,6 +63,7 @@ enum shotgun_e {
 		void    IgniteThink       ( );
 		short		m_LaserSprite;
 		int m_flDie;
+		int value;
 		
 
 }; 
@@ -708,7 +709,7 @@ void CPhase2::Spawn( )
 		pev->health = 150000;
 		pev->effects = EF_MUZZLEFLASH;
 		pev->takedamage = DAMAGE_YES;
-		m_flDie = gpGlobals->time + 14;
+		m_flDie = gpGlobals->time + 20; //14, 20
 		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10000, 30, CLASS_NONE, DMG_BURN  ); //destroy all near copyes
 		pev->effects |= EF_LIGHT;
 		pEntity = CBaseEntity::Instance(pev->owner);
@@ -723,6 +724,8 @@ void CPhase2::Spawn( )
 		UTIL_ShowMessageAll( "Shotgun gravity-beam created!"  );
 		}
 		
+		value = 2048;
+		
 		SetThink( IgniteThink );
 }
 
@@ -734,21 +737,48 @@ SetThink(IgniteThink);
 
 }
 
+
 void CPhase2::IgniteThink( void )
 {
+/* 	//init vectors
 	CBaseEntity *pEntity = NULL;
 	Vector	vecDir;
 	vecDir = Vector( 0, 0, 0 );
+	Vector vecDirToEnemy;
+	
+	//init distance
+	Vector vecMid = pev->origin; // + pev->view_ofs
+	Vector vecMidEnemy = pEntity->BodyTarget( vecMid );
 
+	//int fEnemyVisible = FBoxVisible(pev, m_hEnemy->pev, vecMidEnemy );	
+	vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
+	float flDistToEnemy = vecDirToEnemy.Length();
+	Vector vec = UTIL_VecToAngles(vecMidEnemy - vecMid); */
+
+
+
+
+
+	//init vectors
+	CBaseEntity *pEntity = NULL;
+	Vector	vecDir;
+	vecDir = Vector( 0, 0, 0 );
+	Vector vecDirToEnemy;
+	
+	
+	
+	
+	//
 	// Make a lightning strike
 	Vector vecEnd;
 	TraceResult tr;
-	vecEnd.x = RANDOM_FLOAT(-128,128);;	// Pick a random direction
-	vecEnd.y = RANDOM_FLOAT(-128,128);;
+	vecEnd.x = RANDOM_FLOAT(-128,128);	// Pick a random direction
+	vecEnd.y = RANDOM_FLOAT(-128,128);
 	vecEnd.z = RANDOM_FLOAT(-128,128);
 	// vecEnd = vecEnd.Normalize();
 	vecEnd = pev->origin + vecEnd.Normalize() * 2048;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
+	//UTIL_MakeAimVectors( pev->angles );
 	
 //lightings
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -771,24 +801,43 @@ void CPhase2::IgniteThink( void )
                 WRITE_BYTE( 175 ); // brightness
                 WRITE_BYTE( 8 ); // scroll speed
         MESSAGE_END();
+		//1.28
+		UTIL_Sparks( tr.vecEndPos );
+		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 128, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
+		//lights
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(tr.vecEndPos.x);	// X
+			WRITE_COORD(tr.vecEndPos.y);	// Y
+			WRITE_COORD(tr.vecEndPos.z);	// Z
+			WRITE_BYTE( 30 );		// radius * 0.1
+			WRITE_BYTE( 92 );		// r
+			WRITE_BYTE( 16 );		// g
+			WRITE_BYTE( 16 );		// b
+			WRITE_BYTE( 10 );		// life * 10
+			WRITE_BYTE( 256 );		// decay * 0.1
+		MESSAGE_END( );
 	
 	
-	
-	
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 1600 )) != NULL)
+if (gpGlobals->time <= m_flDie - 6) //14 sec 
+	{
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 2048 )) != NULL)
        		 {
+				//init distance (1.28)
+				Vector vecMid = pev->origin; // get self
+				Vector vecMidEnemy = pEntity->BodyTarget( vecMid );	//get target
+				vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
+				float flDistToEnemy = vecDirToEnemy.Length();
 				
-				if (pEntity->pev->takedamage && !(pEntity->pev->health <= 5))
+				if (pEntity->pev->takedamage && !(pEntity->pev->health <= 3))
 					{
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 40 ) - Center() ).Normalize();
-					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -600;
-					//UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 90.5, 154.7, 1 );
-					//if (pev->movetype != MOVETYPE_NONE)
-					//pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(77,110), DMG_BURN); //destroy all near thinks
-					//UTIL_ScreenFade( pEntity, Vector(RANDOM_LONG(128,255),RANDOM_LONG(0,64),0), 300, 30, 100, FFADE_IN );
+					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -(pev->dmg + 64 + value/flDistToEnemy*30); //600 700/16
 					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 40, 40, CLASS_NONE, DMG_MORTAR  );
+					pev->dmg += 1; //increase grav. power
 					} 
 			}
+	}
 
 if (gpGlobals->time >= m_flDie || pev->health <= 0) //full explode and self destroy
 	{
@@ -799,11 +848,11 @@ if (gpGlobals->time >= m_flDie || pev->health <= 0) //full explode and self dest
 			WRITE_COORD( pev->origin.y);
 			WRITE_COORD( pev->origin.z);
 			WRITE_SHORT( g_sModelIndexFireball );
-			WRITE_BYTE( RANDOM_LONG(8,16) + 7  ); // scale * 10
+			WRITE_BYTE( 35  ); // scale * 10
 			WRITE_BYTE( RANDOM_LONG(8,10)  ); // framerate
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(10,30), 256, CLASS_NONE, DMG_BURN  );
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 300, CLASS_NONE, DMG_BURN  );
 	pev->takedamage = DAMAGE_NO;
 	SUB_Remove();
 	return;

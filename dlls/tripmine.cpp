@@ -175,7 +175,7 @@ void CTripmineGrenade :: Spawn( void )
 
 	pev->takedamage = DAMAGE_YES;
 	pev->dmg = gSkillData.plrDmgTripmine;
-	pev->health = 1; // don't let die normally
+	pev->health = 5; // don't let die normally
 
 	if (pev->owner != NULL)
 	{

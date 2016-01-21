@@ -326,7 +326,7 @@ public:
 	float m_flNextChatTime10; //egon reload delay
 	float m_flNextChatTime11; //crowbar reload delay
 	float m_flNextChatTime12; //shotgun flare delay
-	float m_flNextChatTime13;
+	float m_flNextChatTime13; //turrets limit
 	float m_flNextChatTime14;
 	float m_flNextChatTime15;
 

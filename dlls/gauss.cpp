@@ -395,9 +395,10 @@ void CGauss::ThirdAttack( void )
 		Vector vecDir = gpGlobals->v_forward;
 		//UTIL_MakeAimVectors( pev->angles );
 		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 2048, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+		//Vector( -16, -16, 0 )
 		pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
 		
-	if (pEntity != NULL && pEntity->pev->takedamage && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) // != pEntity->IsPlayer()
+	if (pEntity != NULL && pEntity->pev->takedamage && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1 && pEntity->IsPlayer()) // != pEntity->IsPlayer()
     {
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
@@ -427,31 +428,37 @@ void CGauss::ThirdAttack( void )
             WRITE_BYTE( 100 ); // scroll speed
 			MESSAGE_END();
 			
-		pEntity->pev->punchangle.z = RANDOM_LONG(-5,5);
-		pEntity->pev->punchangle.x = RANDOM_LONG(-5,5);
+		pEntity->pev->punchangle.z = RANDOM_LONG(-25,25);
+		pEntity->pev->punchangle.x = RANDOM_LONG(-25,25);
 		pEntity->TakeDamage(pev, VARS( pev->owner ), 3, DMG_BLAST); //nuke wave immune bonus
 		
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		
 		//fix cheat in teamplay
 		CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
-		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE) && (pEntity->IsPlayer()))
-			m_pPlayer->pev->health += 0.35; //take unlimited health
+		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE)) // && (pEntity->IsPlayer())
+			m_pPlayer->pev->health += 3.0; //take unlimited health
 
 	
 	
 	vecDir = ( pEntity->Center() - Vector ( m_pPlayer->pev->v_angle.x, m_pPlayer->pev->v_angle.y, m_pPlayer->pev->v_angle.z ) - Center() ).Normalize();
-	pEntity->pev->velocity = m_pPlayer->pev->velocity + vecDir * -350;
+	pEntity->pev->velocity = vecDir * -150;
 	
 	//vecDir = ( pEntity->Center() - Vector ( m_pPlayer->pev->v_angle.x, m_pPlayer->pev->v_angle.y, m_pPlayer->pev->v_angle.z ) - Center() ).Normalize();
 	//pEntity->pev->velocity = m_pPlayer->pev->velocity + vecDir * -375;
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 0.015; 
 	
 	}
+	else
+	{
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1;
+	}
 	
 
 }
-//now not used
+//now unused
 BOOL CGauss::Lock( )
 {
 /* 
@@ -683,8 +690,10 @@ void CGauss::Fire( Vector vecOrigSrc, Vector vecDir, float flDamage )
 				fHasPunched = 1;
 
 				// try punching through wall if secondary attack (primary is incapable of breaking through)
-				if ( !m_fPrimaryFire )
+				if ( !m_fPrimaryFire ) //if second attack
 				{
+					//UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+					m_pPlayer->pev->punchangle.x = -(flDamage/7); //hardest aim, stop easy fraging
 					UTIL_TraceLine( tr.vecEndPos + vecDir * 8, vecDest, dont_ignore_monsters, pentIgnore, &beam_tr);
 					if (!beam_tr.fAllSolid)
 					{
@@ -1032,7 +1041,7 @@ void    CBlaster2Beam :: Explode( TraceResult* TResult, int DamageType )
 			Vector	vecDir;
 			vecDir = Vector( 0, 0, 0 );
 
-			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 3074 )) != NULL) //x3 radius (<1.26)
+			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 2074 )) != NULL)
        		 	{
 					if (pEntity->pev->takedamage || pEntity->pev->solid == SOLID_NOT) ///check only players
 					{

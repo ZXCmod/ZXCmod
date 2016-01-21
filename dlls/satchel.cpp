@@ -23,7 +23,7 @@
 #include "player.h"
 #include "gamerules.h"
 #include "decals.h"
-
+#include "shake.h"
 
 ////INIT CRYSTAL
 
@@ -88,6 +88,7 @@ LINK_ENTITY_TO_CLASS( monster_satchel, CSatchelCharge );
 //=========================================================
 void CSatchelCharge::Deactivate( void )
 {
+	pev->takedamage = DAMAGE_NO;
 	pev->solid = SOLID_NOT;
 	UTIL_Remove( this );
 }
@@ -117,6 +118,9 @@ void CSatchelCharge :: Spawn( void )
 	pev->dmg = gSkillData.plrDmgSatchel;
 	// ResetSequenceInfo( );
 	pev->sequence = 1;
+	
+	pev->health = 150;
+	pev->takedamage = DAMAGE_AIM;
 }
 
 
@@ -147,6 +151,7 @@ void CSatchelCharge::SatchelSlide( CBaseEntity *pOther )
 		BounceSound();
 	}
 	StudioFrameAdvance( );
+	
 }
 
 
@@ -176,6 +181,9 @@ void CSatchelCharge :: SatchelThink( void )
 	{
 		pev->velocity.z -= 8;
 	}	
+	
+	
+
 }
 
 void CSatchelCharge :: Precache( void )
@@ -185,7 +193,7 @@ void CSatchelCharge :: Precache( void )
 	PRECACHE_SOUND("weapons/g_bounce2.wav");
 	PRECACHE_SOUND("weapons/g_bounce3.wav");
 	PRECACHE_SOUND("zxc/crystal_heal.wav");
-	
+	PRECACHE_MODEL( "sprites/shrinkf.spr" );
 	
 	PRECACHE_MODEL( "models/crystal.mdl" );
 }
@@ -450,6 +458,7 @@ void CSatchel::ThirdAttack( void )
 		m_pPlayer->pev->rendermode = kRenderTransTexture;
         m_pPlayer->pev->renderamt = 1;
 		pl->m_pActiveItem->m_iId = WEAPON_CROWBAR;
+		UTIL_ScreenFade( m_pPlayer, Vector(0,0,200), 1.95, 3.5, 70, FFADE_IN );
 		return;
 		}
 }
@@ -669,7 +678,7 @@ void    CBlasterBeam4 :: Precache( )
         BeamSprite = PRECACHE_MODEL( BLASTER_BEAM_SPRITE );
         PRECACHE_MODEL( "models/crystal.mdl" );
 		PRECACHE_SOUND ("weapons/rocket1.wav");
-		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
+		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shrinkf.spr" );
 		//shockwave.spr
 }
 //We hit something (yay)

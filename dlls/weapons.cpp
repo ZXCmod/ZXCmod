@@ -30,7 +30,7 @@
 #include "soundent.h"
 #include "decals.h"
 #include "gamerules.h"
-
+#include "shake.h" //init fade_
 extern CGraph	WorldGraph;
 extern int gEvilImpulse101;
 
@@ -676,6 +676,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->pev->renderfx = kRenderFxNone;
 		m_pPlayer->pev->renderamt = 0;
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+		UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
 	}
 	}
 	
@@ -707,6 +708,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->pev->renderfx = kRenderFxNone;
 		m_pPlayer->pev->renderamt = 0;
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+		UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
 	}
 	}
 	
@@ -742,6 +744,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_pPlayer->pev->rendermode = kRenderNormal;
 		m_pPlayer->pev->renderfx = kRenderFxNone;
 		m_pPlayer->pev->renderamt = 0;
+		UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
 		
 	}
 	}

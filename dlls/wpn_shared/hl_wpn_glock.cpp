@@ -485,7 +485,7 @@ void    CGB:: Explode()
 		WRITE_BYTE( 10 ); // r, g, b
 		WRITE_BYTE( 200 ); // r, g, b
 		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 128 ); // brightness
+		WRITE_BYTE( 40 ); // brightness
 		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 
 		
@@ -508,17 +508,17 @@ void    CGB :: MoveThink( )
 	vecEnd.y = RANDOM_FLOAT(-360,360);
 	vecEnd.z = RANDOM_FLOAT(-360,360);
 	// vecEnd = vecEnd.Normalize();
-	vecEnd = pev->origin + vecEnd.Normalize() * 64;
+	vecEnd = pev->origin + vecEnd.Normalize() * pev->dmg/2;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
 
 
 //sounds
 	switch(RANDOM_LONG(0,8))
 	{
-	case 0: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build1.wav", 0.3, ATTN_NORM); break;
-	case 3: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build2.wav", 0.4, ATTN_NORM); break;
-	case 5: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build3.wav", 0.5, ATTN_NORM); break;
-	case 8: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build4.wav", 0.55, ATTN_NORM); break;
+	case 0: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build1.wav", 0.4, ATTN_NORM); break;
+	case 3: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build2.wav", 0.5, ATTN_NORM); break;
+	case 5: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build3.wav", 0.6, ATTN_NORM); break;
+	case 8: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build4.wav", 0.7, ATTN_NORM); break;
 	}
 
 /* TraceResult tr, beam_tr;
@@ -573,12 +573,12 @@ void    CGB :: MoveThink( )
 				if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()) && pEntity->pev->health >= 3) //!(pEntity->pev->movetype == MOVETYPE_FLY)
 					{
 					vecDir = ( pEntity->Center() - Vector ( 0, 0, 5 ) - Center() ).Normalize();
-					pEntity->pev->velocity = vecDir * -700;
+					pEntity->pev->velocity = vecDir * -575; //700 550
 					//UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 90.5, 154.7, 1 );
 					//if (pev->movetype != MOVETYPE_NONE)
 					//pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(77,110), DMG_BURN); //destroy all near thinks
 					//UTIL_ScreenFade( pEntity, Vector(RANDOM_LONG(128,255),RANDOM_LONG(0,64),0), 300, 30, 100, FFADE_IN );
-					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 7, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+					::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/5, pev->dmg, CLASS_NONE, DMG_SHOCK  );
 					} 
 			}
 	

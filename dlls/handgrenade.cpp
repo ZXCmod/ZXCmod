@@ -72,6 +72,7 @@ void CHandGrenade::Precache( void )
 	PRECACHE_MODEL("models/p_grenade.mdl");
 	PRECACHE_SOUND( "weapons/gravgren.wav" );
 	m_iTrail = PRECACHE_MODEL("sprites/shockwave.spr");
+	PRECACHE_MODEL( "sprites/black_smoke4.spr" );
 	//m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 	
 
@@ -154,7 +155,32 @@ void CHandGrenade::SecondaryAttack()
 	}
 }
 //edit
+//1.28 smoke grenade
 
+void CHandGrenade::ThirdAttack()
+{
+if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
+	{
+int iAnim;
+Vector vecSrc = m_pPlayer->pev->origin;
+Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
+
+#ifndef CLIENT_DLL
+		CBaseEntity *hGren = Create( "weapon_canister", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+		hGren->pev->velocity = vecThrow;
+		//hGren->pev->avelocity.y = 500;
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		iAnim = HANDGRENADE_THROW1;
+		SendWeaponAnim( iAnim );
+#endif
+
+	m_fInAttack = 0;
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.25;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.95;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+	}
+}
 
 void CHandGrenade::WeaponIdle( void )
 {
@@ -407,7 +433,21 @@ class   CGrav1 : public CBaseEntity
 		short		m_LaserSprite;
 };
 
+class   CSmoke : public CBaseEntity
+{
+        public:
+
+        void    Spawn           ( );
+		void Precache ();
+        void    MoveThink       ( );
+        void    Explode         ();
+		int m_flDie;
+		short		m_Sprite;
+};
+
+
 LINK_ENTITY_TO_CLASS( weapon_saa, CGrav1 );
+LINK_ENTITY_TO_CLASS( weapon_canister, CSmoke );
 
 
 
@@ -454,10 +494,17 @@ void    CGrav1:: Explode(int DamageType)
 {
 
 ///////////MORE EFFECTS! energydraw.wav
-			CBaseEntity *pEntity = NULL;
-			Vector	vecDir;
-			vecDir = Vector( 0, 0, 0 );
-			Vector direction = Vector(0,0,1);
+	CBaseEntity *pEntity = NULL;
+	Vector	vecDir;
+	vecDir = Vector( 0, 0, 0 );
+	Vector direction = Vector(0,0,1);
+	
+	if (pev->movetype == MOVETYPE_TOSS)
+	{
+		pev->movetype = MOVETYPE_BOUNCE;
+		pev->friction = 1.0;
+		pev->gravity = 1.0;
+	}
 
 	// Make a lightning strike
 	Vector vecEnd;
@@ -474,9 +521,9 @@ void    CGrav1:: Explode(int DamageType)
 				if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP) ///NICE!!!
 				{
 				vecDir = ( pEntity->Center() - Vector ( 0, 0, 10 ) - Center() ).Normalize(); ///NOW WORKED! CONGRATULATIONS!
-				pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -420;
+				pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -420; //420  + pev->dmg
 				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 1000, 25, CLASS_NONE, DMG_GENERIC  );
-				
+				//pev->dmg += 3; //increase grav. power
 				UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
 				//pEntity->TakeHealth(-11, DMG_GENERIC);
 				#ifndef CLIENT_DLL
@@ -506,7 +553,9 @@ void    CGrav1:: Explode(int DamageType)
         MESSAGE_END();
 		
 		
-		
+		//1.28
+		UTIL_Sparks( tr.vecEndPos );
+		::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 128, 128, CLASS_NONE, DMG_MORTAR  ); //end blast
 		
 		
 //spark effects
@@ -655,5 +704,76 @@ if (gpGlobals->time >= m_flDie+5)
 	SetThink( SUB_Remove );	
 	}
 	
+}
+
+////////////
+////////////smoke/////////
+////////////
+
+
+
+void    CSmoke :: Spawn( )
+{
+		Precache( );
+        SET_MODEL( ENT(pev), "models/w_grenade.mdl" );
+        pev->movetype = MOVETYPE_TOSS;
+        pev->solid = SOLID_BBOX;
+        UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
+        UTIL_SetOrigin( pev, pev->origin );
+		m_flDie = gpGlobals->time + 30;
+		pev->nextthink = gpGlobals->time + 1.5;//10 times a second
+		SetThink( MoveThink );
+
+}
+
+void CSmoke :: Precache( void )
+{
+	m_Sprite = PRECACHE_MODEL( "sprites/black_smoke4.spr" );
+}
+
+
+
+
+
+
+void    CSmoke:: Explode( )
+{
+	pev->nextthink = gpGlobals->time + 0.3; //0.15 old
+	SetThink(MoveThink);
+}
+
+
+void    CSmoke :: MoveThink( )
+{
+		// lots of smoke
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE( TE_SMOKE );
+			WRITE_COORD( pev->origin.x + RANDOM_FLOAT( -150, 150 ) );
+			WRITE_COORD( pev->origin.y + RANDOM_FLOAT( -150, 150 ) );
+			WRITE_COORD( pev->origin.z - 8 );
+			WRITE_SHORT( m_Sprite );
+			WRITE_BYTE( 64 ); // scale * 10
+			WRITE_BYTE( 6 ); // framerate
+		MESSAGE_END();
+
+if (gpGlobals->time >= m_flDie) //full explode and self destroy
+	{
+
+					// random explosions
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 8  ); // scale * 10
+			WRITE_BYTE( 16  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+	//SetThink( SUB_Remove );
+		SUB_Remove();
+	}
+
+	Explode();
 }
 
