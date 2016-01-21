@@ -1,4 +1,4 @@
-# ZXCmod 1.27 free source 2008-2009.
+# ZXCmod 1.28 free source 2008-2009.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -6,6 +6,16 @@ Get current HL SDK [here](https://github.com/ValveSoftware/halflife).
 Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other information. 
 
 #Changelog
+
+###1.28 
+
+- third attack on mp5: lazers with little zap. - (mp5.cpp)
+- third attack on hornetgun: freeze bomb. - (hornetgun.cpp)
+- third attack on hand grenades: smoke - (handgrenade.cpp)
+- new console command: mp_crowbar. Value 0 is disabled rockets, multiply dmg x2. Default 1 - (game.cpp, crowbar.cpp, game.h, shotgun.cpp)
+- set 5 turrets limit - (turret.cpp, rpg.cpp)
+- other bug fixes and changes. 
+
 
 ###1.27 
  
