@@ -1,4 +1,4 @@
-# ZXCmod 1.31 free source 2008-2009.
+# ZXCmod 1.31-3 free source 2008-2009.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -7,6 +7,13 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
  
+###1.31 [3rd update].
+- third attack on crossbow
+- fourth attack on crossbow
+- improved weap. balance
+- other little changes.
+
+   
 ###1.31
 
 - new function: `FourthAttack()`. Any effect by pressed `USE` and `ATTACK2` keys - (weapons.cpp, weapons.h)
