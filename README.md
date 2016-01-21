@@ -1,4 +1,4 @@
-# ZXCmod 1.30a free source 2008-2009.
+# ZXCmod 1.31 free source 2008-2009.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -7,6 +7,25 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
  
+###1.31
+
+- new function: `FourthAttack()`. Any effect by pressed `USE` and `ATTACK2` keys - (weapons.cpp, weapons.h)
+- fourth attack on crowbar: power hit
+- fourth attack on glock: zoom
+- fourth attack on handgrenates
+- fourth attack on satchels
+- fourth attack on egon: storm
+- fourth attack on shotgun: cannon
+- fourth attack on mp5: plasma
+- new console command: `mp_tank`. Default `0`.
+- new console command: `mp_teleport`. Default `1`.
+- weapon balance improved
+- optimized: weapon code, source code, net game.
+- some bugs destroyed, but hlds can crash with `sv_cheats 1` and `mp_teamplay 1`.
+- cleared bad code in player part. [2nd upd] - (client.cpp, player.cpp)
+- second satchels updated and crowbars (models replaced) [2nd upd] - (ggrenade.cpp, satchels.cpp, crowbar.cpp, weapons.cpp)
+
+  
 ###1.30a
 
 - third attack on tripmine: Ice-Friction, only heal crystal can return inital friction - (tripmine.cpp, satchel.cpp)
