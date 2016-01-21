@@ -124,15 +124,19 @@ void CCrossbowBolt2::Spawn( )
 	pev->gravity = 0.0;
 	pev->friction = 0.0;
 	
+	
+	
 	g_lock = FALSE;
 	
 	Vector vecThrow;
-	vecThrow = gpGlobals->v_forward * 3000;
+	vecThrow = gpGlobals->v_forward * 2048;
 	pev->velocity = vecThrow;
 	
 	g_sModelIndexLaser = PRECACHE_MODEL( "sprites/plasma.spr" );
 	
 	pev->angles = UTIL_VecToAngles (pev->velocity);
+	
+	pev->effects |= EF_LIGHT;
 	
 	//set trails
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -151,7 +155,7 @@ void CCrossbowBolt2::Spawn( )
 	SET_MODEL(ENT(pev), "models/crossbow_bolt.mdl");
 
 	UTIL_SetOrigin( pev, pev->origin );
-	UTIL_SetSize(pev, Vector(-2, -2, -1), Vector(2, 2, 1));
+	UTIL_SetSize(pev, Vector(-4, -4, -3), Vector(4, 4, 3));
 
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/xbow_hit1.wav", 1.0, ATTN_NORM);
 	pev->nextthink = gpGlobals->time + 0.01;
@@ -174,7 +178,7 @@ void CCrossbowBolt2::Update( )
 		pev->velocity = g_vecZero;
 	
 		//remove
-		if (pev->ltime >= (50.0+RANDOM_LONG(1,16)))
+		if (pev->ltime >= 60.0)
 		{
 			pev->takedamage = DAMAGE_NO;
 			pOther = NULL;
@@ -192,23 +196,31 @@ void CCrossbowBolt2::Update( )
 			return;
 		}
 		
-		/* 		
-		if( !pOther->IsAlive( ) ) //destroy think after object kill
-		{
-			g_lock = FALSE;
-			//UTIL_Remove( this );
-		} 
-		*/
-	
-		pOther->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pOther->pev->origin.x));
-		pOther->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pOther->pev->origin.y));
-		pOther->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pOther->pev->origin.z));
 		
+		Vector vecDir;
+		UTIL_MakeVectorsPrivate( pev->angles, vecDir, NULL, NULL );
+		
+	
+		// pOther->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pOther->pev->origin.x));
+		// pOther->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pOther->pev->origin.y));
+		pOther->pev->velocity = ( (( pev->origin) - pOther->pev->origin));
+		
+		//pOther->pev->velocity = 400 * vecDir.Normalize(); //new code
+		
+		//vecDir = ( (Center()- pOther->Center()) );
+		//pOther->pev->velocity = vecDir * -70;
 		
 		//always hurt
 		if ( pOther != NULL && pOther->pev->takedamage )
 		{
-			pOther->TakeDamage(pev, VARS( pev->owner ), 1, DMG_BULLET);	
+		
+			//if( !pOther->IsAlive( ) ) //destroy think after object kill
+			{
+
+				
+			} 
+		
+			pOther->TakeDamage(pev, VARS( pev->owner ), 0.5, DMG_BULLET);	
 			
 			//draw line
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -231,25 +243,58 @@ void CCrossbowBolt2::Update( )
 				WRITE_BYTE( 255 ); // brightness
 				WRITE_BYTE( 255 ); // scroll speed
 			MESSAGE_END();
+			
 		
 			pev->nextthink = gpGlobals->time + 0.1;
+		}
+		else
+		{
+			g_lock = FALSE;
+			pev->effects = 0;
+			pev->nextthink = gpGlobals->time + 1.1;
 		}
 	}
 	else	//no targets
 	{
-		//explode
+		//explode timeout
 		if (pev->ltime >= 5.0)
 		{
 			pev->takedamage = DAMAGE_NO;
-			//pOther = NULL;
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 50, 128, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+			
+			//explode
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_EXPLOSION );
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z);
+				WRITE_SHORT( g_sModelIndexFireball );
+				WRITE_BYTE( 10  ); // scale 
+				WRITE_BYTE( 24  ); // framerate
+				WRITE_BYTE( TE_EXPLFLAG_NONE );
+			MESSAGE_END();
+			//smoke
+			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_SMOKE );
+				WRITE_COORD( pev->origin.x );
+				WRITE_COORD( pev->origin.y );
+				WRITE_COORD( pev->origin.z );
+				WRITE_SHORT( g_sModelIndexSmoke );
+				WRITE_BYTE( pev->dmg ); // smoke scale * 10
+				WRITE_BYTE( 24  ); // framerate
+			MESSAGE_END();
+
 			UTIL_Remove( this );
 			SetTouch( NULL );
-		}
 		
 		pev->nextthink = gpGlobals->time + 1.0;
-		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/xbow_hit1.wav", 0.5, ATTN_NORM);
+		//EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/xbow_hit1.wav", 0.5, ATTN_NORM);
 	}
 	
+	
+	}
+	
+	//pev->nextthink = gpGlobals->time + 1.0;
 }
 
 void    CCrossbowBolt2 :: Hit( CBaseEntity* pOther )
@@ -257,16 +302,18 @@ void    CCrossbowBolt2 :: Hit( CBaseEntity* pOther )
 	//set new position
 
 	TraceResult tr = UTIL_GetGlobalTrace( );
-	//Vector      StartPosition;
 	pev->enemy = pOther->edict( );
-	//StartPosition = pev->origin - pev->velocity.Normalize() * 32;
+	
+	//stop moving
+	pev->velocity = g_vecZero;
 	
 	//private direction
 	Vector vecSrc = pev->origin;
 	Vector vecDir;
 	UTIL_MakeVectorsPrivate( pev->angles, vecDir, NULL, NULL );
 
-
+	pev->movetype = MOVETYPE_NONE;
+	pev->solid = SOLID_NOT;
 
 
 
@@ -293,7 +340,7 @@ void    CCrossbowBolt2 :: Hit( CBaseEntity* pOther )
 			WRITE_BYTE( 16 );		// decay * 0.1
 		MESSAGE_END( );
 		
-		pev->solid = SOLID_NOT;
+		
 		
 		g_lock = TRUE;
 		m_hEnemy = pOther;
@@ -313,12 +360,36 @@ void    CCrossbowBolt2 :: Hit( CBaseEntity* pOther )
 		
 		
 	}
-	//else
+	else
+	{
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 50, 128, CLASS_NONE, DMG_MORTAR  );
+		//explode
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION );
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 10  ); // scale 
+			WRITE_BYTE( 24  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+		//smoke
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SMOKE );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_SHORT( g_sModelIndexSmoke );
+			WRITE_BYTE( pev->dmg ); // smoke scale * 10
+			WRITE_BYTE( 24  ); // framerate
+		MESSAGE_END();
 		
+		UTIL_Remove( this );
 	
-	
+	}
 	SetTouch( NULL );
-	//UTIL_Remove( this );
+	
 }
 
 
@@ -638,7 +709,7 @@ void CCrossbow::ThirdAttack()
 void CCrossbow::FourthAttack()
 {
 
-	Vector vecThrow = gpGlobals->v_forward * 1000; //1600
+	Vector vecThrow = gpGlobals->v_forward * 2048; //1600
 
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;

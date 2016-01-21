@@ -618,7 +618,65 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 }
 
 
+void CRpg::FourthAttack()
+{
+if (m_pPlayer->m_flNextChatTime14 > 2)
+	return;
 
+
+	if (m_iClip)
+	{
+
+		//play sounds
+		switch(RANDOM_LONG(0,1))
+		{
+		case 0: 
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/glauncher.wav", 0.9, ATTN_NORM);
+		break;
+		case 1: 
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/glauncher2.wav", 0.9, ATTN_NORM);
+		break;
+		}
+
+		
+		
+		
+		
+		
+		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		
+		Vector vecSrc = m_pPlayer->pev->origin;
+		Vector vecThrow = gpGlobals->v_forward * 430;
+
+		#ifndef CLIENT_DLL
+		CBaseEntity *pSatchel = Create( "player_freeze", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward + gpGlobals->v_right * 4 + gpGlobals->v_up * -8, Vector(0,0,0), m_pPlayer->edict() );
+			
+			//export properties
+			//*
+			pSatchel->pev->velocity = vecThrow;
+			pSatchel->pev->skin = 1;
+			//pSatchel->pev->gravity = 0.5;
+			pSatchel->pev->friction = 1.0;
+			pSatchel->pev->movetype = MOVETYPE_TOSS;
+			SET_MODEL( ENT(pSatchel->pev), "models/fungus(small).mdl" );
+			UTIL_SetSize( pSatchel->pev, Vector( -8, -8, 0), Vector( 8, 8, 26 ) );
+			//*
+			
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			//m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
+			PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
+			m_iClip--; 
+			m_pPlayer->m_flNextChatTime14 ++;
+
+		#endif
+		//return;
+		UpdateSpot( );
+	}
+}
 
 
 

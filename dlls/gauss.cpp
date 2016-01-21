@@ -381,11 +381,10 @@ void CGauss::ThirdAttack( void )
 	vecSrc = m_pPlayer->GetGunPosition( );
 	Vector vecDir = gpGlobals->v_forward;
 	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 2048, dont_ignore_monsters, m_pPlayer->edict(), &tr);
-	//Vector( -16, -16, 0 )
 	pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
 		
 	#ifndef CLIENT_DLL
-	if (pEntity != NULL && pEntity->pev->takedamage && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1 && pEntity->IsPlayer()) //  && pEntity->IsPlayer()
+	if (pEntity != NULL && pEntity->pev->takedamage && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) //  && pEntity->IsPlayer()
     {
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
@@ -420,13 +419,13 @@ void CGauss::ThirdAttack( void )
 		
 		//fix cheat in teamplay
 		CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
-		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE) && m_pPlayer->pev->health <= 300) // && (pEntity->IsPlayer())
+		if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE) && m_pPlayer->pev->health <= 300 && pEntity->IsPlayer())
 			m_pPlayer->pev->health += 3.0; //take unlimited health
 
-		pEntity->pev->velocity.x = ( ( m_pPlayer->pev->velocity.x + m_pPlayer->pev->origin.x) - pEntity->pev->origin.x);
-		pEntity->pev->velocity.y = ( ( m_pPlayer->pev->velocity.y + m_pPlayer->pev->origin.y) - pEntity->pev->origin.y);
-		pEntity->pev->velocity.z = ( ( m_pPlayer->pev->velocity.z + m_pPlayer->pev->origin.z) - pEntity->pev->origin.z);
-		
+		// pEntity->pev->velocity.x = ( ( m_pPlayer->pev->velocity.x + m_pPlayer->pev->origin.x) - pEntity->pev->origin.x);
+		// pEntity->pev->velocity.y = ( ( m_pPlayer->pev->velocity.y + m_pPlayer->pev->origin.y) - pEntity->pev->origin.y);
+		// pEntity->pev->velocity.z = ( ( m_pPlayer->pev->velocity.z + m_pPlayer->pev->origin.z) - pEntity->pev->origin.z);
+		pEntity->pev->velocity = m_pPlayer->pev->velocity + gpGlobals->v_forward  * -220; //new code
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 0.015; 
 		#endif
 	

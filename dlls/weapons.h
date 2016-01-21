@@ -738,6 +738,7 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void ); // 1.29 wp
+	void FourthAttack( void ); // 1.32 wp
 	void WeaponIdle( void );
 	float m_flNextChatTime9; //delay
 	void UpdateSpot( void );
@@ -951,13 +952,14 @@ class CHgun : public CBasePlayerWeapon
 public:
 	void Spawn( void );
 	void Precache( void );
-	void ThirdAttack( void );
 	int iItemSlot( void ) { return 4; }
 	int GetItemInfo(ItemInfo *p);
 	int AddToPlayer( CBasePlayer *pPlayer );
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
+	void FourthAttack( void );
 	
 	BOOL Deploy( void );
 	BOOL IsUseable( void );

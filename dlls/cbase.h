@@ -375,6 +375,8 @@ public:
 
 	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE };
 	int m_fireState;
+
+	int     m_type; //two types of think's: freeze|explode
 };
 
 

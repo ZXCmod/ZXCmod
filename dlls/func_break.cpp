@@ -154,6 +154,8 @@ void CBreakable::Spawn( void )
     pev->movetype	= MOVETYPE_PUSH;
     m_angle			= pev->angles.y;
 	pev->angles.y	= 0;
+	
+	UTIL_SetOrigin( pev, pev->origin );
 
 	// HACK:  matGlass can receive decals, we need the client to know about this
 	//  so use class to store the material flag

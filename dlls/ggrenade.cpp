@@ -498,7 +498,7 @@ void CGrenadeBeam::Update( void )
 		{
 			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 360 )) != NULL)
 			{
-				if (pEntity && !(pEntity->pev->health <= 3))
+				if (pEntity && !(pEntity->pev->health <= 3) && FVisible( pEntity ))
 				{
 					//::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(30,50), 256, CLASS_NONE, DMG_MORTAR  );
 					//shock ray

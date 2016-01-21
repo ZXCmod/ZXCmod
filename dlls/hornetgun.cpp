@@ -73,11 +73,23 @@ void CHgun::Precache( void )
 	PRECACHE_MODEL("models/w_hgun.mdl");
 	PRECACHE_MODEL("models/p_hgun.mdl");
 	PRECACHE_MODEL( "models/can.mdl" );
+	PRECACHE_MODEL( "models/fungus(small).mdl" );
+	PRECACHE_MODEL( "models/fungus(small)t.mdl" );
+	
+	
 	PRECACHE_SOUND( "weapons/glauncher.wav" );
 	PRECACHE_SOUND( "weapons/glauncher2.wav" );
 	PRECACHE_SOUND( "debris/beamstart9.wav" );
 	PRECACHE_SOUND( "debris/bustconcrete1.wav" );
 	PRECACHE_SOUND( "items/medcharge4.wav" );
+	PRECACHE_SOUND( "debris/beamstart4.wav" );
+	PRECACHE_SOUND( "buttons/blip1.wav" );
+	PRECACHE_SOUND( "buttons/blip2.wav" );
+	PRECACHE_SOUND( "zxc/explode3.wav" );
+	
+
+	
+	
 	BSpr = PRECACHE_MODEL("sprites/laserbeam.spr");
 	PRECACHE_MODEL("models/bag.mdl");
 	
@@ -362,7 +374,7 @@ void CHgun::SecondaryAttack( void )
 }
 	
 
-	//////////////3
+//////////////3
 
 void CHgun::ThirdAttack( void )
 {
@@ -406,14 +418,113 @@ if (m_pPlayer->m_flNextChatTime14 > 2)
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 			m_flRechargeTime = gpGlobals->time + 0.5;
 			m_pPlayer->m_flNextChatTime14 ++;
+			pSatchel->pev->skin = 0;
 			Reload( );
 		#endif
 		return;
 	}
-
-
 }
-	
+
+//////////////4
+
+void CHgun::FourthAttack( void )
+{
+
+	if (m_pPlayer->pev->health <= 5)
+		return;
+
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 0)
+	{
+
+		
+
+		
+		CBaseEntity *pEntity;
+		TraceResult	tr;	
+		Vector vecSrc;
+		vecSrc = m_pPlayer->GetGunPosition( );
+		Vector vecDir = gpGlobals->v_forward;
+		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 4096, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+		pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
+		
+		if (!pEntity->IsAlive())
+		{
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5; 
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "buttons/blip1.wav", 0.75, ATTN_NORM);
+		}
+		if (pEntity->pev->health >= pEntity->pev->max_health )
+			return;
+		
+		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		//dont create another reload void, reload() used by hornet 
+
+		int iAnim;
+
+		
+		if (pEntity != NULL && (pEntity->pev->flags & (FL_CLIENT | FL_MONSTER)) ) //  && pEntity->IsPlayer()
+		{
+
+			#ifndef CLIENT_DLL
+				m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+				iAnim = HGUN_FIDGETSHAKE;
+				SendWeaponAnim( iAnim );
+				
+				//hurt a player, but don't kill yourself
+				if (m_pPlayer->pev->health >= 6)
+				{
+					m_pPlayer->TakeDamage(pev, VARS( pev->owner ), 5, DMG_FALL);
+					UTIL_ScreenFade( m_pPlayer, Vector(175,25,25), 1, 0.24, 64, FFADE_IN ); //flash 
+				}
+				
+				//heal anyone
+				if (pEntity->pev->health <= pEntity->pev->max_health )
+				{
+					pEntity->TakeHealth(10, DMG_GENERIC);
+					UTIL_ScreenFade( pEntity, Vector(0,175,50), 1, 0.24, 64, FFADE_IN ); //flash 
+				}
+				
+				//ray
+				MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+					WRITE_BYTE( TE_BEAMPOINTS );
+					WRITE_COORD(vecSrc.x);
+					WRITE_COORD(vecSrc.y);
+					WRITE_COORD(vecSrc.z);
+					WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+					WRITE_COORD( pEntity->pev->origin.y );
+					WRITE_COORD( pEntity->pev->origin.z );
+					WRITE_SHORT( BSpr ); //sprite
+					WRITE_BYTE( 0 ); // Starting frame
+					WRITE_BYTE( 0  ); // framerate * 0.1
+					WRITE_BYTE( 3 ); // life * 0.1
+					WRITE_BYTE( 10 ); // width
+					WRITE_BYTE( 15 ); // noise
+					WRITE_BYTE( 0 ); // color r,g,b
+					WRITE_BYTE( 175 ); // color r,g,b
+					WRITE_BYTE( 50 ); // color r,g,b
+					WRITE_BYTE( 100 ); // brightness
+					WRITE_BYTE( 12 ); // scroll speed
+				MESSAGE_END();
+				
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart4.wav", 0.75, ATTN_NORM);
+				
+					
+				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 2;
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5; 
+				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+				
+				
+				Reload( );
+			#endif
+		}
+		
+		
+		return;
+	}
+}
 
 
 
@@ -545,6 +656,8 @@ class   CFreezeBomb : public CGrenade
 		void 	EXPORT Touch( CBaseEntity *pOther );
 		void  	Exp( void );
 		int 	m_flDie;
+		
+		
 };
 
 LINK_ENTITY_TO_CLASS( weapon_clip_generic, CFreeze );
@@ -733,21 +846,23 @@ void  CFreeze::MoveTouch( CBaseEntity *pOther )
 
 
 
-void    CFreezeBomb :: Spawn( )
+void    CFreezeBomb :: Spawn( void )
 {
+
+
 	SET_MODEL( ENT(pev), "models/bag.mdl" );
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( 0, 0, 0), Vector(0, 0, 0) );
+	UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
 	UTIL_SetOrigin( pev, pev->origin );
 	m_flDie = gpGlobals->time + 180;
 	pev->takedamage = DAMAGE_YES;
-	pev->gravity			= 0.35;
+	pev->gravity			= 0.55;
 	pev->friction			= 0.35;
 	pev->health			= 10100;
 	pev->dmg = 10;
-
-	pev->nextthink = gpGlobals->time + 3;
+	
+	pev->nextthink = gpGlobals->time + 4;
 	SetTouch( Touch );
 	SetThink( MoveThink );
 }
@@ -759,16 +874,33 @@ void    CFreezeBomb :: Explode( )
 	if (pev->dmg == 10)
 		{
 			pev->nextthink = gpGlobals->time + 1.35; //slow update
-			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/bustconcrete1.wav", 0.5, ATTN_NORM);
-			pev->velocity.z = 125; //jump
-			pev->angles.y += 30; //rotate
+			
+			
+			if (pev->skin==0)
+			{
+				pev->velocity.z = 125; //jump
+				pev->angles.y += 30; //rotate
+				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/bustconcrete1.wav", 0.5, ATTN_NORM);
+			}
+			else
+			{
+
+				EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "buttons/blip2.wav", 0.4, ATTN_NORM, 0, 150);
+				pev->movetype = MOVETYPE_TOSS;
+			
+			}
+			
 		}
-	else
+	else if (pev->skin==0)
 		{
 			pev->nextthink = gpGlobals->time + 0.02; //fast
 			EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "items/medcharge4.wav", 1, ATTN_NORM, 0, pev->dmg*3);
 		}
-		
+	else
+		{
+			pev->nextthink = gpGlobals->time + 0.02; //fast
+			EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "debris/bustconcrete1.wav", .5, ATTN_NORM, 0, pev->dmg*3);
+		}
 	SetThink(MoveThink);
 	
 }
@@ -780,18 +912,18 @@ void    CFreezeBomb :: MoveThink( )
 	CBaseEntity *pEntity = NULL;
 	Explode();
 	
+	pev->movetype = MOVETYPE_TOSS;
+	
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 300 )) != NULL && (pev->dmg == 10))
        	{
 		if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP)
 			{
-			if (FVisible( pEntity ) && (pev->flags & FL_ONGROUND))
+			if (FVisible( pEntity )) // && (pev->flags & FL_ONGROUND)
 				{
-				pev->dmg = 11;
-				pev->velocity.z = 275; //jump strong
-				pev->nextthink = gpGlobals->time + 0.25;
-				//UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
-				//UTIL_SetOrigin( pev, pev->origin );
-				//return;
+					pev->classname = MAKE_STRING( "rpg_rocket" );
+					pev->dmg = 11;
+					pev->velocity.z = 275; //jump strong
+					pev->nextthink = gpGlobals->time + 0.25;
 				}
 			}
 		}
@@ -827,6 +959,34 @@ void    CFreezeBomb :: MoveThink( )
 		
 			pev->nextthink = gpGlobals->time + 0.1;
 			pev->takedamage = DAMAGE_NO;
+			
+			//Last check for explode
+			if ( pev->skin == 1 )
+			{
+				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 256, 512, CLASS_NONE, DMG_MORTAR  );
+				//explode
+				MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+					WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+					WRITE_COORD( pev->origin.x);
+					WRITE_COORD( pev->origin.y);
+					WRITE_COORD( pev->origin.z);
+					WRITE_SHORT( g_sModelIndexFireball );
+					WRITE_BYTE( 80  ); // scale * 10
+					WRITE_BYTE( 16  ); // framerate
+					WRITE_BYTE( TE_EXPLFLAG_NONE );
+				MESSAGE_END();
+				//smoke
+				MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+					WRITE_BYTE( TE_SMOKE );
+					WRITE_COORD( pev->origin.x );
+					WRITE_COORD( pev->origin.y );
+					WRITE_COORD( pev->origin.z );
+					WRITE_SHORT( g_sModelIndexSmoke );
+					WRITE_BYTE( 72 ); // smoke scale * 10
+					WRITE_BYTE( 24  ); // framerate
+				MESSAGE_END();
+				
+			}
 		
 			SUB_Remove ();
 		} 
@@ -838,12 +998,15 @@ void    CFreezeBomb :: MoveThink( )
 
 void  CFreezeBomb::Touch( CBaseEntity *pOther )
 {
-	//stop moving
 
+	//stop moving
+	//pev->velocity = pev->velocity * 0.25;
+	//pev->friction = 1;
+	//pev->avelocity = pev->avelocity * 0.9;
 	pev->movetype = MOVETYPE_TOSS;
 	SetTouch( NULL );
-	pev->nextthink = gpGlobals->time + 0.25;
-	if (pev->solid = SOLID_BBOX) //no stuck
+	pev->nextthink = gpGlobals->time + 0.35;
+	if (pev->solid = SOLID_BBOX && pev->skin == 0) //no stuck
 		pev->solid = SOLID_NOT;
 		
 }
@@ -851,7 +1014,7 @@ void  CFreezeBomb::Touch( CBaseEntity *pOther )
 void  CFreezeBomb::Exp( )
 {
 
-	if (pev->dmg > 75) //delete object time
+	if (pev->dmg > 75 && pev->skin == 0) //delete object time, if freeze bag
 		{
 		//effects
 		Vector direction = Vector(0,0,1);
@@ -876,10 +1039,10 @@ void  CFreezeBomb::Exp( )
 
 		Explode();
 		
+		
+		//freeze action
 		while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 450 )) != NULL)
 			{
-			//if (pEntity->pev->movetype == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP && pev->movetype == MOVETYPE_TOSS)
-				//{
 				if (pEntity != NULL && pEntity->pev->takedamage != pEntity->IsPlayer()) //in 1.26 allow to freeze monsters
 				{
 				if (FVisible( pEntity )) //anyone entity
@@ -907,9 +1070,10 @@ void  CFreezeBomb::Exp( )
 						}
 					}
 				}
+			
 			}
 		
-		//owtheers
+		//
 		SetTouch( NULL );
 		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/beamstart9.wav", 1.0, ATTN_NORM);
 		EMIT_SOUND( ENT(pev), CHAN_ITEM, "debris/beamstart9.wav", 1.0, ATTN_NORM );
@@ -921,7 +1085,7 @@ void  CFreezeBomb::Exp( )
 			WRITE_COORD(vecSrc.x);	// X
 			WRITE_COORD(vecSrc.y);	// Y
 			WRITE_COORD(vecSrc.z);	// Z
-			WRITE_BYTE( 24 );		// radius * 0.1
+			WRITE_BYTE( 16 );		// radius * 0.1
 			WRITE_BYTE( 0 );		// r
 			WRITE_BYTE( 92 );		// g
 			WRITE_BYTE( 92 );		// b
@@ -931,6 +1095,69 @@ void  CFreezeBomb::Exp( )
 		
 		pev->nextthink = gpGlobals->time + 0.1;
 		pev->takedamage = DAMAGE_NO;
+		
+		//1.29 limit reset
+		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );	
+		pl->m_flNextChatTime14 --;
+
+		//delete
+		SetThink( SUB_Remove );
+	}
+	if (pev->dmg > 75 && pev->skin == 1) //delete object time, if explode
+	{
+		//effects
+		Vector direction = Vector(0,0,1);
+
+
+
+		
+		//others
+		SetTouch( NULL );
+		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "zxc/explode3.wav", 1.0, ATTN_NORM);
+		EMIT_SOUND( ENT(pev), CHAN_ITEM, "zxc/explode3.wav", 1.0, ATTN_NORM );
+		
+		//lights
+		Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(vecSrc.x);	// X
+			WRITE_COORD(vecSrc.y);	// Y
+			WRITE_COORD(vecSrc.z);	// Z
+			WRITE_BYTE( 16 );		// radius * 0.1
+			WRITE_BYTE( 100 );		// r
+			WRITE_BYTE( 12 );		// g
+			WRITE_BYTE( 4 );		// b
+			WRITE_BYTE( 32 );		// time * 10
+			WRITE_BYTE( 16 );		// decay * 0.1
+		MESSAGE_END( );
+		
+		pev->nextthink = gpGlobals->time + 0.1;
+		pev->takedamage = DAMAGE_NO;
+		
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 200, 450, CLASS_NONE, DMG_MORTAR  );
+		
+		//explode
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 80  ); // scale * 10
+			WRITE_BYTE( 16  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+		//smoke
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SMOKE );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_SHORT( g_sModelIndexSmoke );
+			WRITE_BYTE( 72 ); // smoke scale * 10
+			WRITE_BYTE( 24  ); // framerate
+		MESSAGE_END();
+			
 		
 		//1.29 limit reset
 		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );	

@@ -1066,8 +1066,8 @@ void CBaseEntity :: TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t
 float CBaseMonster :: DamageForce( float damage )
 { 
 
-
-	float force = damage * ((32 * 32 * 72.0) / (pev->size.x * pev->size.y * pev->size.z)) * 5;
+	//how strong will be push velocity by explodes
+	float force = damage * ((32 * 32 * 72.0) / (pev->size.x * pev->size.y * pev->size.z)) * 3;
 	
 	if ( force > 1000.0) 
 	{

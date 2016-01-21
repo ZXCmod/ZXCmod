@@ -490,7 +490,6 @@ int CCrowbar::Swing( int fFirst )
 				
 				if (m_touch == 1)
 					{
-						vecDir = ( pEntity->Center() - Vector ( 0, 0, 0 ) - Center() ).Normalize();
 						pEntity->pev->velocity = gpGlobals->v_forward  * 600; //relative by player, well done 1.31
 						m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
 					}
