@@ -7,7 +7,7 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
  
-###1.31 [3rd update].
+###1.31 [3rd update]
 - third attack on crossbow
 - fourth attack on crossbow
 - improved weap. balance
