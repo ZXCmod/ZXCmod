@@ -39,6 +39,9 @@
 #include "usercmd.h"
 #include "netadr.h"
 
+
+
+
 extern DLL_GLOBAL ULONG		g_ulModelIndexPlayer;
 extern DLL_GLOBAL BOOL		g_fGameOver;
 extern DLL_GLOBAL int		g_iSkillLevel;
@@ -78,6 +81,17 @@ called when a player connects to a server
 */
 BOOL ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ]  )
 {	
+	entvars_t *pev = &pEntity->v;
+	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
+
+	
+		if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
+		{
+
+	CLIENT_COMMAND(pPlayer->edict(), "rate 8500\n");
+	CLIENT_COMMAND(pPlayer->edict(), "cl_resend 4\n");
+	CLIENT_COMMAND(pPlayer->edict(), "cl_lw 1\n");
+	}
 	return g_pGameRules->ClientConnected( pEntity, pszName, pszAddress, szRejectReason );
 
 // a client connecting during an intermission can cause problems
@@ -121,6 +135,15 @@ void ClientDisconnect( edict_t *pEntity )
 // since the edict doesn't get deleted, fix it so it doesn't interfere.
 	pEntity->v.takedamage = DAMAGE_NO;// don't attract autoaim
 	pEntity->v.solid = SOLID_NOT;// nonsolid
+	
+	
+	
+
+	
+	
+	
+	
+	
 	UTIL_SetOrigin ( &pEntity->v, pEntity->v.origin );
 
 	g_pGameRules->ClientDisconnected( pEntity );
@@ -786,7 +809,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.24";
+		return "Half-Life zxc mod 1.25";
 }
 
 /*
@@ -822,8 +845,8 @@ void PlayerCustomization( edict_t *pEntity, customization_t *pCust )
 	case t_decal:
 		pPlayer->SetCustomDecalFrames(pCust->nUserData2); // Second int is max # of frames.
 		break;
-	case t_sound:
-	case t_skin:
+	//case t_sound:
+	//case t_skin:
 	case t_model:
 		// Ignore for now.
 		break;

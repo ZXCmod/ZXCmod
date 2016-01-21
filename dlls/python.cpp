@@ -619,7 +619,7 @@ if (gpGlobals->time >= m_flDie) //time out 16 s
 				WRITE_COORD( vecSpitOffset.x);	// pos
 				WRITE_COORD( vecSpitOffset.y);	
 				WRITE_COORD( vecSpitOffset.z);	
-				WRITE_COORD( vecSpitDir.x);	// di
+				WRITE_COORD( vecSpitDir.x);	// direction
 				WRITE_COORD( vecSpitDir.y);	
 				WRITE_COORD( vecSpitDir.z);	
 				WRITE_SHORT( iSquidSpitSprite );	// model

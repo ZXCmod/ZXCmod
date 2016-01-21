@@ -719,18 +719,9 @@ LINK_ENTITY_TO_CLASS( ammo_gaussclip, CGaussAmmo );
 
 
 
-//////////newww!!!!!!
-
-
-
-
-
 
 // Associate it with the Worldcraft entity:
-
 LINK_ENTITY_TO_CLASS( weapon_nuke, CBlaster2 );
-
-// The CBlaster2Beam class:
 
 
 void CBlaster2 :: Spawn( )
@@ -766,7 +757,7 @@ void CBlaster2 :: Reload( )
 
 /**********************************
 
-CBlaster2BEAM STUFF:
+Nuke bomb code
 
 **********************************/
 #define SQUEEK_DETONATE_DELAY	16.0

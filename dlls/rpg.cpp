@@ -526,39 +526,6 @@ void CRpg::PrimaryAttack()
 	UpdateSpot( );
 }
 
-////////////////////NEW ! !@@!!@!@!!@!!@@!#$ $ $@#$ %$%$$
-
-
-/* need fix
-
-LINK_ENTITY_TO_CLASS( item_resource, CHider );
-
-void CHider :: Spawn()
-{
-	Precache( );
-
-	SET_MODEL(ENT(pev), "models/conveyor1.mdl");
-	UTIL_SetSize( pev, Vector( -20, -120, -20 ), Vector( 20, 120, 20 ) );
-
-	pev->solid			= SOLID_BBOX;
-	pev->movetype		= MOVETYPE_STEP;
-	pev->health			= 200;
-	pev->gravity = 0.5;
-	pev->friction = 0.8;
-	
-		pev->view_ofs		= Vector ( 0, 0, 6 );// position of the eyes relative to monster's origin.
-	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
-
-	MonsterInit();
-}
-
-void CHider :: Precache()
-{
-	//PRECACHE_MODEL("models/crate.mdl");
-}
-*/
-
-
 
 void CRpg::SecondaryAttack()
 {
@@ -612,6 +579,8 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
 
 if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
+if (m_iClip >= 1)
+{
 //do not create in wall
 	{
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
@@ -666,7 +635,7 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 	Vector vecThrow = gpGlobals->v_forward;
-	CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, vecThrow, m_pPlayer->edict() );
+	CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
 	#endif
 	int flags;
 #if defined( CLIENT_WEAPONS )
@@ -694,6 +663,7 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 	return;
 	}
 	}
+}
 }
 //reload completed
 

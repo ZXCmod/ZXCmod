@@ -171,20 +171,9 @@ void CCrowbar::SecondaryAttack()
 	//{
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
+	//m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	if (! Swing( 1 ))
 	{
-		
-		//pev->nextthink = gpGlobals->time + 0.1;
-       //EMIT_SOUND_DYN( ENT( m_pPlayer->pev ),
-        //                CHAN_WEAPON,
-        //                BLASTER_SOUND_SHOOT,
-        //                BLASTER_SOUND_VOLUME,
-        //                ATTN_NORM,
-        //                0,
-        //                150 );
-        //m_flNextSecondaryAttack = gpGlobals->time + 0.1;
-        //m_flTimeWeaponIdle = gpGlobals->time + 0.1;
-        //m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] --;
         UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
         Vector GunPosition = m_pPlayer->GetGunPosition( );
         GunPosition = GunPosition + gpGlobals->v_forward * BLASTER_OFFSET_FORWARD;
@@ -200,18 +189,10 @@ void CCrowbar::SecondaryAttack()
         Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right * RandomX;
         Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up    * RandomY;
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
-        /*if ( m_pPlayer->pev->flags & FL_DUCKING )// crouching
-			{
-				float RandomX = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS/100, BLASTER_BEAM_RANDOMNESS/100 );
-				float RandomY = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS/100, BLASTER_BEAM_RANDOMNESS/100 );
-			}
-		else
-			{
-				float RandomX = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );
-				float RandomY = RANDOM_FLOAT( -BLASTER_BEAM_RANDOMNESS, BLASTER_BEAM_RANDOMNESS );
-			}
-		*/
-SetThink( SwingAgain );
+		
+		
+		
+		SetThink( SwingAgain );
 	}
 	}
 	
@@ -412,6 +393,7 @@ void    CBlasterBeam :: Spawn( )
         pev->nextthink = gpGlobals->time + 0.1;//10 times a second
         pev->dmg = BLASTER_DAMAGE;
 		pev->effects = EF_MUZZLEFLASH;
+
 }
 
 void    CBlasterBeam :: Precache( )
@@ -495,6 +477,17 @@ CBlasterBeam* CBlasterBeam :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner
 
 void    CBlasterBeam :: MoveThink( )
 {
+// CBaseEntity *pEntity;
+// CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+// CBaseEntity *pEntity = NULL;
+
+// if ( pEntity->pev->button & IN_RELOAD) 
+	// {
+	// SET_VIEW( edict(), edict() );
+	
+	
+	// }
+
         MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
                 WRITE_BYTE      ( TE_BEAMFOLLOW );
                 WRITE_SHORT     ( entindex() );

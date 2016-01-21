@@ -59,7 +59,7 @@ void CEgon::Spawn( )
 	SET_MODEL(ENT(pev), "models/w_egon.mdl");
 
 	m_iDefaultAmmo = EGON_DEFAULT_GIVE;
-
+	float m_flNextChatTime10 = gpGlobals->time; //delay
 	FallInit();// get ready to fall down.
 }
 
@@ -69,9 +69,11 @@ void CEgon::Precache( void )
 	PRECACHE_MODEL("models/w_egon.mdl");
 	PRECACHE_MODEL("models/v_egon.mdl");
 	PRECACHE_MODEL("models/p_egon.mdl");
+	PRECACHE_MODEL( "models/alt_nuke2.mdl" );
 
 	PRECACHE_MODEL("models/w_9mmclip.mdl");
 	PRECACHE_SOUND("items/9mmclip1.wav");
+	PRECACHE_MODEL( "sprites/gradbeam.spr" );
 
 	PRECACHE_SOUND( EGON_SOUND_OFF );
 	PRECACHE_SOUND( EGON_SOUND_RUN );
@@ -84,6 +86,7 @@ void CEgon::Precache( void )
 
 	m_usEgonFire = PRECACHE_EVENT ( 1, "events/egon_fire.sc" );
 	m_usEgonStop = PRECACHE_EVENT ( 1, "events/egon_stop.sc" );
+	
 }
 
 
@@ -255,52 +258,23 @@ void CEgon::PrimaryAttack( void )
 
 void CEgon::SecondaryAttack(void)
 {
-#ifndef CLIENT_DLL
-		//m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 12.9;	
-
-		m_pPlayer->pev->velocity = gpGlobals->v_forward * -260;	
+	
+	#ifndef CLIENT_DLL
+		m_pPlayer->pev->velocity = gpGlobals->v_forward * -260;	//fly!
 		m_fireState = FIRE_CHARGE;
-#endif
+	#endif
 		
 		if ( gpGlobals->time >= m_flAmmoUseTime )
 			{
-				UseAmmo( 1 );
-				m_flAmmoUseTime = gpGlobals->time + 1.25;
+				UseAmmo( 1 ); //eat ammo
+				m_flAmmoUseTime = gpGlobals->time + 1.25; //eat 1 ammo\1.25 sec
 			}
-		if ( !HasAmmo() )
+		//ammo out, end attack
+		if ( !HasAmmo() ) 
 			{
 				EndAttack();
 				m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
 			}
-
-/*
-		if (XXX == 1)
-		{
-		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 12.9;	
-		
-		}
-		else
-		{
-		XXX = 0;
-		m_fireState = FIRE_CHARGE;
-		
-		}
-	XXX = 1;
-	return;
-		*/
-/*#ifndef CLIENT_DLL
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
-		WRITE_BYTE( RANDOM_FLOAT(7.3, 53.1) ); // life
-		WRITE_BYTE( RANDOM_FLOAT(6.2, 9.6) ); // width
-		WRITE_BYTE( RANDOM_FLOAT(1, 3) ); // r, g, b
-		WRITE_BYTE( RANDOM_FLOAT(1, 16) ); // r, g, b
-		WRITE_BYTE( RANDOM_FLOAT(128, 255) ); // r, g, b
-		WRITE_BYTE( RANDOM_FLOAT(64, 224) ); // brightness
-	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-#endif*/
 }
 
 void CEgon::Fire( const Vector &vecOrigSrc, const Vector &vecDir )
@@ -535,7 +509,7 @@ void CEgon::DestroyEffect( void )
 void CEgon::WeaponIdle( void )
 {
 	ResetEmptySound( );
-
+	
 	if ( m_flTimeWeaponIdle > gpGlobals->time )
 		return;
 
@@ -562,7 +536,28 @@ void CEgon::WeaponIdle( void )
 	
 
 
+//new code - launch big bomb by pressed Reload key
+if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 25) 
+	{
+	if (  m_pPlayer->m_flNextChatTime10 < gpGlobals->time ) //need delay
+		{
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/glauncher.wav", 0.9, ATTN_NORM); //play sound
+	
+		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		Vector vecSrc = m_pPlayer->pev->origin;
+		Vector vecThrow = gpGlobals->v_forward * 700; //init and start speed of core
 
+		#ifndef CLIENT_DLL
+			CBaseEntity *pSatchel = Create( "weapon_frag", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+			pSatchel->pev->velocity = vecThrow;
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 25;
+			m_pPlayer->m_flNextChatTime10 = gpGlobals->time + 2.25;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+		#endif
+		return;
+		}
+	}
 }
 
 
@@ -614,7 +609,247 @@ LINK_ENTITY_TO_CLASS( ammo_egonclip, CEgonAmmo );
 #endif
 
 
+//////////////NEW weapon
 
+class   CBfb : public CBaseEntity
+{
+        public:
+
+        void    Spawn           ( );
+		void Precache ();
+        void    MoveThink       ( );
+        void    Explode         (int);
+		int m_flDie;
+		int m_flDie2;
+		int     BeamSprite;
+		int m_iSpriteTexture;
+		short		m_LaserSprite;
+		int m_iBalls;
+		
+		static CBfb* Create( Vector, Vector, CBaseEntity* );
+		void EXPORT Hit         ( CBaseEntity* );
+		
+};
+
+LINK_ENTITY_TO_CLASS( weapon_frag, CBfb );
+
+
+
+void    CBfb :: Spawn( )
+{
+		Precache( );
+		
+        SET_MODEL( ENT(pev), "models/alt_nuke2.mdl" );
+        pev->movetype = MOVETYPE_BOUNCE;
+        pev->solid = SOLID_BBOX;
+        UTIL_SetSize( pev, Vector(0,0,0), Vector(0,0,0) );
+		pev->angles.x = -(pev->angles.x);
+        UTIL_SetOrigin( pev, pev->origin );
+        pev->classname = MAKE_STRING( "BFBomb" );
+		m_flDie = gpGlobals->time + 5;
+		pev->dmg = 100;
+		pev->takedamage = DAMAGE_YES;
+		pev->nextthink = gpGlobals->time + 0.3;
+		SetThink( MoveThink );
+		pev->gravity			= 0.35;
+		pev->friction			= 0.35;
+		pev->health			= 9999; 
+		
+		SetTouch( Hit );
+		
+/* 		CBaseEntity *pEntity;
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+		pPlayer->pev->SET_VIEW( pActivator->edict(), edict() ); */
+		
+			//SET_VIEW( m_hPlayer->edict(), m_hPlayer->edict() );
+			//((CBasePlayer *)((CBaseEntity *)m_hPlayer))->EnableControl(TRUE);
+			
+		//CBaseEntity *pEntity = NULL;
+		//SET_VIEW( edict(), pEntity->edict() );
+		
+}
+
+void CBfb :: Precache( void )
+{
+m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
+PRECACHE_SOUND( "weapons/gravgren.wav" );
+m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
+PRECACHE_MODEL( "models/alt_nuke2.mdl" );
+m_iBalls = PRECACHE_MODEL( "sprites/gradbeam.spr" );
+}
+
+///////////////
+CBfb* CBfb :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
+{
+        CBfb* Beam = GetClassPtr( (CBfb*)NULL );
+
+        UTIL_SetOrigin( Beam->pev, Pos );
+        Beam->pev->angles = Aim;
+        Beam->Spawn( );
+        Beam->SetTouch( CBfb :: Hit );
+        Beam->pev->owner = Owner->edict( );
+        return Beam;
+}
+
+void    CBfb :: Hit( CBaseEntity* Target )
+{
+        TraceResult TResult;
+        Vector      StartPosition;
+        pev->enemy = Target->edict( );
+        StartPosition = pev->origin - pev->velocity.Normalize() * 32;
+
+        UTIL_TraceLine( StartPosition,
+                        StartPosition + pev->velocity.Normalize() * 64,
+                        dont_ignore_monsters,
+                        ENT( pev ),
+                        &TResult );
+   
+		
+		
+//full explode after touch with wall
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(291,549), 205, CLASS_NONE, DMG_MORTAR  ); //end blast
+/* 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_BEAMCYLINDER );
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_COORD( pev->origin.x + 350);
+			WRITE_COORD( pev->origin.y + 250);
+			WRITE_COORD( pev->origin.z + 150 ); // reach damage radius over .2 seconds
+			WRITE_SHORT( m_iSpriteTexture );
+			WRITE_BYTE( 0 ); // startframe
+			WRITE_BYTE( 1 ); // framerate
+			WRITE_BYTE( 12 ); // life
+			WRITE_BYTE( 25 );  // width
+			WRITE_BYTE( 51 );   // noise
+			WRITE_BYTE( 255 );   // r, g, b
+			WRITE_BYTE( 128 );   // r, g, b
+			WRITE_BYTE( 0 );   // r, g, b
+			WRITE_BYTE( 128 ); // brightness
+			WRITE_BYTE( 12 );		// speed
+		MESSAGE_END(); */
+
+
+		//lights
+		Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(vecSrc.x);	// X
+		WRITE_COORD(vecSrc.y);	// Y
+		WRITE_COORD(vecSrc.z);	// Z
+		WRITE_BYTE( 42 );		// radius * 0.1
+		WRITE_BYTE( 128 );		// r
+		WRITE_BYTE( 16 );		// g
+		WRITE_BYTE( 0 );		// b
+		WRITE_BYTE( 128 );		// life * 10
+		WRITE_BYTE( 0 );		// decay * 0.1
+	MESSAGE_END( );
+//
+TraceResult tr, beam_tr;
+		// balls
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, tr.vecEndPos );
+			WRITE_BYTE( TE_SPRITETRAIL );// TE_RAILTRAIL);
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_COORD( pev->origin.x + tr.vecPlaneNormal.x*3 );
+			WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*3 );
+			WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*3  );
+			WRITE_SHORT( m_iBalls );		// model
+			WRITE_BYTE( 20  );				// count
+			WRITE_BYTE( 7 );				// life * 10
+			WRITE_BYTE( RANDOM_LONG( 1, 2 ) );				// size * 10
+			WRITE_BYTE( 90 );				// amplitude * 0.1
+			WRITE_BYTE( 2 );				// speed * 100
+		MESSAGE_END();
+		
+
+
+	
+		// random explosions
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z);
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 62  ); // scale * 10
+			WRITE_BYTE( RANDOM_LONG(8,10)  ); // framerate
+			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_END();
+	//UTIL_ScreenShake( pEntity->pev->origin, 12.0, 120, 0.9, 1 ); 
+	pev->takedamage = DAMAGE_NO;
+	SetThink( SUB_Remove );
+}
+/////////////////
+
+
+
+void    CBfb:: Explode(int DamageType)
+{
+
+
+		
+		//set trails
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
+		WRITE_BYTE( 40 ); // life
+		WRITE_BYTE( 3 ); // width
+		WRITE_BYTE( 128 ); // r, g, b
+		WRITE_BYTE( 60 ); // r, g, b
+		WRITE_BYTE( 0 ); // r, g, b
+		WRITE_BYTE( 128 ); // brightness
+		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+		
+		//Vector vecThrow = gpGlobals->v_forward * 1024; //init and start speed of core
+		//pev->velocity = vecThrow;
+		//pev->velocity = pev->velocity * 2.3;
+		pev->movetype = MOVETYPE_FLY;
+		
+		//CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
+		//ENT( pEntity->pev );
+		
+
+
+
+
+pev->nextthink = gpGlobals->time + 0.15;
+pev->effects |= EF_LIGHT;
+SetThink(MoveThink);
+}
+
+
+void    CBfb :: MoveThink( )
+{
+TraceResult tr, beam_tr;
+		// balls
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, tr.vecEndPos );
+			WRITE_BYTE( TE_SPRITETRAIL );// TE_RAILTRAIL);
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_SHORT( m_iBalls );		// model
+			WRITE_BYTE( 3  );				// count
+			WRITE_BYTE( 2 );				// life * 10
+			WRITE_BYTE( 1 );				// size * 10
+			WRITE_BYTE( 24 );				// amplitude * 0.1
+			WRITE_BYTE( 24 );				// speed * 100
+		MESSAGE_END();
+
+Explode(DMG_FREEZE);
+if (gpGlobals->time >= m_flDie) //full explode and self destroy
+	{
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(71,83), 512, CLASS_NONE, DMG_MORTAR  ); //end blast
+	pev->takedamage = DAMAGE_NO;
+	SetThink( SUB_Remove );
+}
+
+}
 
 
 

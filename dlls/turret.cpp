@@ -109,8 +109,8 @@ public:
 	float m_flMaxSpin;		// Max time to spin the barrel w/o a target
 	int m_iSpin;
 
-	CSprite *m_pEyeGlow;
-	int		m_eyeBrightness;
+	//CSprite *m_pEyeGlow;
+	//int		m_eyeBrightness;
 
 	int	m_iDeployHeight;
 	int	m_iRetractHeight;
@@ -146,8 +146,8 @@ TYPEDESCRIPTION	CBaseTurret::m_SaveData[] =
 	DEFINE_FIELD( CBaseTurret, m_flMaxSpin, FIELD_FLOAT ),
 	DEFINE_FIELD( CBaseTurret, m_iSpin, FIELD_INTEGER ),
 
-	DEFINE_FIELD( CBaseTurret, m_pEyeGlow, FIELD_CLASSPTR ),
-	DEFINE_FIELD( CBaseTurret, m_eyeBrightness, FIELD_INTEGER ),
+	//DEFINE_FIELD( CBaseTurret, m_pEyeGlow, FIELD_CLASSPTR ),
+	//DEFINE_FIELD( CBaseTurret, m_eyeBrightness, FIELD_INTEGER ),
 	DEFINE_FIELD( CBaseTurret, m_iDeployHeight, FIELD_INTEGER ),
 	DEFINE_FIELD( CBaseTurret, m_iRetractHeight, FIELD_INTEGER ),
 	DEFINE_FIELD( CBaseTurret, m_iMinPitch, FIELD_INTEGER ),
@@ -254,6 +254,7 @@ void CBaseTurret::KeyValue( KeyValueData *pkvd )
 
 void CBaseTurret::Spawn()
 { 
+
 	Precache( );
 	pev->nextthink		= gpGlobals->time + 1;
 	pev->movetype		= MOVETYPE_STEP;
@@ -305,7 +306,7 @@ void CTurret::Spawn()
 
 	Precache( );
 	SET_MODEL(ENT(pev), "models/turret.mdl");
-	pev->health			= 150;
+	pev->health			= 100;
 	m_HackedGunPos		= Vector( 0, 0, 12.75 );
 	m_flMaxSpin =		TURRET_MAXSPIN;
 	pev->view_ofs.z = 12.75;
@@ -322,7 +323,7 @@ void CTurret::Spawn()
 	//m_pEyeGlow = CSprite::SpriteCreate( TURRET_GLOW_SPRITE, pev->origin, FALSE );
 	//m_pEyeGlow->SetTransparency( kRenderGlow, 255, 0, 0, 0, kRenderFxNoDissipation );
 	//m_pEyeGlow->SetAttachment( edict(), 2 );
-	m_eyeBrightness = 0;	pev->nextthink = gpGlobals->time + 0.3; 
+	//m_eyeBrightness = 0;	pev->nextthink = gpGlobals->time + 0.3; 
 }
 
 void CTurret::Precache()
@@ -441,38 +442,21 @@ void CBaseTurret::Ping( void )
 		EMIT_SOUND(ENT(pev), CHAN_ITEM, "turret/tu_ping.wav", 0.5, ATTN_NORM);
 		EyeOn( );
 	}
-	else if (m_eyeBrightness > 0)
-	{
-		EyeOff( );
-	}
+
 }
 
 
 void CBaseTurret::EyeOn( )
 {
 
-	if (m_pEyeGlow)
-	{
-		if (m_eyeBrightness != 255)
-		{
-			m_eyeBrightness = 255;
-		}
-		m_pEyeGlow->SetBrightness( m_eyeBrightness );
-	}
+
 	
 }
 
 
 void CBaseTurret::EyeOff( )
 {
-	if (m_pEyeGlow)
-	{
-		if (m_eyeBrightness > 0)
-		{
-			m_eyeBrightness = max( 0, m_eyeBrightness - 30 );
-			m_pEyeGlow->SetBrightness( m_eyeBrightness );
-		}
-	}
+
 }
 
 
@@ -485,16 +469,11 @@ void CBaseTurret::ActiveThink(void)
 		pev->nextthink = gpGlobals->time + 0.1;
 }
 
-
 	int fAttack = 0;
 	Vector vecDirToEnemy;
 
 	pev->nextthink = gpGlobals->time + 0.1;
 	StudioFrameAdvance( );
-
-
-	
-	
 
 	if ((!m_iOn) || (m_hEnemy == NULL))
 	{
@@ -503,21 +482,6 @@ void CBaseTurret::ActiveThink(void)
 		SetThink(SearchThink);
 		return;
 	}
-
-	
-	
-	
-	
-	// if it's dead, look for something new
-	
-	
-	
-//if (m_hEnemy->edict() == pev->owner)	
-	//{
-	
-	
-
-
 
 	if ( !m_hEnemy->IsAlive() )
 	{
@@ -536,32 +500,13 @@ void CBaseTurret::ActiveThink(void)
 			}
 		}
 	}
-
-
-
-
+	
+	
 	Vector vecMid = pev->origin + pev->view_ofs;
 	Vector vecMidEnemy = m_hEnemy->BodyTarget( vecMid );
 
-
-	//m_hEnemy->edict() == pev->owner
-	// Look for our current enemy
-	
-	
-
 	int fEnemyVisible = FBoxVisible(pev, m_hEnemy->pev, vecMidEnemy );	
-
-	
-	
-	
-	
-	
-	
-	
-
 	vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
-
-
 	float flDistToEnemy = vecDirToEnemy.Length();
 
 	Vector vec = UTIL_VecToAngles(vecMidEnemy - vecMid);	
@@ -570,8 +515,7 @@ void CBaseTurret::ActiveThink(void)
 	
 	
 	
-
-//ADDED IN VER 1.24
+		//ADDED IN VER 1.24
 if (m_hEnemy->edict() == pev->owner)
 			{
 				m_hEnemy = NULL;
@@ -588,6 +532,7 @@ if ( g_pGameRules->PlayerRelationship( pOwner, m_hEnemy ) == GR_TEAMMATE)
 				SetThink(SearchThink);
 				return;
 			}
+
 
 	// Current enmey is not visible.
 	if (!fEnemyVisible || (flDistToEnemy > TURRET_RANGE))
@@ -679,6 +624,9 @@ if ( g_pGameRules->PlayerRelationship( pOwner, m_hEnemy ) == GR_TEAMMATE)
 */
 	if (fEnemyVisible)
 	{
+	
+
+			
 		if (vec.y > 360)
 			vec.y -= 360;
 
@@ -727,7 +675,7 @@ if ( g_pGameRules->PlayerRelationship( pOwner, m_hEnemy ) == GR_TEAMMATE)
 //turret fired VARS( pev->owner )
 void CTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, entvars_t *pevAttacker)
 {
-	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, RANDOM_LONG(7,12), 1, RANDOM_LONG(4,12), VARS( pev->owner ) );
+	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, RANDOM_LONG(7,12), 1, RANDOM_LONG(2,9), VARS( pev->owner ) );
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "turret/tu_fire1.wav", 1, 0.6);
 	pev->effects = pev->effects | EF_MUZZLEFLASH;
 }
@@ -735,6 +683,10 @@ void CTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, 
 
 void CMiniTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, entvars_t *pevAttacker)
 {
+
+
+
+
 	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, BULLET_MONSTER_9MM, 1 );
 
 	switch(RANDOM_LONG(0,2))
@@ -949,6 +901,14 @@ void CBaseTurret::SetTurretAnim(TURRET_ANIM anim)
 //
 void CBaseTurret::SearchThink(void)
 {
+		
+
+
+
+
+
+
+
 	// ensure rethink
 	SetTurretAnim(TURRET_ANIM_SPIN);
 	StudioFrameAdvance( );
@@ -965,6 +925,7 @@ void CBaseTurret::SearchThink(void)
 	if (m_hEnemy != NULL)
 	{
 		if (!m_hEnemy->IsAlive() )
+		
 			m_hEnemy = NULL;// Dead enemy forces a search for new one
 	}
 
@@ -1017,6 +978,9 @@ void CBaseTurret::SearchThink(void)
 //
 void CBaseTurret::AutoSearchThink(void)
 {
+
+
+
 	// ensure rethink
 	StudioFrameAdvance( );
 	pev->nextthink = gpGlobals->time + 0.3;
@@ -1042,6 +1006,14 @@ void CBaseTurret::AutoSearchThink(void)
 		SetThink(Deploy);
 		EMIT_SOUND(ENT(pev), CHAN_BODY, "turret/tu_alert.wav", TURRET_MACHINE_VOLUME, ATTN_NORM);
 	}
+	
+	// if (m_hEnemy->edict() == pev->owner)
+			// {
+				// m_hEnemy = NULL;
+				// m_flLastSight = gpGlobals->time + m_flMaxWait;
+				// SetThink(SearchThink);
+				// return;
+			// }
 }
 
 void CBaseTurret ::	TurretDeath( void )
@@ -1145,7 +1117,7 @@ int CBaseTurret::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, flo
 		Vector vecSrc, vecAng;
 		GetAttachment( 1, vecSrc, vecAng );
 		UTIL_Sparks( vecSrc );
-		UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_YELLOW, 128 );
+		UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_YELLOW, 16 );
 	pev->health -= flDamage;
 	if (pev->health <= 0)
 	{
@@ -1304,7 +1276,7 @@ void CSentry::Spawn()
 	Precache( );
 
 	SET_MODEL(ENT(pev), "models/sentry.mdl");
-	pev->health			= 100;
+	pev->health			= 75;
 	UTIL_SetSize(pev, Vector( -5, -5, -1), Vector(5, 5, 3));
 	//UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 	UTIL_SetOrigin( pev, pev->origin );
@@ -1360,7 +1332,7 @@ void CSentry::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, 
 int CSentry::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType)
 {
 //sparks
-	UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_YELLOW, 64 );
+	UTIL_BloodStream( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_YELLOW, 16 );
 	//UTIL_BloodDrips( pev->origin, UTIL_RandomBloodVector(), BLOOD_COLOR_RED, RANDOM_LONG(100, 200) );
 
 		Vector vecSrc, vecAng;

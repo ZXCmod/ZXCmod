@@ -96,7 +96,7 @@ void CGlock::Reload( void )
 	if (m_iClip == 0)
 		iResult = DefaultReload( 17, GLOCK_RELOAD, 1.5 );
 	else
-		iResult = DefaultReload( 18, GLOCK_RELOAD_NOT_EMPTY, 1.5 );
+		iResult = DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.5 );
 
 	if (iResult)
 	{
@@ -120,7 +120,7 @@ void CGlock::PrimaryAttack( void )
 
 void CGlock::SecondaryAttack( void )
 {
-	GlockFire( 0.105, 0.14, FALSE );
+	GlockFire( 0.105, 0.18, FALSE );
 }
 
 void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
@@ -201,7 +201,7 @@ void CGlock::WeaponIdle( void )
 {
 	ResetEmptySound( );
 
-	m_pPlayer->GetAutoaimVector( AUTOAIM_10DEGREES );
+	//m_pPlayer->GetAutoaimVector( AUTOAIM_10DEGREES );
 
 	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;

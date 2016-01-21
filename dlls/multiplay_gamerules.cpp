@@ -504,7 +504,25 @@ void CHalfLifeMultiplay :: ClientDisconnected( edict_t *pClient )
 					GETPLAYERUSERID( pPlayer->edict() ) );
 			}
 
+			
+			//
+				// entvars_t *pev = &pEntity->v;
+	// CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
+
+	
+		// if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
+		// {
+	// pPlayer->SetThink( SUB_Remove );
+		// }
+		//
+			
+			
+			
 			pPlayer->RemoveAllItems( TRUE );// destroy all of the players weapons and items
+			pPlayer->m_afPhysicsFlags |= PFLAG_OBSERVER;
+			pPlayer->pev->movetype = MOVETYPE_NOCLIP;
+			pPlayer->pev->deadflag = DEAD_RESPAWNABLE;
+			
 		}
 	}
 }

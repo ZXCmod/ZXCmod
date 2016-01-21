@@ -394,8 +394,14 @@ Vector CBasePlayer :: GetGunPosition( )
 //=========================================================
 void CBasePlayer :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType)
 {
+//strcpy( sbuf1, "1 %p1\n2 Health: %i2%%\n3 Armor: %i3%%" );
+CBaseEntity *pAttacker = CBaseEntity::Instance(pevAttacker);
+
+
 	if ( pev->takedamage )
 	{
+
+	
 		m_LastHitGroup = ptr->iHitgroup;
 
 		switch ( ptr->iHitgroup )
@@ -404,20 +410,44 @@ void CBasePlayer :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector 
 			break;
 		case HITGROUP_HEAD:
 			flDamage *= 3;
+	
+		//MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pevAttacker) );
+			//WRITE_STRING( STRING(pev->netname) );
+		//MESSAGE_END();
+		if (pevAttacker->flags & (FL_CLIENT))
+		{
+		MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pevAttacker) );
+			WRITE_STRING( "Headshot!" );
+		MESSAGE_END();
+		}
+			
 			break;
 		case HITGROUP_CHEST:
 			flDamage *= 1;
+		// if (pevAttacker->flags & (FL_CLIENT))
+		// {
+		// MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pevAttacker) );
+			// WRITE_STRING( "chest shot" );
+		// MESSAGE_END();
+		// }
 			break;
 		case HITGROUP_STOMACH:
 			flDamage *= 1;
+		// if (pevAttacker->flags & (FL_CLIENT))
+		// {
+		// MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pevAttacker) );
+			// WRITE_STRING( "stomach shot" );
+		// MESSAGE_END();
+		// }
 			break;
 		case HITGROUP_LEFTARM:
 		case HITGROUP_RIGHTARM:
-			flDamage *= 1;
+		
+			flDamage *= 0.90;
 			break;
 		case HITGROUP_LEFTLEG:
 		case HITGROUP_RIGHTLEG:
-			flDamage *= 1;
+			flDamage *= 0.90;
 			break;
 		default:
 			break;
@@ -1274,6 +1304,23 @@ void CBasePlayer::PlayerDeathThink(void)
 {
 	float flForward;
 
+//freeze
+/* 	if (FTime2 > 0)
+	{
+		EnableControl(TRUE);
+		pev->rendermode = kRenderNormal;
+		pev->renderfx = kRenderFxNone;
+		pev->renderamt = 0;
+		FTime2 = 0;
+	} */
+
+	
+	
+	
+	
+	
+	
+	
 	if (FBitSet(pev->flags, FL_ONGROUND))
 	{
 		flForward = pev->velocity.Length() - 20;
@@ -1342,6 +1389,14 @@ void CBasePlayer::PlayerDeathThink(void)
 	}
 	
 // wait for any button down,  or mp_forcerespawn is set and the respawn time is up
+		//freeze fix 1
+	if (FTime2 == 0)
+	{
+		//EnableControl(TRUE);
+		//pev->rendermode = kRenderNormal;
+		//pev->renderfx = kRenderFxNone;
+		//pev->renderamt = 0;
+		//FTime2 = 0;
 	if ( pev->button & IN_ATTACK || pev->button & IN_ATTACK2 
 		&& !( g_pGameRules->IsMultiplayer() && (gpGlobals->time > (m_fDeadTime + 5))) )
 
@@ -1349,12 +1404,13 @@ void CBasePlayer::PlayerDeathThink(void)
 {
 	pev->button = 0;
 	m_iRespawnFrames = 0;
-
+	CopyToBodyQue( pev );
 	//ALERT(at_console, "Respawn\n");
 
 	respawn(pev, !(m_afPhysicsFlags & PFLAG_OBSERVER) );// don't copy a corpse if we're in deathcam.
 	pev->nextthink = -1;
 	return;
+	}
 	}
 
 }
@@ -1394,6 +1450,8 @@ void CBasePlayer::StartDeathCam( void )
 		}
 
 		CopyToBodyQue( pev );
+
+	
 		StartObserver( pSpot->v.origin, pSpot->v.v_angle );
 
 		return;
@@ -1412,22 +1470,8 @@ void CBasePlayer::StartDeathCam( void )
 
 void CBasePlayer::StartObserver( Vector vecPosition, Vector vecViewAngle )
 {
-/*
-pev->gravity = 0;
 
-
-	pev->movetype		= MOVETYPE_NOCLIP;
-	pev->health		= 111;
-
-	
-	m_pGoalEnt = NULL;
-	pev->model = iStringNull;
-//m_afPhysicsFlags |= PFLAG_OBSERVER;
-	return;
-	*/
-	
-		// reset FOV
-	pev->classname		= MAKE_STRING("player");
+	//pev->classname		= MAKE_STRING("player");
 	m_iFOV = 0;
 	m_iClientFOV = -1;
 	pev->fov = m_iFOV;
@@ -1437,8 +1481,6 @@ pev->gravity = 0;
 		WRITE_BYTE(0);
 	MESSAGE_END();
 
-	// Setup flags
-	//m_iHideHUD = (HIDEHUD_FLASHLIGHT | HIDEHUD_WEAPONS | HIDEHUD_HEALTH);
 	m_afPhysicsFlags |= PFLAG_OBSERVER;
 	pev->effects |= EF_NODRAW;
 	pev->view_ofs = g_vecZero;
@@ -1451,32 +1493,10 @@ pev->gravity = 0;
 	ClearBits( pev->flags, FL_DUCKING );
 	pev->deadflag = DEAD_RESPAWNABLE;
 	pev->health = 1;
-	
-	// Clear out the status bar
 	m_fInitHUD = TRUE;
-
-	// Update Team Status
-	// pev->team = 0;
-
-	// Remove all the player's stuff
-	// RemoveAllItems( FALSE );
-
-	// Move them to the new position
 	UTIL_SetOrigin( pev, vecPosition );
 
-	// Find a player to watch
-	//Observer_SetMode(OBS_ROAMING);
 
-	// Tell all clients this player is now a spectator
-	//MESSAGE_BEGIN( MSG_ALL, gmsgSpectator );  
-	//	WRITE_BYTE( ENTINDEX( edict() ) );
-	//	WRITE_BYTE( 1 );
-	//MESSAGE_END();
-
-	 //MESSAGE_BEGIN( MSG_ALL, gmsgTeamInfo );
-	 //	WRITE_BYTE( ENTINDEX(edict()) );
-	 //  WRITE_STRING( "" );
-	 //MESSAGE_END();
 
 
 }
@@ -1846,6 +1866,20 @@ void CBasePlayer::UpdateStatusBar()
 
 void CBasePlayer::PreThink(void)
 {
+///freeze always updater
+if (FTime2 > 0)
+    {
+      if (FTime2 <= gpGlobals->time)
+      {
+         EnableControl(TRUE);
+         pev->rendermode = kRenderNormal;
+         pev->renderfx = kRenderFxNone;
+         pev->renderamt = 0;
+         FTime2 = 0;
+      }
+	  }
+
+
 	int buttonsChanged = (m_afButtonLast ^ pev->button);	// These buttons have changed this frame
 	
 	// Debounced button codes for pressed/released
@@ -2445,7 +2479,7 @@ void CBasePlayer :: UpdatePlayerSound ( void )
 
 	if ( !pSound )
 	{
-		ALERT ( at_console, "Client lost reserved sound!\n" );
+		//ALERT ( at_console, "Client lost reserved sound!\n" );
 		return;
 	}
 
@@ -2546,7 +2580,7 @@ void CBasePlayer :: UpdatePlayerSound ( void )
 
 	// Below are a couple of useful little bits that make it easier to determine just how much noise the 
 	// player is making. 
-	// UTIL_ParticleEffect ( pev->origin + gpGlobals->v_forward * iVolume, g_vecZero, 255, 25 );
+	//UTIL_ParticleEffect ( pev->origin + gpGlobals->v_forward * iVolume, g_vecZero, 128, 3 );
 	//ALERT ( at_console, "%d/%d\n", iVolume, m_iTargetVolume );
 }
 
@@ -2876,10 +2910,12 @@ void CBasePlayer::Spawn( void )
 	m_bitsDamageType	= 0;
 	m_afPhysicsFlags	= 0;
 	m_fLongJump			= FALSE;// no longjump module. 
+	FTime2 = 0; //freeze
+	//EnableControl(FALSE);
 	
 	//client cmd
-	CLIENT_COMMAND(edict(), "rate 25000\n");
-	CLIENT_COMMAND(edict(), "cl_resend 2\n");
+	CLIENT_COMMAND(edict(), "rate 15000\n");
+	CLIENT_COMMAND(edict(), "cl_resend 3\n");
 	CLIENT_COMMAND(edict(), "cl_lw 1\n");
 	//CLIENT_COMMAND(edict(), "cl_updaterate 20\n");
 	//CLIENT_COMMAND(edict(), "cl_cmdrate 20\n");

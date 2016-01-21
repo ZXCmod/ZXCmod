@@ -919,6 +919,10 @@ public:
 	float m_flRechargeTime;
 	float m_flNextChatTime8; //delay
 	int m_iFirePhase;// don't save me.
+	short BSpr;
+	float FTime1;
+
+
 
 	virtual BOOL UseDecrement( void )
 	{ 

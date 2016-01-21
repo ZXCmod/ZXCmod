@@ -88,6 +88,10 @@ enum sbar_data
 class CBasePlayer : public CBaseMonster
 {
 public:
+
+	float				FTime1; //frrrreeeeezzzzzz
+	float				FTime2; //frrrreeeeezzzzzz2
+
 	int					random_seed;    // See that is shared between client & server for shared weapons code
 
 	int					m_iPlayerSound;// the index of the sound list slot reserved for this player
@@ -124,6 +128,7 @@ public:
 	float				m_flSwimTime;		// how long player has been underwater
 	float				m_flDuckTime;		// how long we've been ducking
 	float				m_flWallJumpTime;	// how long until next walljump
+	
 
 	float				m_flSuitUpdate;					// when to play next suit update
 	int					m_rgSuitPlayList[CSUITPLAYLIST];// next sentencenum to play for suit update
@@ -318,6 +323,13 @@ public:
 	float m_flNextChatTime7; //turrets limit
 	float m_flNextChatTime8; //hornetgun reload delay
 	float m_flNextChatTime9; //heavy turets reload delay
+	float m_flNextChatTime10; //egon reload delay
+	float m_flNextChatTime11;
+	float m_flNextChatTime12;
+	float m_flNextChatTime13;
+	float m_flNextChatTime14;
+	float m_flNextChatTime15;
+
 };
 
 #define AUTOAIM_2DEGREES  0.0348994967025

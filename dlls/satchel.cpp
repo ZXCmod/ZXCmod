@@ -123,6 +123,7 @@ void CSatchelCharge :: Spawn( void )
 	pev->gravity = 0.5;
 	pev->friction = 0.8;
 
+
 	pev->dmg = gSkillData.plrDmgSatchel;
 	// ResetSequenceInfo( );
 	pev->sequence = 1;
@@ -628,6 +629,7 @@ void    CBlasterBeam4 :: Spawn( )
         //pev->gravity = 0.1;//A SMIDGEN of gravity. Can you HAVE a smidgen of gravity??
         pev->nextthink = gpGlobals->time + 0.1;//10 times a second
         pev->dmg = -70;
+		
 		pev->effects = EF_MUZZLEFLASH;
 		m_flDie = gpGlobals->time + SQUEEK_DETONATE_DELAY;
 

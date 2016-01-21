@@ -380,9 +380,9 @@ Vector vecSrc = m_pPlayer->pev->origin;
 Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
 
 #ifndef CLIENT_DLL
-		CBaseEntity *pSatchel = Create( "weapon_saa", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-		pSatchel->pev->velocity = vecThrow;
-		pSatchel->pev->avelocity.y = 500;
+		CBaseEntity *hGren = Create( "weapon_saa", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+		hGren->pev->velocity = vecThrow;
+		//hGren->pev->avelocity.y = 500;
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		iAnim = HANDGRENADE_THROW1;
 		SendWeaponAnim( iAnim );
@@ -391,26 +391,6 @@ Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
 	m_fInAttack = 0;
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 5;
 }
-
-//////gravity grenade!
-
-/*
-class   CBlasterBeam6 : public CGrenade
-{
-        public:
-
-        void    Spawn           ( );
-        void    Precache        ( );
-        void    MoveThink       ( );
-        void 	EXPORT Hit         ( CBaseEntity* );
-        void    Explode         ( TraceResult*, int);
-        static CBlasterBeam* Create( Vector, Vector, CBaseEntity* );
-
-        int     BeamSprite;
-		
-
-};
-*/
 
 class   CGrav1 : public CBaseEntity
 {
@@ -440,7 +420,7 @@ void    CGrav1 :: Spawn( )
         SET_MODEL( ENT(pev), "models/w_grenade.mdl" );
         pev->movetype = MOVETYPE_TOSS;
         pev->solid = SOLID_BBOX;
-        UTIL_SetSize( pev, Vector(3,3,3), Vector(3,3,3) );
+        UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
         UTIL_SetOrigin( pev, pev->origin );
         pev->classname = MAKE_STRING( "weapon_grenade" ); // GravGrenade
 		m_flDie = gpGlobals->time + 11;
@@ -600,7 +580,7 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 				{
 				vecDir = ( pEntity->Center() - Vector ( 0, 0, 10 ) - Center() ).Normalize(); ///NOW WORKED! CONGRATULATIONS!
 				pEntity->pev->velocity = pEntity->pev->velocity + vecDir * 2048;
-				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 25, 512, CLASS_NONE, DMG_FREEZE|DMG_MORTAR  );
+				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 7, 512, CLASS_NONE, DMG_FREEZE|DMG_MORTAR  );
 				UTIL_ScreenShake( pEntity->pev->origin, 12.0, 120, 0.9, 1 );
 
 //spark effects
@@ -619,7 +599,7 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 	MESSAGE_END();
 
 	
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 3, 256, CLASS_NONE, DMG_GENERIC  ); //end blast
+	//::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 3, 256, CLASS_NONE, DMG_GENERIC  ); //end blast
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_BEAMCYLINDER );
 			WRITE_COORD( pev->origin.x);

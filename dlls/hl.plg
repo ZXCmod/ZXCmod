@@ -6,44 +6,13 @@
 --------------------Configuration: hl - Win32 Profile--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP8DE.tmp" with contents
+Creating temporary file "C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP1357.tmp" with contents
 [
 /nologo /G5 /MT /W3 /Zi /O2 /I "..\dlls" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\game_shared" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /D "CLIENT_WEAPONS" /Fp".\Profilehl/hl.pch" /YX /Fo".\Profilehl/" /Fd".\Profilehl/" /FD /c 
-"D:\mod\Single-Player Source\dlls\cbase.cpp"
-"D:\mod\Single-Player Source\dlls\client.cpp"
-"D:\mod\Single-Player Source\dlls\crossbow.cpp"
-"D:\mod\Single-Player Source\dlls\crowbar.cpp"
-"D:\mod\Single-Player Source\dlls\egon.cpp"
-"D:\mod\Single-Player Source\dlls\gamerules.cpp"
-"D:\mod\Single-Player Source\dlls\gauss.cpp"
-"D:\mod\Single-Player Source\dlls\h_battery.cpp"
-"D:\mod\Single-Player Source\dlls\handgrenade.cpp"
-"D:\mod\Single-Player Source\dlls\healthkit.cpp"
-"D:\mod\Single-Player Source\dlls\hornet.cpp"
-"D:\mod\Single-Player Source\dlls\hornetgun.cpp"
-"D:\mod\Single-Player Source\dlls\items.cpp"
-"D:\mod\Single-Player Source\dlls\maprules.cpp"
-"D:\mod\Single-Player Source\dlls\monsters.cpp"
-"D:\mod\Single-Player Source\dlls\mp5.cpp"
-"D:\mod\Single-Player Source\dlls\multiplay_gamerules.cpp"
 "D:\mod\Single-Player Source\dlls\player.cpp"
-"D:\mod\Single-Player Source\dlls\python.cpp"
-"D:\mod\Single-Player Source\dlls\rpg.cpp"
-"D:\mod\Single-Player Source\dlls\satchel.cpp"
-"D:\mod\Single-Player Source\dlls\shotgun.cpp"
-"D:\mod\Single-Player Source\dlls\singleplay_gamerules.cpp"
-"D:\mod\Single-Player Source\dlls\sound.cpp"
-"D:\mod\Single-Player Source\dlls\squeakgrenade.cpp"
-"D:\mod\Single-Player Source\dlls\teamplay_gamerules.cpp"
-"D:\mod\Single-Player Source\dlls\triggers.cpp"
-"D:\mod\Single-Player Source\dlls\tripmine.cpp"
-"D:\mod\Single-Player Source\dlls\turret.cpp"
-"D:\mod\Single-Player Source\dlls\util.cpp"
-"D:\mod\Single-Player Source\dlls\weapons.cpp"
-"D:\mod\Single-Player Source\dlls\world.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP8DE.tmp" 
-Creating temporary file "C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP8DF.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP1357.tmp" 
+Creating temporary file "C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP1358.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /profile /debug /machine:I386 /def:".\hl.def" /out:".\Profilehl/hl.dll" /implib:".\Profilehl/hl.lib" 
 ".\Profilehl\aflock.obj"
@@ -148,41 +117,10 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 ".\Profilehl\xen.obj"
 ".\Profilehl\zombie.obj"
 ]
-Creating command line "link.exe @C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP8DF.tmp"
+Creating command line "link.exe @C:\DOCUME~1\cxz\LOCALS~1\Temp\RSP1358.tmp"
 <h3>Output Window</h3>
 Compiling...
-cbase.cpp
-client.cpp
-crossbow.cpp
-crowbar.cpp
-egon.cpp
-gamerules.cpp
-gauss.cpp
-h_battery.cpp
-handgrenade.cpp
-healthkit.cpp
-hornet.cpp
-hornetgun.cpp
-items.cpp
-maprules.cpp
-monsters.cpp
-mp5.cpp
-multiplay_gamerules.cpp
 player.cpp
-python.cpp
-rpg.cpp
-satchel.cpp
-shotgun.cpp
-singleplay_gamerules.cpp
-sound.cpp
-squeakgrenade.cpp
-teamplay_gamerules.cpp
-triggers.cpp
-tripmine.cpp
-turret.cpp
-util.cpp
-weapons.cpp
-world.cpp
 Linking...
    Creating library .\Profilehl/hl.lib and object .\Profilehl/hl.exp
 

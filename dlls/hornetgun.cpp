@@ -71,6 +71,7 @@ void CHgun::Precache( void )
 	PRECACHE_MODEL( "models/can.mdl" );
 	PRECACHE_SOUND( "weapons/glauncher.wav" );
 	PRECACHE_SOUND( "weapons/glauncher2.wav" );
+	BSpr = PRECACHE_MODEL("sprites/lgtning.spr");
 
 	m_usHornetFire = PRECACHE_EVENT ( 1, "events/firehornet.sc" );
 
@@ -189,83 +190,134 @@ void CHgun::PrimaryAttack()
 void CHgun::SecondaryAttack( void )
 {
 	Reload();
-
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 	{
 		return;
 	}
-
 	//Wouldn't be a bad idea to completely predict these, since they fly so fast...
 #ifndef CLIENT_DLL
-	CBaseEntity *pHornet;
+/* 	CBaseEntity *pHornet;
 	Vector vecSrc;
-
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-
 	vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12;
-
-	m_iFirePhase++;
-	switch ( m_iFirePhase )
-	{
-	case 1:
-		vecSrc = vecSrc + gpGlobals->v_up * 8;
-		break;
-	case 2:
-		vecSrc = vecSrc + gpGlobals->v_up * 8;
-		vecSrc = vecSrc + gpGlobals->v_right * 8;
-		break;
-	case 3:
-		vecSrc = vecSrc + gpGlobals->v_right * 8;
-		break;
-	case 4:
-		vecSrc = vecSrc + gpGlobals->v_up * -8;
-		vecSrc = vecSrc + gpGlobals->v_right * 8;
-		break;
-	case 5:
-		vecSrc = vecSrc + gpGlobals->v_up * -8;
-		break;
-	case 6:
-		vecSrc = vecSrc + gpGlobals->v_up * -8;
-		vecSrc = vecSrc + gpGlobals->v_right * -8;
-		break;
-	case 7:
-		vecSrc = vecSrc + gpGlobals->v_right * -8;
-		break;
-	case 8:
-		vecSrc = vecSrc + gpGlobals->v_up * 8;
-		vecSrc = vecSrc + gpGlobals->v_right * -8;
-		m_iFirePhase = 0;
-		break;
-	}
-
 	pHornet = CBaseEntity::Create( "hornet", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
 	pHornet->pev->velocity = gpGlobals->v_forward * 2400;
 	pHornet->pev->angles = UTIL_VecToAngles( pHornet->pev->velocity );
-
 	pHornet->SetThink( CHornet::StartDart );
+	m_flRechargeTime = gpGlobals->time + 0.5; */
+	
+///////////neew
 
+    Vector vecSrc, vecAim, vecOrig;
+    TraceResult tr;
+	Vector vecDir;
+    CBaseEntity *pEntity;
+    vecOrig = m_pPlayer->GetGunPosition( );
+    vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12;
+    vecAim = gpGlobals->v_forward;
+    UTIL_TraceLine ( vecOrig, vecOrig + vecAim * 2048, dont_ignore_monsters, ENT( m_pPlayer->pev ), &tr);
+
+	
+	
+//freeze random 1/2
+
+switch(RANDOM_LONG(1,2))
+	{
+	case 1: 
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+            WRITE_BYTE( TE_BEAMPOINTS );
+            WRITE_COORD(vecSrc.x);
+            WRITE_COORD(vecSrc.y);
+            WRITE_COORD(vecSrc.z);
+            WRITE_COORD( tr.vecEndPos.x );
+            WRITE_COORD( tr.vecEndPos.y );
+            WRITE_COORD( tr.vecEndPos.z );
+            WRITE_SHORT( BSpr ); //sprite
+            WRITE_BYTE( 0 ); // Starting frame
+            WRITE_BYTE( 0  ); // framerate * 0.1
+            WRITE_BYTE( 2 ); // life * 0.1
+            WRITE_BYTE( 64 ); // width
+            WRITE_BYTE( 5 ); // noise
+            WRITE_BYTE( 100 ); // color r,g,b
+            WRITE_BYTE( 100 ); // color r,g,b
+            WRITE_BYTE( 255 ); // color r,g,b
+            WRITE_BYTE( 240 ); // brightness
+            WRITE_BYTE( 1 ); // scroll speed
+    MESSAGE_END();
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 2; // -2 ammo
+	//Reload( );
 	m_flRechargeTime = gpGlobals->time + 0.5;
-#endif
+    pEntity = CBaseEntity::Instance(tr.pHit);
+    if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
+    {
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+        UTIL_ScreenFade( pPlayer, Vector(0,0,255), 5.0, 1.0, 140, FFADE_IN );
+        pPlayer->pev->rendermode = kRenderNormal;
+        pPlayer->pev->renderfx = kRenderFxGlowShell;
+        pPlayer->pev->rendercolor.x = 200;  // red
+        pPlayer->pev->rendercolor.y = 200;  // green
+        pPlayer->pev->rendercolor.z = 255; // blue
+        pPlayer->pev->renderamt = 70;
+        pPlayer->EnableControl(FALSE);
+        pPlayer->FTime2 = gpGlobals->time + 1.25; //1.75 sec to be unfreeze
+    }
+	break;
+	/////////////2
+	case 2:
+	{
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+            WRITE_BYTE( TE_BEAMPOINTS );
+            WRITE_COORD(vecSrc.x);
+            WRITE_COORD(vecSrc.y);
+            WRITE_COORD(vecSrc.z);
+            WRITE_COORD( tr.vecEndPos.x);
+            WRITE_COORD( tr.vecEndPos.y);
+            WRITE_COORD( tr.vecEndPos.z);
+            WRITE_SHORT( BSpr );
+            WRITE_BYTE( 0 ); // Starting frame
+            WRITE_BYTE( 0  ); // framerate * 0.1
+            WRITE_BYTE( 2 ); // life * 0.1
+            WRITE_BYTE( 64 ); // width
+            WRITE_BYTE( 3 ); // noise
+            WRITE_BYTE( 255 ); // color r,g,b
+            WRITE_BYTE( 0 ); // color r,g,b
+            WRITE_BYTE( 0 ); // color r,g,b
+            WRITE_BYTE( 240 ); // brightness
+            WRITE_BYTE( 12 ); // scroll speed
+    MESSAGE_END();
+	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecOrig, vecAim, Vector( 0, 0, 0 ), 2048, 35, 1, RANDOM_LONG(16,21), m_pPlayer->pev, m_pPlayer->random_seed ); //shot
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1; // -1 ammo
+	//Reload( );
+	m_flRechargeTime = gpGlobals->time + 0.5;
+	break;
+	}
+	//////////////3
 
+	}
+	
+//////////// end freeze
+	
+	
+	
+	
+#endif
 	int flags;
 #if defined( CLIENT_WEAPONS )
 	flags = FEV_NOTHOST;
 #else
 	flags = 0;
 #endif
-
 	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usHornetFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, FIREMODE_FAST, 0, 0, 0 );
-
-
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
+	//m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
-
-		// player "shoot" animation
+	// player "shoot" animation
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1;
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.35; //delay
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+	
+
+
 }
 
 
@@ -372,7 +424,7 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 
 
 
-//////////////NEWWW from handgranade
+//////////////NEWWW Flash can (i was dont know, how create freeze effect)
 
 class   CFreeze : public CBaseEntity
 {
@@ -414,7 +466,6 @@ void    CFreeze :: Spawn( )
 		pev->friction			= 0.35;
 		pev->health			= 9999999; //get more eat!
 
-		
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT(entindex()); // entity
@@ -426,12 +477,6 @@ void    CFreeze :: Spawn( )
 		WRITE_BYTE( 128 ); // r, g, b
 		WRITE_BYTE( 128 ); // brightness
 		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-
-		
-		
-		
-
-
 }
 
 void CFreeze :: Precache( void )
@@ -441,11 +486,6 @@ PRECACHE_SOUND( "weapons/gravgren.wav" );
 m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 PRECACHE_MODEL( "models/can.mdl" );
 }
-
-
-
-
-
 
 void    CFreeze:: Explode(int DamageType)
 {
@@ -554,8 +594,24 @@ if (gpGlobals->time >= m_flDie) //full explode and self destroy
 	pev->takedamage = DAMAGE_NO;
 	SetThink( SUB_Remove );
 }
-
-
-	
-
 }
+
+
+
+
+
+
+
+
+
+
+
+///////NEW WEAPON - TRUE FREEZE GUN
+///////////////////////
+///////////////////////
+//////////////NEW weapon
+
+
+
+
+

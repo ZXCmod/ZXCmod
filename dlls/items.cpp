@@ -310,6 +310,16 @@ class CItemLongJump : public CItem
 		Precache( );
 		SET_MODEL(ENT(pev), "models/w_longjump.mdl");
 		CItem::Spawn( );
+		
+/* 			if ( RANDOM_LONG( 0, 1 ) == 0 )
+			{
+				EMIT_SOUND( ENT(pev), CHAN_BODY, "weapons/rocket1.wav", 1, ATTN_NORM );
+			}
+			else
+			{
+				EMIT_SOUND( ENT(pev), CHAN_BODY, "common/bodydrop4.wav", 1, ATTN_NORM );
+			} */
+			//EMIT_SOUND( ENT(pev), CHAN_BODY, "weapons/rocket1.wav", 1, ATTN_NORM );
 	}
 	void Precache( void )
 	{
@@ -331,7 +341,7 @@ class CItemLongJump : public CItem
 			MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
 				WRITE_STRING( STRING(pev->classname) );
 			MESSAGE_END();
-
+			//EMIT_SOUND( ENT(pev), CHAN_BODY, "weapons/mine_deploy.wav", 0.5, ATTN_NORM );
 			EMIT_SOUND_SUIT( pPlayer->edict(), "!HEV_A1" );	// Play the longjump sound UNDONE: Kelly? correct sound?
 			return TRUE;		
 		}
