@@ -157,7 +157,7 @@ public:
 #define RPG_DEFAULT_GIVE			1
 #define GAUSS_DEFAULT_GIVE			25
 #define EGON_DEFAULT_GIVE			25
-#define HANDGRENADE_DEFAULT_GIVE	10
+#define HANDGRENADE_DEFAULT_GIVE	20
 #define SATCHEL_DEFAULT_GIVE		2
 #define TRIPMINE_DEFAULT_GIVE		1
 #define SNARK_DEFAULT_GIVE			6
@@ -341,6 +341,8 @@ public:
 	virtual BOOL ShouldWeaponIdle( void ) {return FALSE; };
 	virtual void Holster( int skiplocal = 0 );
 	virtual BOOL UseDecrement( void ) { return FALSE; };
+	void InvReset( void ); // invisible reset
+	void TripleReset( void ); // triple x dmg reset
 	
 	int	PrimaryAmmoIndex(); 
 	int	SecondaryAmmoIndex(); 

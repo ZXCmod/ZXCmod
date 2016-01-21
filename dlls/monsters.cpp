@@ -314,89 +314,113 @@ void CBaseMonster :: Look ( int iDistance )
 
 	CBaseEntity	*pSightEnt = NULL;// the current visible entity that we're dealing with
 	CBaseEntity *pPlayer1 = CBaseEntity::Instance(pev->owner);
-	//CBasePlayer *pPlayer1 = (CBasePlayer *)pEntity1;
 
-		CBaseEntity *pList[20];
+	CBaseEntity *pList[10];
 
-		Vector delta = Vector( iDistance, iDistance, iDistance );
-	// if (edict() == pev->owner)
-		// return pReturn;
-		// Find only monsters/clients in box, NOT limited to PVS
-		int count = UTIL_EntitiesInBox( pList, 20, pev->origin - delta, pev->origin + delta, FL_CLIENT|FL_MONSTER );
-		for ( int i = 0; i < count; i++ )
-		{
-			pSightEnt = pList[i];
-			// !!!temporarily only considering other monsters and clients, don't see prisoners
-			if   (pPlayer1 != NULL && pSightEnt != this &&  
-				 pSightEnt->pev->health > 0 && (pSightEnt->edict() != pPlayer1->edict() ) &&
-				 (g_pGameRules->PlayerRelationship( pPlayer1, pSightEnt ) != GR_TEAMMATE)
-				 ) // is fixed (v1.34), turrets ignore a allies and owner
-			{
-				// the looker will want to consider this entity  && (edict() == pSightEnt->pev->owner)
-				// don't check anything else about an entity that can't be seen, or an entity that you don't care about.
-				if ( IRelationship( pSightEnt ) != R_NO  && FInViewCone( pSightEnt ) && !FBitSet( pSightEnt->pev->flags, FL_NOTARGET ) && FVisible( pSightEnt ) )
+	Vector delta = Vector( iDistance, iDistance, iDistance );
+
+	// Find only monsters/clients in box, NOT limited to PVS
+	int count = UTIL_EntitiesInBox( pList, 10, pev->origin - delta, pev->origin + delta, FL_CLIENT|FL_MONSTER );
+	for ( int i = 0; i < count; i++ )
+	{
+		pSightEnt = pList[i];
+		
+			if (pPlayer1 != NULL && pSightEnt != NULL && pSightEnt->pev->effects == EF_NODRAW && FInViewCone( pSightEnt ) && FVisible( pSightEnt )  && pSightEnt->IsAlive() &&
+			 (g_pGameRules->PlayerRelationship( pPlayer1, pSightEnt ) != GR_TEAMMATE))
 				{
-				
-					if ( pSightEnt->IsPlayer()  )
+					// follow line to targets >1.35
+					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+						WRITE_BYTE( TE_BEAMENTS );
+						WRITE_SHORT( ENTINDEX( this->edict() ) );
+						WRITE_SHORT( ENTINDEX( pSightEnt->edict() ) );
+						WRITE_SHORT( g_sModelIndexLaser );
+						WRITE_BYTE( 0 ); // framestart
+						WRITE_BYTE( 0 ); // framerate
+						WRITE_BYTE( 1 ); // life
+						WRITE_BYTE( 5 );  // width
+						WRITE_BYTE( 0 );   // noise
+						WRITE_BYTE( 50 );   // r, g, b
+						WRITE_BYTE( 10 );   // r, g, b
+						WRITE_BYTE( 100 );   // r, g, b +pSightEnt->pev->health
+						WRITE_BYTE( 200 );	// brightness
+						WRITE_BYTE( 0 );		// speed
+					MESSAGE_END();	
+				}
+		
+		// !!!temporarily only considering other monsters and clients, don't see prisoners
+		if   (pPlayer1 != NULL && pSightEnt != this &&  
+			 pSightEnt->pev->health > 0 && (pSightEnt->edict() != pPlayer1->edict() ) &&
+			 (g_pGameRules->PlayerRelationship( pPlayer1, pSightEnt ) != GR_TEAMMATE) &&
+			 (pSightEnt->pev->effects != EF_NODRAW)
+			 ) // is fixed (v1.34), turrets ignore a allies and owner
+		{
+			// the looker will want to consider this entity  && (edict() == pSightEnt->pev->owner)
+			// don't check anything else about an entity that can't be seen, or an entity that you don't care about.
+			if ( IRelationship( pSightEnt ) != R_NO  && FInViewCone( pSightEnt ) && !FBitSet( pSightEnt->pev->flags, FL_NOTARGET ) && FVisible( pSightEnt ) )
+			{
+			
+				if ( pSightEnt->IsPlayer()  )
+				{
+					if ( pev->spawnflags & SF_MONSTER_WAIT_TILL_SEEN )
 					{
-						if ( pev->spawnflags & SF_MONSTER_WAIT_TILL_SEEN )
+						CBaseMonster *pClient;
+
+						pClient = pSightEnt->MyMonsterPointer();
+						// don't link this client in the list if the monster is wait till seen and the player isn't facing the monster
+						if ( pSightEnt && !pClient->FInViewCone( this ) )
 						{
-							CBaseMonster *pClient;
-
-							pClient = pSightEnt->MyMonsterPointer();
-							// don't link this client in the list if the monster is wait till seen and the player isn't facing the monster
-							if ( pSightEnt && !pClient->FInViewCone( this ) )
-							{
-								// we're not in the player's view cone. 
-								continue;
-							}
-							else
-							{
-								// player sees us, become normal now.
-								pev->spawnflags &= ~SF_MONSTER_WAIT_TILL_SEEN;
-							}
+							// we're not in the player's view cone. 
+							continue;
 						}
-
-						// if we see a client, remember that (mostly for scripted AI)
-						iSighted |= bits_COND_SEE_CLIENT;
+						else
+						{
+							// player sees us, become normal now.
+							pev->spawnflags &= ~SF_MONSTER_WAIT_TILL_SEEN;
+						}
 					}
 
-					pSightEnt->m_pLink = m_pLink;
-					m_pLink = pSightEnt;
+					// if we see a client, remember that (mostly for scripted AI)
+					iSighted |= bits_COND_SEE_CLIENT;
+				}
 
-					if ( pSightEnt == m_hEnemy )
-					{
-						// we know this ent is visible, so if it also happens to be our enemy, store that now.
-						iSighted |= bits_COND_SEE_ENEMY;
-					}
+				pSightEnt->m_pLink = m_pLink;
+				m_pLink = pSightEnt;
 
-					// don't add the Enemy's relationship to the conditions. We only want to worry about conditions when
-					// we see monsters other than the Enemy.
-					switch ( IRelationship ( pSightEnt ) )
-					{
-					case	R_NM:
-						iSighted |= bits_COND_SEE_NEMESIS;		
-						break;
-					case	R_HT:		
-						iSighted |= bits_COND_SEE_HATE;		
-						break;
-					case	R_DL:
-						iSighted |= bits_COND_SEE_DISLIKE;
-						break;
-					case	R_FR:
-						iSighted |= bits_COND_SEE_FEAR;
-						break;
-					case    R_AL:
-						break;
-					default:
-						ALERT ( at_aiconsole, "%s can't assess %s\n", STRING(pev->classname), STRING(pSightEnt->pev->classname ) );
-						break;
-					}
+				if ( pSightEnt == m_hEnemy )
+				{
+					// we know this ent is visible, so if it also happens to be our enemy, store that now.
+					iSighted |= bits_COND_SEE_ENEMY;
+				}
+
+				// don't add the Enemy's relationship to the conditions. We only want to worry about conditions when
+				// we see monsters other than the Enemy.
+				switch ( IRelationship ( pSightEnt ) )
+				{
+				case	R_NM:
+					iSighted |= bits_COND_SEE_NEMESIS;		
+					break;
+				case	R_HT:		
+					iSighted |= bits_COND_SEE_HATE;		
+					break;
+				case	R_DL:
+					iSighted |= bits_COND_SEE_DISLIKE;
+					break;
+				case	R_FR:
+					iSighted |= bits_COND_SEE_FEAR;
+					break;
+				case    R_AL:
+					break;
+				default:
+					ALERT ( at_aiconsole, "%s can't assess %s\n", STRING(pev->classname), STRING(pSightEnt->pev->classname ) );
+					break;
 				}
 			}
+
 		}
 	
-	
+	}
+
+
 	SetConditions( iSighted );
 }
 
@@ -2025,6 +2049,11 @@ void CBaseMonster :: MonsterInit ( void )
 	pev->armorvalue		= 0;
 	//pev->fuser1			= 30;
 	//pev->fuser2			= 30;
+	
+	// Charge = 0; // 0 or 1 bool
+	// TripleShot = 0; // 0 or 1 bool change it for multiple dmg (new in 1.35 for Red Crystal)
+	// TripleShotS = 1;
+	
 	pev->deadflag		= DEAD_NO;
 	m_IdealMonsterState	= MONSTERSTATE_IDLE;// Assume monster will be idle, until proven otherwise
 	
@@ -2104,11 +2133,11 @@ void CBaseMonster :: StartMonster ( void )
 		pev->origin.z += 1;
 		DROP_TO_FLOOR ( ENT(pev) );
 		// Try to move the monster to make sure it's not stuck in a brush.
-		if (!WALK_MOVE ( ENT(pev), 0, 0, WALKMOVE_NORMAL ) )
-		{
-			ALERT(at_error, "Monster %s stuck in wall--level design error", STRING(pev->classname));
-			pev->effects = EF_BRIGHTFIELD;
-		}
+		// if (!WALK_MOVE ( ENT(pev), 0, 0, WALKMOVE_NORMAL ) )
+		// {
+			// ALERT(at_error, "Monster %s stuck in wall--level design error", STRING(pev->classname));
+			// pev->effects = EF_BRIGHTFIELD;
+		// }
 	}
 	else 
 	{
@@ -2217,7 +2246,7 @@ int CBaseMonster::IRelationship ( CBaseEntity *pTarget )
 	static int iEnemy[14][14] =
 	{			 //   NONE	 MACH	 PLYR	 HPASS	 HMIL	 AMIL	 APASS	 AMONST	APREY	 APRED	 INSECT	PLRALY	PBWPN	ABWPN
 	/*NONE*/		{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO	},
-	/*MACHINE*/		{ R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_DL,	R_DL	},
+	/*MACHINE*/		{ R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_FR,	R_DL,	R_DL	},
 	/*PLAYER*/		{ R_NO	,R_DL	,R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_DL,	R_DL	},
 	/*HUMANPASSIVE*/{ R_NO	,R_NO	,R_AL	,R_AL	,R_HT	,R_FR	,R_NO	,R_HT	,R_DL	,R_FR	,R_NO	,R_AL,	R_NO,	R_NO	},
 	/*HUMANMILITAR*/{ R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_HT	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_HT,	R_NO,	R_NO	},
@@ -2227,7 +2256,7 @@ int CBaseMonster::IRelationship ( CBaseEntity *pTarget )
 	/*ALIENPREY   */{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_FR	,R_NO	,R_DL,	R_NO,	R_NO	},
 	/*ALIENPREDATO*/{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_DL,	R_NO,	R_NO	},
 	/*INSECT*/		{ R_FR	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR,	R_NO,	R_NO	},
-	/*PLAYERALLY*/	{ R_NO	,R_DL	,R_AL	,R_AL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_NO	},
+	/*PLAYERALLY*/	{ R_NO	,R_FR	,R_AL	,R_AL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_NO	},
 	/*PBIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_NO,	R_DL	},
 	/*ABIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_AL	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO	,R_DL,	R_DL,	R_NO	}
 	};

@@ -465,7 +465,7 @@ void CBigMomma :: HandleAnimEvent( MonsterEvent_t *pEvent )
 					
 			if ( pHurt )
 			{
-				pHurt->TakeDamage( pev, pev, gSkillData.bigmommaDmgSlash, DMG_CRUSH | DMG_SLASH );
+				pHurt->TakeDamage( pev, VARS( pev->owner ), 64, DMG_CRUSH | DMG_SLASH );
 				pHurt->pev->punchangle.x = 15;
 				switch( pEvent->event )
 				{
@@ -665,7 +665,7 @@ void CBigMomma :: Spawn()
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_GREEN;
-	pev->health			= 250;
+	pev->health			= 500;
 	pev->view_ofs		= Vector ( 0, 0, 128 );// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= 0.3;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;

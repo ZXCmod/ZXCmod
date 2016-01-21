@@ -24,7 +24,7 @@ cvar_t	fragsleft	= {"mp_fragsleft","0", FCVAR_SERVER | FCVAR_UNLOGGED };	  // Do
 cvar_t	timeleft	= {"mp_timeleft","0" , FCVAR_SERVER | FCVAR_UNLOGGED };	  // "      "
 
 // multiplayer server rules
-cvar_t	teamplay	= {"mp_teamplay","0", FCVAR_SERVER };
+cvar_t	teamplay	= {"mp_teamplay","1", FCVAR_SERVER };
 cvar_t	fraglimit	= {"mp_fraglimit","50", FCVAR_SERVER };
 cvar_t	timelimit	= {"mp_timelimit","30", FCVAR_SERVER };
 cvar_t	friendlyfire= {"mp_friendlyfire","0", FCVAR_SERVER };
@@ -47,7 +47,7 @@ cvar_t	allowmonsters7={"zxc_tank","1", FCVAR_SERVER }; //1.31, func_tank
 cvar_t	allowmonsters8={"zxc_teleport","1", FCVAR_SERVER }; //1.31, cwb teleportation
 cvar_t	allowmonsters9={"zxc_allwep","1", FCVAR_SERVER }; //1.33, wpn limit
 cvar_t	allowmonsters10={"zxc_megaweps","0", FCVAR_SERVER }; //1.34, very Hi-explosive and no some weapons
-cvar_t	allowmonsters11={"zxc_sfrad","800", FCVAR_SERVER }; // sflare radius
+cvar_t	allowmonsters11={"zxc_sfrad","1200", FCVAR_SERVER }; // sflare radius
 cvar_t	allowmonsters12={"zxc_sflife","0", FCVAR_SERVER }; // sflare time life
 cvar_t	allowmonsters13={"zxc_sfshake","1", FCVAR_SERVER }; // sflare shake toggle
 cvar_t	allowmonsters14={"zxc_sfreload","180", FCVAR_SERVER }; // sflare reload in sec

@@ -141,13 +141,13 @@ void CHalfLifeMultiplay::RefreshSkillData( void )
 // override some values for multiplay.
 
 	// suitcharger
-	gSkillData.suitchargerCapacity = 100;
+	gSkillData.suitchargerCapacity = 50;
 
 	// Crowbar whack
 	// gSkillData.plrDmgCrowbar = RANDOM_LONG(20,30);
 
 	// Glock Round
-	gSkillData.plrDmg9MM = 15;
+	gSkillData.plrDmg9MM = 3;
 
 	// 357 Round
 	gSkillData.plrDmg357 = 57+RANDOM_LONG(1,9);
@@ -161,15 +161,7 @@ void CHalfLifeMultiplay::RefreshSkillData( void )
 	// Shotgun buckshot
 	gSkillData.plrDmgBuckshot = 5;
 
-	// Crossbow
-	// gSkillData.plrDmgCrossbowClient = 60;
-
-	// RPG RANDOM_LONG(99,197)
 	gSkillData.plrDmgRPG = 120;
-
-	// Egon
-	gSkillData.plrDmgEgonWide = 8;
-	gSkillData.plrDmgEgonNarrow = 8;
 
 	// Hand Grendade
 	gSkillData.plrDmgHandGrenade = 110;
@@ -180,8 +172,6 @@ void CHalfLifeMultiplay::RefreshSkillData( void )
 	// Tripmine
 	gSkillData.plrDmgTripmine = 120;
 
-	// hornet
-	gSkillData.plrDmgHornet = 15;
 }
 
 // longest the intermission can last, in seconds
@@ -479,10 +469,11 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 	char  szText[64];
 	char *txt;
 	
-	switch(RANDOM_LONG(0,1))
+	switch(RANDOM_LONG(0,2))
 	{
-		case 0: txt = "Zxc-mod forum: forum.zxcmod.com  "; break;
+		case 0: txt = "Official group zxc-mod: vk.com/zxcmod  "; break;
 		case 1: txt = "More about zxc-mod on the ofsite: www.ZxcMod.com  "; break;
+		case 2: txt = "zxc-mod rpynna: www.vkontakte.ru/zxcmod "; break;
 	}
 	
 
@@ -850,8 +841,7 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 {
 	BOOL		addDefault;
 	CBaseEntity	*pWeaponEntity = NULL;
-	//float cheats = CVAR_GET_FLOAT( "sv_cheats" );
-
+	
 	pPlayer->pev->weapons |= (1<<WEAPON_SUIT);
 	
 	m_flNextSBarUpdateTime2 = 1.0; // teamplay timer updater
@@ -880,37 +870,25 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		pPlayer->GiveNamedItem( "weapon_snark" );
 		pPlayer->GiveNamedItem( "weapon_satchel" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
+		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_handgrenade" );
-		// pPlayer->GiveAmmo( 12, "Snarks", SNARK_MAX_CARRY );
-		//ammo
+
 		pPlayer->GiveAmmo( 60, "9mm", _9MM_MAX_CARRY );// 4 full reloads
 		
 		if (allowmonsters16.value != 0)
 		{
-			//ammo
+			// ammo
 			pPlayer->GiveAmmo( 700, "9mm", _9MM_MAX_CARRY );
 			pPlayer->GiveAmmo( 60, "357", _357_MAX_CARRY );
 			pPlayer->GiveAmmo( 30, "buckshot", BUCKSHOT_MAX_CARRY );
 			pPlayer->GiveAmmo( 20, "bolts", BOLT_MAX_CARRY );
 			pPlayer->GiveAmmo( 9, "rockets", ROCKET_MAX_CARRY );
-			//pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
 			pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );
 			pPlayer->GiveAmmo( 12, "Snarks", SNARK_MAX_CARRY );
 			pPlayer->GiveAmmo( 20, "ARgrenades", M203_GRENADE_MAX_CARRY );
 			pPlayer->GiveAmmo( 100, "uranium", URANIUM_MAX_CARRY );
+			// pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
 		}
-		
-		/* 		
-		pPlayer->GiveAmmo( 500, "9mm", _9MM_MAX_CARRY );
-		pPlayer->GiveAmmo( 24, "357", _357_MAX_CARRY );
-		pPlayer->GiveAmmo( 16, "buckshot", BUCKSHOT_MAX_CARRY );
-		pPlayer->GiveAmmo( 10, "bolts", BOLT_MAX_CARRY );
-		pPlayer->GiveAmmo( 3, "rockets", ROCKET_MAX_CARRY );
-		//pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
-		pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );
-		pPlayer->GiveAmmo( 30, "Snarks", SNARK_MAX_CARRY );
-		pPlayer->GiveAmmo( 1, "ARgrenades", M203_GRENADE_MAX_CARRY ); 
-		*/
 	}
 	
 	else if ( addDefault )
@@ -920,16 +898,11 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
-		// pPlayer->GiveAmmo( 1, "Trip Mine", TRIPMINE_MAX_CARRY );// 4 full reloads
-		/*
-
-		*/
 		pPlayer->GiveAmmo( 60, "9mm", _9MM_MAX_CARRY );// 4 full reloads
-		#ifndef CLIENT_DLL
-		UTIL_ScreenFade( pPlayer, Vector(RANDOM_LONG(0,255),RANDOM_LONG(0,255),RANDOM_LONG(0,255)), 1.95, 0.9, 128, FFADE_IN );
-		#endif
-
 	}
+	
+	UTIL_ScreenFade( pPlayer, Vector(RANDOM_LONG(0,255),RANDOM_LONG(0,255),RANDOM_LONG(0,255)), 1.95, 0.9, 128, FFADE_IN );
+
 }
 
 //=========================================================
@@ -943,7 +916,7 @@ BOOL CHalfLifeMultiplay :: FPlayerCanRespawn( CBasePlayer *pPlayer )
 //=========================================================
 float CHalfLifeMultiplay :: FlPlayerSpawnTime( CBasePlayer *pPlayer )
 {
-	return gpGlobals->time;//now!
+	return gpGlobals->time;
 }
 
 BOOL CHalfLifeMultiplay :: AllowAutoTargetCrosshair( void )
@@ -1010,6 +983,21 @@ void CHalfLifeMultiplay :: PlayerKilled( CBasePlayer *pVictim, entvars_t *pKille
 		// }
 		
 		FireTargets( "game_playerkill", ktmp, ktmp, USE_TOGGLE, 0 );
+		
+		if (g_flWeaponCheat == INT(0)) // without sv_cheats
+		{
+			peKiller->pev->max_health += 7;
+			peKiller->pev->health     += 7;
+			peKiller->pev->armorvalue += 7;
+		}
+		else // bonus balance!
+		{
+			peKiller->pev->max_health += 3;
+			peKiller->pev->health     += 3;
+			peKiller->pev->armorvalue += 3;
+		}
+			
+		
 	}
 	else
 	{  // killed by the world

@@ -74,7 +74,6 @@ int MaxAmmoCarry( int iszName )
 			return CBasePlayerItem::ItemInfoArray[i].iMaxAmmo2;
 	}
 
-	ALERT( at_console, "MaxAmmoCarry() doesn't recognize '%s'!\n", STRING( iszName ) );
 	return -1;
 }
 
@@ -273,10 +272,7 @@ void UTIL_PrecacheOtherWeapon( const char *szClassname )
 
 	pent = CREATE_NAMED_ENTITY( MAKE_STRING( szClassname ) );
 	if ( FNullEnt( pent ) )
-	{
-		ALERT ( at_console, "NULL Ent in UTIL_PrecacheOtherWeapon\n" );
 		return;
-	}
 	
 	CBaseEntity *pEntity = CBaseEntity::Instance (VARS( pent ));
 
@@ -406,7 +402,6 @@ void W_Precache(void)
 	g_sModelIndexLaser = PRECACHE_MODEL( (char *)g_pModelNameLaser );
 	g_sModelIndexLaserDot = PRECACHE_MODEL("sprites/laserdot.spr");
 
-
 	// used by explosions
 	PRECACHE_MODEL ("models/grenade.mdl");
 	PRECACHE_MODEL ("models/p_tripmine.mdl");
@@ -515,10 +510,7 @@ void CBasePlayerItem::FallThink ( void )
 		// clatter if we have an owner (i.e., dropped by someone)
 		// don't clatter if the gun is waiting to respawn (if it's waiting, it is invisible!)
 		if ( !FNullEnt( pev->owner ) )
-		{
-			int pitch = 95 + RANDOM_LONG(0,29);
-			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "items/weapondrop1.wav", 1, ATTN_NORM, 0, pitch);	
-		}
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "items/weapondrop1.wav", 1, ATTN_NORM, 0, 100);	
 
 		// lie flat
 		pev->angles.x = 0;
@@ -534,13 +526,8 @@ void CBasePlayerItem::FallThink ( void )
 void CBasePlayerItem::Materialize( void )
 {
 	if (g_flWeaponCheat != 0.0)
-	{
-		// SUB_Remove(); //no spawn weapons
-		// pev->nextthink = gpGlobals->time + 0.25;
-		// SetThink( SUB_Remove );
 		UTIL_Remove( this );
-	}
-		//
+
 	if ( pev->effects & EF_NODRAW )
 	{
 		// changing from invisible state to visible.
@@ -671,7 +658,7 @@ BOOL CanAttack( float attack_time, float curtime, BOOL isPredicted )
 
 void CBasePlayerWeapon::ItemPostFrame( void )
 {
-	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
+	
 	
 	if ((m_fInReload) && ( m_pPlayer->m_flNextAttack <= UTIL_WeaponTimeBase() ) )
 	{
@@ -719,37 +706,16 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		if ( (m_iClip != 0 ))
 		{
 			m_pPlayer->TabulateAmmo();
+			InvReset();
 			FourthAttack();
+			TripleReset();
 		}
-		
-			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-			{
-				m_pPlayer->pev->rendermode = kRenderNormal;
-				m_pPlayer->pev->renderfx = kRenderFxNone;
-				m_pPlayer->pev->renderamt = 0;
-				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-				m_pPlayer->pev->health+=50;
-			}
+
 	} 
 	
-	//secondary
+	// secondary
 	else if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
-	
-		//work here with reset invisible
-		//reset values when invisibled
-		//if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-		//{
-			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-			{
-				m_pPlayer->pev->rendermode = kRenderNormal;
-				m_pPlayer->pev->renderfx = kRenderFxNone;
-				m_pPlayer->pev->renderamt = 0;
-				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart14.wav", 0.9, ATTN_NORM);
-				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-				m_pPlayer->pev->health+=50;
-			}
-		//}
 
 		//!(m_pPlayer->pev->button & IN_USE) && //cuted
 		if ( pszAmmo2() && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
@@ -757,35 +723,25 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 			m_fFireOnEmpty = TRUE;
 		}
 		m_pPlayer->TabulateAmmo();
+		InvReset();
 		SecondaryAttack();
+		TripleReset();
 		m_pPlayer->pev->button &= ~IN_ATTACK2;
 
 	}
 	
-	//<< first
+	// << first
 	else if (!(m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
-	
-		//reset values when invisibled
-		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR )
-		{
-			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-			{
-				m_pPlayer->pev->rendermode = kRenderNormal;
-				m_pPlayer->pev->renderfx = kRenderFxNone;
-				m_pPlayer->pev->renderamt = 0;
-				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-				m_pPlayer->pev->health+=50;
-			}
-		}
-	
-	
+
 		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
 		{
 			m_fFireOnEmpty = TRUE;
 		}
 		m_pPlayer->TabulateAmmo();
+		InvReset();
 		PrimaryAttack();
+		TripleReset();
 	}
 	
 	// << third attack
@@ -798,39 +754,20 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		if ( (m_iClip != 0 ))
 		{
 			m_pPlayer->TabulateAmmo();
+			InvReset();
 			ThirdAttack();
+			TripleReset();
 		}
 		
 		
-		//reset values when invisibled
-		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
-		{
-			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-			{
-				m_pPlayer->pev->rendermode = kRenderNormal;
-				m_pPlayer->pev->renderfx = kRenderFxNone;
-				m_pPlayer->pev->renderamt = 0;
-				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-				m_pPlayer->pev->health+=50;
-			}
-		}
+		
 	} 
-	
-	
-	
+
 	else if ( m_pPlayer->pev->button & IN_RELOAD && iMaxClip() != WEAPON_NOCLIP && !m_fInReload ) 
 	{
 		// reload when reload is pressed, or if no buttons are down and weapon is empty.
-		Reload();
-		if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
-		{
-			m_pPlayer->pev->rendermode = kRenderNormal;
-			m_pPlayer->pev->renderfx = kRenderFxNone;
-			m_pPlayer->pev->renderamt = 0;
-			m_pPlayer->pev->health+=50;
-			UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
-			
-		}
+		InvReset(); Reload(); TripleReset();
+
 	}
 	else if ( !(m_pPlayer->pev->button & (IN_ATTACK|IN_ATTACK2) ) )
 	{
@@ -869,6 +806,35 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 }
 
 
+		
+// reset values when invisibled
+void CBasePlayerWeapon::InvReset( void )
+{
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
+		
+	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+	{
+		if (m_pPlayer->pev->effects == EF_NODRAW) //reset values
+		{
+			m_pPlayer->pev->effects &= ~EF_NODRAW;
+			UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+			m_pPlayer->pev->health+=50;
+			MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(m_pPlayer->pev) );
+				WRITE_STRING( "Invisible is resetted." );
+			MESSAGE_END();
+		}
+	}
+}
+
+//reset values when charged
+void CBasePlayerWeapon::TripleReset( void )
+{
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
+	
+	if (pl->TripleShot == 1)
+		{pl->Charge = 0; pl->TripleShot = 0; pl->TripleShotS = 1;}
+		
+}
 
 void CBasePlayerItem::DestroyItem( void )
 {
@@ -920,12 +886,6 @@ void CBasePlayerItem::AttachToPlayer ( CBasePlayer *pPlayer )
 	pev->owner = pPlayer->edict();
 	pev->nextthink = gpGlobals->time + .1;
 	SetTouch( NULL );
-
-	//if(!modelindexsave)
-	//{
-	//	modelindexsave=pev->modelindex;
-	//	modelsave=pev->model;
-	//}
 }
 
 // CALLED THROUGH the newly-touched weapon's instance. The existing player weapon is pOriginal
@@ -1075,8 +1035,6 @@ BOOL CBasePlayerWeapon :: AddSecondaryAmmo( int iCount, char *szName, int iMax )
 	int iIdAmmo;
 
 	iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMax );
-
-	//m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType] = iMax; // hack for testing
 
 	if (iIdAmmo > 0)
 	{
@@ -1426,7 +1384,7 @@ void CWeaponBox::Kill( void )
 	{
 		pWeapon = m_rgpPlayerItems[ i ];
 
-		while ( pWeapon )
+		while ( pWeapon != NULL )
 		{
 			pWeapon->SetThink(SUB_Remove);
 			pWeapon->pev->nextthink = gpGlobals->time + 0.1;
@@ -1473,12 +1431,7 @@ void CWeaponBox::Touch( CBaseEntity *pOther )
 	{
 		if ( !FStringNull( m_rgiszAmmo[ i ] ) )
 		{
-			// there's some ammo of this type. 
 			pPlayer->GiveAmmo( m_rgAmmo[ i ], (char *)STRING( m_rgiszAmmo[ i ] ), MaxAmmoCarry( m_rgiszAmmo[ i ] ) );
-
-			//ALERT ( at_console, "Gave %d rounds of %s\n", m_rgAmmo[i], STRING(m_rgiszAmmo[i]) );
-
-			// now empty the ammo from the weaponbox since we just gave it to the player
 			m_rgiszAmmo[ i ] = iStringNull;
 			m_rgAmmo[ i ] = 0;
 		}
@@ -1563,54 +1516,52 @@ BOOL CWeaponBox::PackWeapon( CBasePlayerItem *pWeapon )
 	//ALERT ( at_console, "packed %s\n", STRING(pWeapon->pev->classname) );
 
 	
-	
-if(!pWeapon->modelindexsave)
-{
-pWeapon->modelindexsave=pWeapon->pev->modelindex;
-pWeapon->modelsave=pWeapon->pev->model;
-}
 
-pWeapon->pev->modelindex = 0;
-pWeapon->pev->model = iStringNull;
-pWeapon->pev->owner = edict();
-pWeapon->SetThink( NULL );// crowbar may be trying to swing again, etc.
-pWeapon->SetTouch( NULL );
-pWeapon->m_pPlayer = NULL;
+	if(!pWeapon->modelindexsave)
+	{
+		pWeapon->modelindexsave=pWeapon->pev->modelindex;
+		pWeapon->modelsave=pWeapon->pev->model;
+	}
 
-ALERT ( at_console, "packed %s\n", STRING(pWeapon->pev->classname) );
+	pWeapon->pev->modelindex = 0;
+	pWeapon->pev->model = iStringNull;
+	pWeapon->pev->owner = edict();
+	pWeapon->SetThink( NULL );// crowbar may be trying to swing again, etc.
+	pWeapon->SetTouch( NULL );
+	pWeapon->m_pPlayer = NULL;
 
-if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_crowbar")))
-{
-	SET_MODEL( ENT(pev), "models/w_crowbar.mdl");
-	return FALSE;
-}
+	if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_crowbar")))
+	{
+		SET_MODEL( ENT(pev), "models/w_crowbar.mdl");
+		return FALSE;
+	}
 
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_9mmhandgun")))
-SET_MODEL( ENT(pev), "models/w_9mmhandgun.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_357")))
-SET_MODEL( ENT(pev), "models/w_357.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_shotgun")))
-SET_MODEL( ENT(pev), "models/w_shotgun.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_9mmAR")))
-SET_MODEL( ENT(pev), "models/w_9mmAR.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_crossbow")))
-SET_MODEL( ENT(pev), "models/w_crossbow.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_rpg")))
-SET_MODEL( ENT(pev), "models/w_rpg.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_gauss")))
-SET_MODEL( ENT(pev), "models/w_gauss.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_hornetgun")))
-SET_MODEL( ENT(pev), "models/w_hgun.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_egon")))
-SET_MODEL( ENT(pev), "models/w_egon.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_snark")))
-SET_MODEL( ENT(pev), "models/w_sqknest.mdl");
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_satchel")))
-SET_MODEL( ENT(pev), "models/w_satchel.mdl"); 
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_tripmine")))
-SET_MODEL( ENT(pev), "models/w_weaponbox.mdl"); 
-else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_handgrenade")))
-SET_MODEL( ENT(pev), "models/w_grenade.mdl"); 
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_9mmhandgun")))
+	SET_MODEL( ENT(pev), "models/w_9mmhandgun.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_357")))
+	SET_MODEL( ENT(pev), "models/w_357.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_shotgun")))
+	SET_MODEL( ENT(pev), "models/w_shotgun.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_9mmAR")))
+	SET_MODEL( ENT(pev), "models/w_9mmAR.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_crossbow")))
+	SET_MODEL( ENT(pev), "models/w_crossbow.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_rpg")))
+	SET_MODEL( ENT(pev), "models/w_rpg.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_gauss")))
+	SET_MODEL( ENT(pev), "models/w_gauss.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_hornetgun")))
+	SET_MODEL( ENT(pev), "models/w_hgun.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_egon")))
+	SET_MODEL( ENT(pev), "models/w_egon.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_snark")))
+	SET_MODEL( ENT(pev), "models/w_sqknest.mdl");
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_satchel")))
+	SET_MODEL( ENT(pev), "models/w_satchel.mdl"); 
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_tripmine")))
+	SET_MODEL( ENT(pev), "models/w_weaponbox.mdl"); 
+	else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_handgrenade")))
+	SET_MODEL( ENT(pev), "models/w_grenade.mdl"); 
 	
 	return TRUE;
 }
@@ -1624,8 +1575,6 @@ BOOL CWeaponBox::PackAmmo( int iszName, int iCount )
 
 	if ( FStringNull( iszName ) )
 	{
-		// error here
-		ALERT ( at_console, "NULL String in PackAmmo!\n" );
 		return FALSE;
 	}
 	
@@ -1633,7 +1582,6 @@ BOOL CWeaponBox::PackAmmo( int iszName, int iCount )
 
 	if ( iMaxCarry != -1 && iCount > 0 )
 	{
-		//ALERT ( at_console, "Packed %d rounds of %s\n", iCount, STRING(iszName) );
 		GiveAmmo( iCount, (char *)STRING( iszName ), iMaxCarry );
 		return TRUE;
 	}
@@ -1675,7 +1623,6 @@ int CWeaponBox::GiveAmmo( int iCount, char *szName, int iMax, int *pIndex/* = NU
 
 		return i;
 	}
-	ALERT( at_console, "out of named ammo slots\n");
 	return i;
 }
 

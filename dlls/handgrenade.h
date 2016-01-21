@@ -1,25 +1,26 @@
 
 class   CGrav1 : public CBaseEntity
 {
-        private:
+        public:
 
         void    Spawn            ( void );
 		void 	Precache 		 ( void );
         void    EXPORT MoveThink ( );
-        void    Explode          ( void );
+        void    EXPORT Touch	( CBaseEntity *pOther );
 		
 		private:
-		int 	m_flDie;
-		int 	m_flDie2;
 		int     BeamSprite;
 		int 	m_iSpriteTexture;
 		short	m_LaserSprite;
 		short	m_Sprite;
+		int 	radius; // add more radius per charge
+		CBaseEntity *pEntity;
+		TraceResult tr;
 };
 
 class   CSmoke : public CBaseEntity
 {
-        private:
+        public:
 
         void    Spawn            ( void );
 		void 	Precache 		 ( void );

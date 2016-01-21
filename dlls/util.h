@@ -282,6 +282,7 @@ extern float		UTIL_SplineFraction( float value, float scale );
 extern float		UTIL_WaterLevel( const Vector &position, float minz, float maxz );
 extern void			UTIL_Bubbles( Vector mins, Vector maxs, int count );
 extern void			UTIL_BubbleTrail( Vector from, Vector to, int count );
+extern void			UTIL_BubbleTrailDry( Vector from, Vector to, int count );
 
 // allows precacheing of other entities
 extern void			UTIL_PrecacheOther( const char *szClassname );

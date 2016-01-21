@@ -40,21 +40,21 @@ LINK_ENTITY_TO_CLASS( spark_shower, CShower );
 
 void CShower::Spawn( void )
 {
-	pev->velocity = RANDOM_FLOAT( 200, 300 ) * pev->angles;
-	pev->velocity.x += RANDOM_FLOAT(-100.f,100.f);
-	pev->velocity.y += RANDOM_FLOAT(-100.f,100.f);
+	pev->velocity = RANDOM_LONG( 200, 300 ) * pev->angles;
+	pev->velocity.x += RANDOM_LONG(-100,100);
+	pev->velocity.y += RANDOM_LONG(-100,100);
 	if ( pev->velocity.z >= 0 )
 		pev->velocity.z += 200;
 	else
 		pev->velocity.z -= 200;
 	pev->movetype = MOVETYPE_BOUNCE;
-	pev->gravity = 0.5;
+	pev->gravity = 1.0;
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->solid = SOLID_NOT;
 	SET_MODEL( edict(), "models/grenade.mdl");	// Need a model, just use the grenade, we don't draw it anyway
 	UTIL_SetSize(pev, g_vecZero, g_vecZero );
 	pev->effects |= EF_NODRAW;
-	pev->speed = RANDOM_FLOAT( 0.5, 1.5 );
+	pev->speed = RANDOM_FLOAT( 0.2, 0.8 );
 
 	pev->angles = g_vecZero;
 }
@@ -141,22 +141,10 @@ void CEnvExplosion::Spawn( void )
 	pev->effects = EF_NODRAW;
 
 	pev->movetype = MOVETYPE_NONE;
-	/*
-	if ( m_iMagnitude > 250 )
-	{
-		m_iMagnitude = 250;
-	}
-	*/
 
 	float flSpriteScale;
 	flSpriteScale = ( m_iMagnitude - 50) * 0.6;
-	
-	/*
-	if ( flSpriteScale > 50 )
-	{
-		flSpriteScale = 50;
-	}
-	*/
+
 	if ( flSpriteScale < 10 )
 	{
 		flSpriteScale = 10;

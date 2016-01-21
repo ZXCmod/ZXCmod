@@ -368,11 +368,11 @@ void CBarney :: BarneyFirePistol ( void )
 		case 1: FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 2048,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
 		case 2: FireBullets(2, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
 		case 3: FireBullets(3, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
-		case 4: FireBullets(10, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 640,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
+		case 4: FireBullets(5, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 640,  pev->dmg, 1, 1, VARS( pev->owner )  ); break;
 		case 5: CBaseEntity *pGlockCore = Create( "weapon_stoner", vecShootOrigin + gpGlobals->v_forward * 64, vecShootDir, edict() );
 					pGlockCore->pev->velocity = vecThrow;
 					pGlockCore->pev->owner = pev->owner;
-					pGlockCore->pev->dmg = pev->dmg+26; break;
+					pGlockCore->pev->dmg = 30; break;
 	}
 	int pitchShift = RANDOM_LONG( 0, 20 );
 	
@@ -652,14 +652,14 @@ void CBarney::Killed( entvars_t *pevAttacker, int iGib)
 
 		GetAttachment( 0, vecGunPos, vecGunAngles );
 
-		
+/* 		
 	switch (RANDOM_LONG(0,1))
 	{
-	case 0: CBaseEntity::Create( "monster_scientist", pev->origin, pev->angles, edict() ); break;
-	case 1: CBaseEntity::Create( "monster_headcrab", pev->origin, pev->angles, edict() ); break;
+		case 0: CBaseEntity::Create( "monster_scientist", pev->origin, pev->angles, edict() ); break;
+		case 1: CBaseEntity::Create( "monster_headcrab", pev->origin, pev->angles, edict() ); break;
 	}
+ */
 	}
-
 	SetUse( NULL );	
 	CTalkMonster::Killed( pevAttacker, iGib );
 	

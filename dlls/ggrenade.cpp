@@ -44,7 +44,7 @@ LINK_ENTITY_TO_CLASS( grenade, CGrenade );
 void CGrenade::Explode( Vector vecSrc, Vector vecAim )
 {
 	TraceResult tr;
-	UTIL_TraceLine ( pev->origin, pev->origin + Vector ( 0, 0, -32 ),  ignore_monsters, ENT(pev), & tr);
+	UTIL_TraceLine ( pev->origin, pev->origin + Vector ( 0, 0, 32 ),  ignore_monsters, ENT(pev), & tr);
 
 	Explode( &tr, DMG_CRUSH );
 }
@@ -52,18 +52,15 @@ void CGrenade::Explode( Vector vecSrc, Vector vecAim )
 // UNDONE: temporary scorching for PreAlpha - find a less sleazy permenant solution.
 void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 {
-	float		flRndSound;// sound randomizer
 
-	pev->model = iStringNull;//invisible
-	pev->solid = SOLID_NOT;// intangible
+
+	pev->model = iStringNull;
+	pev->solid = SOLID_NOT;
 
 	pev->takedamage = DAMAGE_NO;
 
-	// Pull out of the wall a bit
 	if ( pTrace->flFraction != 1.0 )
-	{
 		pev->origin = pTrace->vecEndPos + (pTrace->vecPlaneNormal * (pev->dmg - 24) * 0.6);
-	}
 
 	int iContents = UTIL_PointContents ( pev->origin );
 	
@@ -72,15 +69,8 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 		WRITE_COORD( pev->origin.x );	// Send to PAS because of the sound
 		WRITE_COORD( pev->origin.y );
 		WRITE_COORD( pev->origin.z );
-		if (iContents != CONTENTS_WATER)
-		{
-			WRITE_SHORT( g_sModelIndexFireball );
-		}
-		else
-		{
-			WRITE_SHORT( g_sModelIndexWExplosion );
-		}
-		WRITE_BYTE( pev->dmg * .50  ); // explode scale, fixed 1.30
+		WRITE_SHORT( g_sModelIndexFireball );
+		WRITE_BYTE( pev->dmg * 0.5  ); // explode scale, fixed 1.30
 		WRITE_BYTE( 16  ); // framerate
 		WRITE_BYTE( TE_EXPLFLAG_NONE );
 	MESSAGE_END();
@@ -92,27 +82,11 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 	else
 		pevOwner = NULL;
 
-	pev->owner = NULL; // can't traceline attack owner if this is set
+	pev->owner = NULL; 
 
 	RadiusDamage ( pev, pevOwner, pev->dmg, CLASS_NONE, bitsDamageType );
 
-	if ( RANDOM_FLOAT( 0 , 1 ) < 0.5 )
-	{
-		UTIL_DecalTrace( pTrace, DECAL_SCORCH1 );
-	}
-	else
-	{
-		UTIL_DecalTrace( pTrace, DECAL_SCORCH2 );
-	}
-
-	flRndSound = RANDOM_FLOAT( 0 , 1 );
-
-	switch ( RANDOM_LONG( 0, 2 ) )
-	{
-		case 0:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/debris1.wav", 0.55, ATTN_NORM);	break;
-		case 1:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/debris2.wav", 0.55, ATTN_NORM);	break;
-		case 2:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/debris3.wav", 0.55, ATTN_NORM);	break;
-	}
+	UTIL_DecalTrace( pTrace, DECAL_SCORCH2 );
 
 	pev->effects |= EF_NODRAW;
 	SetThink( Smoke );
@@ -121,10 +95,21 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 
 	if (iContents != CONTENTS_WATER)
 	{
-		int sparkCount = RANDOM_LONG(0,3);
+		int sparkCount = RANDOM_LONG(0,7);
 		for ( int i = 0; i < sparkCount; i++ )
 			Create( "spark_shower", pev->origin, pTrace->vecPlaneNormal, NULL );
 	}
+
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_EXPLODEMODEL	 );
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z);
+		WRITE_COORD(pev->origin.x);///
+		WRITE_SHORT(g_sModelIndexBloodDrop); // entity
+		WRITE_SHORT( 24 ); // model
+		WRITE_BYTE( 16 ); // life
+	MESSAGE_END();
 }
 
 
@@ -202,7 +187,7 @@ void CGrenade::Detonate( void )
 	Vector		vecSpot;// trace starts here!
 
 	vecSpot = pev->origin + Vector ( 0 , 0 , 8 );
-	UTIL_TraceLine ( vecSpot, vecSpot + Vector ( 0, 0, -40 ),  ignore_monsters, ENT(pev), & tr);
+	UTIL_TraceLine ( vecSpot, vecSpot + Vector ( 0, 0, 8 ),  ignore_monsters, ENT(pev), & tr);
 
 	Explode( &tr, DMG_CRUSH );
 }
@@ -264,39 +249,23 @@ void CGrenade::BounceTouch( CBaseEntity *pOther )
 	}
 
 	Vector vecTestVelocity;
-	// pev->avelocity = Vector (300, 300, 300);
 
-	// this is my heuristic for modulating the grenade velocity because grenades dropped purely vertical
-	// or thrown very far tend to slow down too quickly for me to always catch just by testing velocity. 
-	// trimming the Z velocity a bit seems to help quite a bit.
 	vecTestVelocity = pev->velocity; 
 	vecTestVelocity.z *= 0.45;
 
 	if ( !m_fRegisteredSound && vecTestVelocity.Length() <= 60 )
 	{
-		//ALERT( at_console, "Grenade Registered!: %f\n", vecTestVelocity.Length() );
-
-		// grenade is moving really slow. It's probably very close to where it will ultimately stop moving. 
-		// go ahead and emit the danger sound.
-		
-		// register a radius louder than the explosion, so we make sure everyone gets out of the way
-		CSoundEnt::InsertSound ( bits_SOUND_DANGER, pev->origin, pev->dmg / 0.4, 0.3 );
+		CSoundEnt::InsertSound ( bits_SOUND_DANGER, pev->origin, pev->dmg, 0.3 );
 		m_fRegisteredSound = TRUE;
 	}
 
 	if (pev->flags & FL_ONGROUND)
-	{
-		// add a bit of static friction
 		pev->velocity = pev->velocity * 0.8;
-
-		pev->sequence = RANDOM_LONG( 1, 1 );
-	}
 	else
-	{
-		// play bounce sound
 		BounceSound();
-	}
-	pev->framerate = pev->velocity.Length() / 200.0;
+		
+	pev->framerate = pev->velocity.Length();
+	
 	if (pev->framerate > 1.0)
 		pev->framerate = 1;
 	else if (pev->framerate < 0.5)
@@ -308,26 +277,13 @@ void CGrenade::BounceTouch( CBaseEntity *pOther )
 
 void CGrenade::SlideTouch( CBaseEntity *pOther )
 {
-	// don't hit the guy that launched this grenade
 	if ( pOther->edict() == pev->owner )
 		return;
 
-	// pev->avelocity = Vector (300, 300, 300);
-
 	if (pev->flags & FL_ONGROUND)
-	{
-		// add a bit of static friction
 		pev->velocity = pev->velocity * 0.95;
-
-		if (pev->velocity.x != 0 || pev->velocity.y != 0)
-		{
-			// maintain sliding sound
-		}
-	}
 	else
-	{
 		BounceSound();
-	}
 }
 
 void CGrenade :: BounceSound( void )
@@ -352,9 +308,7 @@ void CGrenade :: TumbleThink( void )
 	pev->nextthink = gpGlobals->time + 0.1;
 
 	if (pev->dmgtime - 1 < gpGlobals->time)
-	{
 		CSoundEnt::InsertSound ( bits_SOUND_DANGER, pev->origin + pev->velocity * (pev->dmgtime - gpGlobals->time), 400, 0.1 );
-	}
 
 	if (pev->dmgtime <= gpGlobals->time)
 	{
@@ -381,25 +335,18 @@ void CGrenade :: TumbleThink2( void )
 	pev->nextthink = gpGlobals->time + 0.1;
 
 	if (pev->dmgtime - 1 < gpGlobals->time)
-	{
 		CSoundEnt::InsertSound ( bits_SOUND_DANGER, pev->origin + pev->velocity * (pev->dmgtime - gpGlobals->time), 400, 0.1 );
-	}
 
 	if (pev->dmgtime <= gpGlobals->time)
 	{
 	
 		Vector vecSrc;
-		vecSrc.x = RANDOM_LONG(-360,360);
-		vecSrc.y = RANDOM_LONG(-360,360);
+		vecSrc.x = RANDOM_LONG(0,360);
+		vecSrc.y = RANDOM_LONG(0,360);
 		vecSrc.z = 0;
 
-
-		//FireBullets( 64, pev->origin, vecSrc, Vector( RANDOM_LONG(-360,360), RANDOM_LONG(-360,360), RANDOM_LONG(-180,360) ), 768, 35, 1, 70, VARS( pev->owner ) );
-		//FireBullets( 8, pev->origin, vecSrc, Vector( 2000,2000,2000 ), 128, 35, 1, 50, VARS( pev->owner ) );
-		
-		//Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 32, pev->angles, pev->owner ); 
 		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 64, pev->angles, pev->owner ); 
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 75, 225, CLASS_NONE, DMG_CRUSH  ); //end blast
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10+pev->dmg, 225, CLASS_NONE, DMG_CRUSH  ); //end blast
 		Create( "env_particleemitter", pev->origin + gpGlobals->v_up * 96, pev->angles, pev->owner ); 
 
 		SetThink( Detonate );
@@ -416,7 +363,7 @@ void CGrenade :: TumbleThink2( void )
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
-//grenade beams, copied and changed from egon.cpp
+// grenade beams, copied and changed from egon.cpp
 class   CGrenadeBeam : public CBaseEntity
 {
 		void    Spawn           ( );
@@ -441,25 +388,27 @@ void CGrenadeBeam::Spawn( void )
 	pev->gravity = 1.0;
 	pev->friction = 0.0;
 	
-	
 	pev->solid = SOLID_NOT;
 	UTIL_SetSize( pev, Vector( 0, 0, 0), Vector(0, 0, 0) );
 	UTIL_SetOrigin( pev, pev->origin );
 	
 	pev->classname = MAKE_STRING( "weapon_grenade" );
 	
-	//sprite 
+	// sprite 
 	SET_MODEL( ENT(pev), "sprites/blueflare2.spr" );
 	m_iBalls = PRECACHE_MODEL( "sprites/gradbeam.spr" );
 	m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 	m_LaserSprite2 = PRECACHE_MODEL( "sprites/plasma.spr" );
-	//effects
+	
+	// effects
 	pev->rendermode = kRenderTransAdd;
 	pev->rendercolor.x = 255;  // red
 	pev->rendercolor.y = 255;  // green
 	pev->rendercolor.z = 255; // blue
 	pev->renderamt = 250;
 	pev->scale = 1.25;
+	
+	pev->dmg = 30;
 	
 	pev->velocity.z = 370; //jump strong
 	pev->velocity.y = RANDOM_LONG(-160,160); //jump strong 2
@@ -504,8 +453,8 @@ void CGrenadeBeam::Update( void )
 			{
 				if (pEntity && !(pEntity->pev->health <= 3) && FVisible( pEntity ))
 				{
-					//::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(30,50), 256, CLASS_NONE, DMG_MORTAR  );
-					//shock ray
+					// ::RadiusDamage( pev->origin, pev, VARS( pev->owner ), RANDOM_LONG(30,50), 256, CLASS_NONE, DMG_MORTAR  );
+					// shock ray
 					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 						WRITE_BYTE( TE_BEAMPOINTS );
 						WRITE_COORD(pev->origin.x);
@@ -528,8 +477,8 @@ void CGrenadeBeam::Update( void )
 					MESSAGE_END();
 					
 					UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
-					UTIL_ScreenFade( pEntity, Vector(255,255,250), 1, 0.84, 128, FFADE_IN ); //flash 
-					pEntity->TakeDamage(pev, VARS( pev->owner ), RANDOM_LONG(45,65), DMG_CRUSH);	
+					UTIL_ScreenFade( pEntity, Vector(205,205,250), 1, 0.84, 128, FFADE_IN ); //flash 
+					pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_SHOCK);	
 
 				}
 			
@@ -544,14 +493,14 @@ void CGrenadeBeam::Update( void )
 			WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*4 );
 			WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*5  );
 			WRITE_SHORT( m_iBalls );		// model
-			WRITE_BYTE( 1  );				// count
-			WRITE_BYTE( 1 );				// life * 10
+			WRITE_BYTE( 8  );				// count
+			WRITE_BYTE( 8 );				// life * 10
 			WRITE_BYTE( 1 );				// size * 10
 			WRITE_BYTE( 64 );				// amplitude * 0.1
 			WRITE_BYTE( 8 );				// speed * 100
 		MESSAGE_END();
 		
-		//lights
+		// lights
 		Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
 			WRITE_BYTE(TE_DLIGHT);
@@ -559,14 +508,14 @@ void CGrenadeBeam::Update( void )
 			WRITE_COORD(vecSrc.y);	// Y
 			WRITE_COORD(vecSrc.z);	// Z
 			WRITE_BYTE( 16 );		// radius * 0.1
-			WRITE_BYTE( RANDOM_LONG(0,200) );		// r
+			WRITE_BYTE( 200 );		// r
 			WRITE_BYTE( 100 );		// g
 			WRITE_BYTE( 255 );		// b
 			WRITE_BYTE( 128 );		// time * 10
 			WRITE_BYTE( 16 );		// decay * 0.1
 		MESSAGE_END( );
 		
-		//play sounds
+		// play sounds
 		switch(RANDOM_LONG(0,6))
 			{
 			case 0: 
@@ -590,13 +539,9 @@ void CGrenadeBeam::Update( void )
 			case 6: 
 				EMIT_SOUND(ENT(pev), CHAN_BODY, "buttons/spark3.wav", 1.0, ATTN_NORM); //play sound
 			break;
-			
-			
 			}
 		
 		UTIL_Remove( this );
-		
-		
 		}
 	
 	pev->nextthink = gpGlobals->time + 0.2;
@@ -641,7 +586,7 @@ CGrenade *CGrenade::ShootContact( entvars_t *pevOwner, Vector vecStart, Vector v
 	pGrenade->pev->nextthink = gpGlobals->time;
 	
 	// Tumble in air
-	pGrenade->pev->avelocity.x = RANDOM_FLOAT ( -100, -500 );
+	pGrenade->pev->avelocity.x = RANDOM_LONG ( -100, -500 );
 	
 	// Explode on contact
 	pGrenade->SetTouch( ExplodeTouch );
@@ -682,20 +627,17 @@ CGrenade * CGrenade:: ShootTimed( entvars_t *pevOwner, Vector vecStart, Vector v
 	pGrenade->pev->sequence = RANDOM_LONG( 3, 6 );
 	pGrenade->pev->framerate = 1.0;
 
-	// Tumble through the air
-	// pGrenade->pev->avelocity.x = -400;
-
 	pGrenade->pev->gravity = 0.5;
 	pGrenade->pev->friction = 0.8;
 
 	SET_MODEL(ENT(pGrenade->pev), "models/w_grenade.mdl");
-	pGrenade->pev->dmg = RANDOM_LONG(100,116);
+	pGrenade->pev->dmg = 112;
 
 	return pGrenade;
 }
 
 //////
-//////1.31 fire gren
+////// 1.31 fire gren
 //////
 
 CGrenade * CGrenade:: ShootTimed2( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time )
@@ -708,12 +650,7 @@ CGrenade * CGrenade:: ShootTimed2( entvars_t *pevOwner, Vector vecStart, Vector 
 	pGrenade->pev->angles = UTIL_VecToAngles(pGrenade->pev->velocity);
 	pGrenade->pev->owner = ENT(pevOwner);
 	
-	
 	pGrenade->SetTouch( BounceTouch );	// Bounce if touched
-	
-	// Take one second off of the desired detonation time and set the think to PreDetonate. PreDetonate
-	// will insert a DANGER sound into the world sound list and delay detonation for one second so that 
-	// the grenade explodes after the exact amount of time specified in the call to ShootTimed(). 
 
 	pGrenade->pev->dmgtime = gpGlobals->time + time;
 	pGrenade->SetThink( TumbleThink2 );
@@ -723,26 +660,19 @@ CGrenade * CGrenade:: ShootTimed2( entvars_t *pevOwner, Vector vecStart, Vector 
 		pGrenade->pev->nextthink = gpGlobals->time;
 		pGrenade->pev->velocity = Vector( 0, 0, 0 );
 	}
-		
-	pGrenade->pev->sequence = RANDOM_LONG( 3, 6 );
-	pGrenade->pev->framerate = 1.0;
+
 	pGrenade->pev->gravity = 0.5;
 	pGrenade->pev->friction = 0.8;
 	SET_MODEL(ENT(pGrenade->pev), "models/w_grenade.mdl");
 	
 	pGrenade->pev->dmg = 50;
-	
-	//effects
+
 	pGrenade->pev->rendermode = kRenderNormal;
 	pGrenade->pev->renderfx = kRenderFxGlowShell;
 	pGrenade->pev->rendercolor.x = 255;  // red
 	pGrenade->pev->rendercolor.y = 128;  // green
 	pGrenade->pev->rendercolor.z = 0; // blue
 	pGrenade->pev->renderamt = 160;
-	
-	
-	
-
 
 	return pGrenade;
 }

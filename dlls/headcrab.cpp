@@ -286,7 +286,7 @@ void CHeadCrab :: Spawn()
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_RED;
 	pev->effects		= 0;
-	pev->health			= RANDOM_FLOAT(3, 190);
+	pev->health			= 100;
 	pev->view_ofs		= Vector ( 0, 0, 20 );// position of the eyes relative to monster's origin.
 	pev->yaw_speed		= 34;//!!! should we put this in the monster's changeanim function since turn rates may vary with state/anim?
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
@@ -357,7 +357,7 @@ void CHeadCrab :: LeapTouch ( CBaseEntity *pOther )
 	{
 		EMIT_SOUND_DYN( edict(), CHAN_WEAPON, RANDOM_SOUND_ARRAY(pBiteSounds), GetSoundVolue(), ATTN_IDLE, 0, GetVoicePitch() );
 		
-		pOther->TakeDamage( pev, pev, GetDamageAmount(), DMG_SLASH );
+		pOther->TakeDamage( pev, VARS( pev->owner ), GetDamageAmount(), DMG_SLASH );
 	}
 
 	SetTouch( NULL );

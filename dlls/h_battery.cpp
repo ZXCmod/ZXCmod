@@ -223,7 +223,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	if ((m_hActivator->pev->fuser1<100)) // 2
 	{
 		m_iJuice2--;
-		m_hActivator->pev->fuser1 += 0.5;
+		m_hActivator->pev->fuser1 += 1;
 		
 		if (multiple <= 0.5)
 			multiple += 0.0045;
@@ -236,7 +236,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	if ((m_hActivator->pev->fuser2<100)) // 3
 	{
 		m_iJuice3--;
-		m_hActivator->pev->fuser2 += 0.5;
+		m_hActivator->pev->fuser2 += 1;
 		
 		if (multiple <= 0.5)
 			multiple += 0.0045;

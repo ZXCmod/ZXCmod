@@ -21,6 +21,7 @@
 #include "nodes.h"
 #include "player.h"
 #include "game.h"
+#include "shake.h"
 
 enum glock_e {
 	GLOCK_IDLE1 = 0,
@@ -38,13 +39,13 @@ enum glock_e {
 
 //////////////NEW weapon
 
-class   CGB : public CBaseEntity
+class   CGB : public CGrenade
 {
         public:
 
-        void    Spawn           ( void );
-		void 	Precache 		( void );
-        void    MoveThink       ( void );
+        void    	Spawn           	   ( void );
+        void    	EXPORT MoveThink       ( void );
+		void 		EXPORT MoveTouch	   ( CBaseEntity *pOther );
 		
 		
 		private:
@@ -55,10 +56,7 @@ class   CGB : public CBaseEntity
 		int 	m_iSpriteTexture;
 		short	m_LaserSprite;
 		int 	m_iBalls;
-		
-		
-		static CGB* Create( Vector, Vector, CBaseEntity* );
-		void EXPORT Hit         ( CBaseEntity* );
+
 		
 };
 
@@ -78,7 +76,7 @@ void CGlock::Spawn( )
 	
 	m_typeG = 0;
 
-	FallInit();// get ready to fall down.
+	FallInit();
 }
 
 
@@ -87,6 +85,7 @@ void CGlock::Precache( void )
 	PRECACHE_MODEL("models/v_9mmhandgun.mdl");
 	PRECACHE_MODEL("models/w_9mmhandgun.mdl");
 	PRECACHE_MODEL("models/p_9mmhandgun.mdl");
+	
 
 	m_iShell = PRECACHE_MODEL ("models/shell.mdl");// brass shell
 
@@ -100,14 +99,14 @@ void CGlock::Precache( void )
 	PRECACHE_SOUND ("weapons/pl_gun1.wav");//silenced handgun
 	PRECACHE_SOUND ("weapons/pl_gun2.wav");//silenced handgun
 	PRECACHE_SOUND ("weapons/pl_gun3.wav");//handgun
-	//1.27
+
 	PRECACHE_SOUND ("zxc/GaussGun.wav");
 	PRECACHE_SOUND ("zxc/Build1.wav");
 	PRECACHE_SOUND ("zxc/Build2.wav");
 	PRECACHE_SOUND ("zxc/Build3.wav");
 	PRECACHE_SOUND ("zxc/Build4.wav");
 	PRECACHE_SOUND ("zxc/LsrExpl2.wav");
-	//
+
 	m_usFireGlock1 = PRECACHE_EVENT( 1, "events/glock1.sc" );
 	m_usFireGlock2 = PRECACHE_EVENT( 1, "events/glock2.sc" );
 }
@@ -142,14 +141,9 @@ void CGlock::Reload( void )
 
 	if (iResult)
 	{
-		m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 10, 15 );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 8;
 	}
 	
-	// if ( m_pPlayer->pev->fov != 0 )
-	// {
-		// m_fInZoom = FALSE;
-		// m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;  // 0 means reset to default fov
-	// }
 }
 
 
@@ -163,41 +157,33 @@ BOOL CGlock::Deploy( )
 		{
 			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 ); //304
 		}
-	// pev->body = 1;
 	return DefaultDeploy( "models/v_9mmhandgun.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded", /*UseDecrement() ? 1 : 0*/ 0 );
 }
 
 void CGlock::SecondaryAttack( void )
 {
-	if (allowmonsters10.value == 0)
-		GlockFire( 0.07, 0.2 );
-	else
-	{
-		
-		m_typeG = 0;
-		ThirdAttack( );
-	}
+
+	GlockFire( 0.07, 0.2 );
+
 }
 
 void CGlock::PrimaryAttack( void )
 {
-	if (allowmonsters10.value == 0)
-		GlockFire( 0.035, 0.3 ); //0.25
-	else
-		{
-			
-			m_typeG = 1;
-			if (m_iClip >= 20)
-				ThirdAttack( );
-			else
-				DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.25 );
-			
-		}
+
+	GlockFire( 0.035, 0.3 ); //0.25
+
 }
 
-//updated in v1.33 with both types
+// updated in v1.33 with both types
 void CGlock::ThirdAttack( void )
 {
+	// don't fire underwater
+	if (m_pPlayer->pev->waterlevel == 3)
+	{
+		PlayEmptySound( );
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.15;
+		return;
+	}
 	
 	if (allowmonsters9.value == 0)
 		return;
@@ -207,69 +193,46 @@ void CGlock::ThirdAttack( void )
 	if (m_iClip <= 4)
 		iResult = DefaultReload( 20, GLOCK_RELOAD_NOT_EMPTY, 1.25 );
 		
-	if (  m_iClip >= 4 ) //need delay
+	if (  m_iClip >= 4 ) // need delay
 		{
 		
-		SendWeaponAnim( GLOCK_SHOOT );
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
-		Vector vecSrc = m_pPlayer->pev->origin;
-		
-		if (  m_typeG == 0 ) //normal
+			SendWeaponAnim( GLOCK_SHOOT );
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+			Vector vecSrc = m_pPlayer->pev->origin;
+			
+			if (  m_typeG == 0 ) // normal
 			{
-				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); //play sound
-				Vector vecThrow = gpGlobals->v_forward * 700; //init and start speed of core, 540
-				#ifndef CLIENT_DLL
-					CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-					pGlockCore->pev->velocity = vecThrow;
-					pGlockCore->pev->dmg = 64; 
-					m_iClip-=4;
-					if (allowmonsters10.value == 0)
-					{
-						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
-						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
-					}
-					else
-					{
-						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
-					}
-				#endif
-				return;
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); 
+				Vector vecThrow = gpGlobals->v_forward * 700;
+				
+				CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+				pGlockCore->pev->velocity = vecThrow;
+				pGlockCore->pev->dmg = 16; 
+				m_iClip-=4;
+
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+
+
 			}
-		if (  m_typeG == 1 ) // typed as 1 (red trails)
-		{
-				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); //play sound
-				Vector vecThrow = gpGlobals->v_forward * 1200; //init and start speed of core, 540
-				#ifndef CLIENT_DLL
-					CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-					pGlockCore->pev->velocity = vecThrow;
-					pGlockCore->pev->dmg = 96; 
-					if (allowmonsters10.value == 0)
-						m_iClip-=5;
-					else
-						m_iClip-=20;
-					if (allowmonsters10.value == 0)
-					{
-						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
-						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
-					}
-					else
-					{
-						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
-						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
-					}
-				#endif
-				return;
-		}
-		
-		
-		
-		
+			if (  m_typeG == 1 ) // typed as 1 (red trails)
+			{
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/GaussGun.wav", 1.0, ATTN_NORM); 
+				Vector vecThrow = gpGlobals->v_forward * 1200; 
+				
+				CBaseEntity *pGlockCore = Create( "weapon_minigun", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+				pGlockCore->pev->velocity = vecThrow;
+				pGlockCore->pev->dmg = 24; 
+
+				m_iClip-=5;
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+
+			}
+
 		}
 
 }
@@ -283,7 +246,6 @@ void CGlock::FourthAttack( void )
 		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;
 		m_flNextSecondaryAttack = 0.3;
 		m_typeG = 0;
-		//return;
 	}
 	else if ( m_pPlayer->pev->fov != 60 )
 	{
@@ -291,7 +253,6 @@ void CGlock::FourthAttack( void )
 		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 60;
 		m_flNextSecondaryAttack = 0.3;
 		m_typeG = 1;
-		//return;
 	}
 	PlayEmptySound( );
 	m_flNextSecondaryAttack = 0.3;
@@ -310,49 +271,68 @@ void CGlock::GlockFire( float flSpread , float flCycleTime )
 		return;
 	}
 
-	m_iClip--;
+	CBaseEntity *pEntity;
+	TraceResult	tr;	
+	Vector vecSrc;
 
+	vecSrc	 = m_pPlayer->GetGunPosition( );
+	Vector vecAiming = gpGlobals->v_forward;
+
+
+	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+	pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
+	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), g_vecZero ? m_usFireGlock1 : m_usFireGlock2, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecAiming.x, vecAiming.y, 0, 0, 0, 0 );
+	
+	m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( 0, 0, 0 ), 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
 	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-
-
-
-	// player "shoot" animation
+	m_iClip--;
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-	// silenced
-	if (pev->body == 1)
-	{
-		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
-	}
-	else
-	{
-		// non-silenced
-		m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
-	}
-
-	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
-	Vector vecAiming;
-	
-
-	vecAiming = gpGlobals->v_forward;
-	
-
-#ifndef CLIENT_DLL
-	Vector vecDir;
-	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( flSpread, flSpread, flSpread ), 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-
-	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), vecDir ? m_usFireGlock1 : m_usFireGlock2, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, ( m_iClip == 0 ) ? 1 : 0, 0 );
-
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + flCycleTime;
-
-	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
-		// HEV suit - indicate out of ammo condition
-		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
-#endif
-
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+	
+	// draw light
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(tr.vecEndPos.x);	// X
+		WRITE_COORD(tr.vecEndPos.y);	// Y
+		WRITE_COORD(tr.vecEndPos.z);	// Z
+		WRITE_BYTE( 12 );		// radius * 0.1
+		WRITE_BYTE( 100 );		// r
+		WRITE_BYTE( 200 );		// g
+		WRITE_BYTE( 100 );		// b
+		WRITE_BYTE( 1 );		// time * 10
+		WRITE_BYTE( 0 );		// decay * 0.1
+	MESSAGE_END( );
+	// draw light 2
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(vecSrc.x);	// X
+		WRITE_COORD(vecSrc.y);	// Y
+		WRITE_COORD(vecSrc.z);	// Z
+		WRITE_BYTE( 10 );		// radius * 0.1
+		WRITE_BYTE( 100 );		// r
+		WRITE_BYTE( 200 );		// g
+		WRITE_BYTE( 100 );		// b
+		WRITE_BYTE( 128 );		// time * 10
+		WRITE_BYTE( 16 );		// decay * 0.1
+	MESSAGE_END( );
+	
+	// don't hit on transparent objects
+    if (pEntity != NULL && (pEntity->IsBSPModel()))
+		return; 
+	
+	// freeze begin
+    if (pEntity != NULL && !(pEntity->IsPlayer())) // monsters
+        pEntity->PTime += 250; // timer of monsters
+		
+	if (pEntity != NULL && pEntity->IsPlayer()) // is player
+	{
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+		UTIL_ScreenFade( pPlayer, Vector(0,200,0), 3.0, 1.0, 60, FFADE_IN );
+		pEntity->PTime += 72; // timer of player
+	}
+	
+	pEntity->TakeDamage(pev, VARS( pev->owner ), 3, DMG_PARALYZE);
 }
 
 
@@ -370,7 +350,7 @@ void CGlock::Holster( int skiplocal /* = 0 */ )
 	}
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0;
-	m_flTimeWeaponIdle = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 8;
 	SendWeaponAnim( 3 );
 }
 
@@ -379,33 +359,13 @@ void CGlock::WeaponIdle( void )
 {
 	ResetEmptySound( );
 
-	//m_pPlayer->GetAutoaimVector( AUTOAIM_10DEGREES );
-
 	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 
-	// only idle if the slid isn't back
 	if (m_iClip != 0)
 	{
-		int iAnim;
-		float flRand = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 0.0, 1.0 );
-
-		if (flRand <= 0.3 + 0 * 0.75)
-		{
-			iAnim = GLOCK_IDLE3;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 49.0 / 16;
-		}
-		else if (flRand <= 0.6 + 0 * 0.875)
-		{
-			iAnim = GLOCK_IDLE1;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 60.0 / 16.0;
-		}
-		else
-		{
-			iAnim = GLOCK_IDLE2;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 40.0 / 16.0;
-		}
-		SendWeaponAnim( iAnim, 1 );
+		SendWeaponAnim( GLOCK_IDLE1, 1 );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 8;
 	}
 	
 
@@ -438,28 +398,17 @@ class CGlockAmmo : public CBasePlayerAmmo
 		return FALSE;
 	}
 };
+
+
 LINK_ENTITY_TO_CLASS( ammo_glockclip, CGlockAmmo );
 LINK_ENTITY_TO_CLASS( ammo_9mmclip, CGlockAmmo );
 
 
-
-
-
-
-
-
-///////////////////
-///////////////////
-
-
-
-
-
-
-
 void    CGB :: Spawn( )
 {
-	Precache( );
+	m_iSpriteTexture = PRECACHE_MODEL( "sprites/xspark3.spr" ); // shockwave.spr
+	m_LaserSprite = PRECACHE_MODEL( "sprites/blflare.spr" );
+	m_iBalls = PRECACHE_MODEL( "sprites/gradbeam.spr" );
 	
 	SET_MODEL( ENT(pev), "sprites/blflare.spr" );
 	pev->movetype = MOVETYPE_FLY;
@@ -469,100 +418,25 @@ void    CGB :: Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmhandgun" );
 	m_flDie = gpGlobals->time + 3;
-	pev->dmg = 64; //dynamyc value, 85
-	pev->takedamage = DAMAGE_YES;
-	pev->nextthink = gpGlobals->time + 0.1;
+	pev->dmg = 16; 
+	pev->takedamage = DAMAGE_NO;
 	
-	pev->avelocity.z = -pev->dmg*3;
+	pev->avelocity.z = 64;
 	
 	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
 	pev->renderamt = 195;
 	
-	SetTouch( Hit );
+	SetTouch( MoveTouch );
 	SetThink( MoveThink );
+	pev->nextthink = gpGlobals->time + 0.1; 
+	
 	pev->health			= 256; 
-	if (allowmonsters10.value == 1)
-		pev->dmg*=0.5;
-
 }
-
-void CGB :: Precache( void )
-{
-	m_iSpriteTexture = PRECACHE_MODEL( "sprites/xspark3.spr" ); // shockwave.spr
-	m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
-	m_iBalls = PRECACHE_MODEL( "sprites/gradbeam.spr" );
-	//rjet1.spr
-
-}
-
-///////////////
-CGB* CGB :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
-{
-	CGB* Beam = GetClassPtr( (CGB*)NULL );
-	UTIL_SetOrigin( Beam->pev, Pos );
-	Beam->pev->angles = Aim;
-	Beam->Spawn( );
-	Beam->SetTouch( CGB :: Hit );
-	Beam->pev->owner = Owner->edict( );
-	return Beam;
-	
-	
-}
-
-void    CGB :: Hit( CBaseEntity* Target )
-{
-	TraceResult TResult;
-	Vector      StartPosition;
-	pev->enemy = Target->edict( );
-	StartPosition = pev->origin - pev->velocity.Normalize() * 32;
-
-	UTIL_TraceLine( StartPosition,
-					StartPosition + pev->velocity.Normalize() * 64,
-					ignore_monsters,
-					ENT( pev ),
-					&TResult );
-   
-		
-		
-	//full explode after touch with wall
-	//if (allowmonsters10.value == 0)
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 26, 128, CLASS_NONE, DMG_SHOCK  ); //end blast
-
-	//sprite 
-	pev->model = MAKE_STRING("sprites/blueflare2.spr");
-	CSprite *pSprite = CSprite::SpriteCreate( "sprites/blueflare2.spr", pev->origin, TRUE );
-	if ( pSprite )
-		{
-			pSprite->pev->nextthink = gpGlobals->time + 2.4;
-			pSprite->pev->scale = pev->dmg/50; /// 85 / 40 = 2.125
-			pSprite->SetThink( SUB_Remove );
-			pSprite->SetTransparency( kRenderTransAdd, 128, 128, 128, 200, kRenderFxGlowShell );
-		}
-		
-	EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
-	pev->takedamage = DAMAGE_NO;
-	SetThink( SUB_Remove );
-}
-
 
 
 
 void    CGB :: MoveThink( )
 {
-
-
-
-	// Make a lightning strike
-	Vector vecEnd;
-	TraceResult tr;
-	vecEnd.x = RANDOM_FLOAT(-360,360);	// Pick a random direction
-	vecEnd.y = RANDOM_FLOAT(-360,360);
-	vecEnd.z = RANDOM_FLOAT(-360,360);
-	vecEnd = pev->origin + vecEnd.Normalize() * pev->dmg/2;
-	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
-
-
-	//sounds
 	switch(RANDOM_LONG(0,8))
 	{
 		case 0: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build1.wav", 0.4, ATTN_NORM); break;
@@ -570,113 +444,51 @@ void    CGB :: MoveThink( )
 		case 5: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build3.wav", 0.6, ATTN_NORM); break;
 		case 8: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build4.wav", 0.7, ATTN_NORM); break;
 	}
-
-	
 		
-	//set trails
-	if (pev->dmg <= 80)
-	{
-		
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(m_LaserSprite ); // model
-		WRITE_BYTE( 14 ); // life
-		WRITE_BYTE( 2 ); // width
-		WRITE_BYTE( 30 ); // r, g, b
-		WRITE_BYTE( 45 ); // r, g, b
-		WRITE_BYTE( 30 ); // r, g, b
-		WRITE_BYTE( 46 ); // brightness
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(m_iSpriteTexture ); // model
-		WRITE_BYTE( 31 ); // life
-		WRITE_BYTE( 1 ); // width
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 60 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 160 ); // brightness
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-	}
-	else
-	{
-		
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(m_LaserSprite ); // model
-		WRITE_BYTE( 10 ); // life
-		WRITE_BYTE( 3 ); // width
-		WRITE_BYTE( 60 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 46 ); // brightness
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-		
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(m_iSpriteTexture ); // model
-		WRITE_BYTE( 31 ); // life
-		WRITE_BYTE( 1 ); // width
-		WRITE_BYTE( 60 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 10 ); // r, g, b
-		WRITE_BYTE( 160 ); // brightness
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
-	}
-	
-	//lightings 1
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMPOINTS );
-		WRITE_COORD(pev->origin.x);
-		WRITE_COORD(pev->origin.y);
-		WRITE_COORD(pev->origin.z);
-		WRITE_COORD( tr.vecEndPos.x );
-		WRITE_COORD( tr.vecEndPos.y );
-		WRITE_COORD( tr.vecEndPos.z );
-		WRITE_SHORT( m_LaserSprite );
-		WRITE_BYTE( 0 ); // Starting frame
-		WRITE_BYTE( 16  ); // framerate * 0.1
-		WRITE_BYTE( 1 ); // life * 0.1
-		WRITE_BYTE( 3 ); // width
-		WRITE_BYTE( 128 ); // noise
-		WRITE_BYTE( 64 ); // color r,g,b
-		WRITE_BYTE( 128 ); // color r,g,b
-		WRITE_BYTE( 255 ); // color r,g,b
-		WRITE_BYTE( 140 ); // brightness
-		WRITE_BYTE( 16 ); // scroll speed
-	MESSAGE_END();
-		
-	//capture targets
+	// capture targets
 	CBaseEntity *pEntity = NULL;
-	Vector	vecDir;
-	vecDir = Vector( 0, 0, 0 );
-	
 
-
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, pev->dmg+16 )) != NULL)
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 80 )) != NULL)
 		{
-			if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()) && pEntity->pev->health >= 3) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+			if ((pEntity->edict() != pev->owner) && (pEntity->edict() != edict()) && pEntity->pev->health >= 3) //!(pEntity->pev->movetype == MOVETYPE_FLY)
 				{
 					if ( FBitSet(pEntity->pev->flags, FL_DUCKING) && (pEntity->pev->flags & FL_ONGROUND) ) 
 					{
-						::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/2, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+						::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 96, CLASS_NONE, DMG_SHOCK  );
 					}
-					else
+					else // target in air
 					{
 						pEntity->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pEntity->pev->origin.x));
 						pEntity->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pEntity->pev->origin.y));
 						pEntity->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pEntity->pev->origin.z));
-						::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg/3, pev->dmg, CLASS_NONE, DMG_SHOCK  );
+						::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*0.5, 64, CLASS_NONE, DMG_SHOCK  );
 					}
-				} 
+					// direct lighting
+					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+						WRITE_BYTE( TE_BEAMPOINTS );
+						WRITE_COORD(pev->origin.x);
+						WRITE_COORD(pev->origin.y);
+						WRITE_COORD(pev->origin.z);
+						WRITE_COORD( pEntity->pev->origin.x );
+						WRITE_COORD( pEntity->pev->origin.y );
+						WRITE_COORD( pEntity->pev->origin.z );
+						WRITE_SHORT( m_LaserSprite );
+						WRITE_BYTE( 0 ); // Starting frame
+						WRITE_BYTE( 0  ); // framerate * 0.1
+						WRITE_BYTE( 1 ); // life * 0.1
+						WRITE_BYTE( 12 ); // width
+						WRITE_BYTE( 0 ); // noise
+						WRITE_BYTE( 64 ); // color r,g,b
+						WRITE_BYTE( 128 ); // color r,g,b
+						WRITE_BYTE( 255 ); // color r,g,b
+						WRITE_BYTE( 200 ); // brightness
+						WRITE_BYTE( 0 ); // scroll speed
+					MESSAGE_END();
+				}
+
 		}
 
-	if (gpGlobals->time >= m_flDie) //full explode and self destroy
+	if (gpGlobals->time >= m_flDie) // full explode and self destroy
 		{
 			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 200, CLASS_NONE, DMG_SHOCK  ); //end blast
 			EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
@@ -684,7 +496,58 @@ void    CGB :: MoveThink( )
 			SetThink( SUB_Remove );
 		}
 		
-	pev->nextthink = gpGlobals->time + 0.12;
+	pev->nextthink = gpGlobals->time + 0.1;
+}
+
+
+
+void    CGB :: MoveTouch( CBaseEntity *pOther )
+{
+	TraceResult TResult;
+	Vector      StartPosition;
+	StartPosition = pev->origin - pev->velocity.Normalize() * 32;
+
+	UTIL_TraceLine( StartPosition,
+					StartPosition + pev->velocity.Normalize() * 64,
+					dont_ignore_monsters,
+					ENT( pev ),
+					&TResult );
+   
+	if ((UTIL_PointContents(pev->origin) == CONTENTS_WATER))
+		{
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 128, 512, CLASS_NONE, DMG_SHOCK  ); //end blast
+			pev->dmg = 300;
+			EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
+		}
+		
+		
+	// full explode after touch with wall
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 26, 128, CLASS_NONE, DMG_SHOCK  ); //end blast
+
+	// sprite 
+	pev->model = MAKE_STRING("sprites/blueflare2.spr");
+	CSprite *pSprite = CSprite::SpriteCreate( "sprites/blueflare2.spr", pev->origin, TRUE );
+	if ( pSprite )
+		{
+			pSprite->pev->nextthink = gpGlobals->time + 2.4;
+			pSprite->pev->scale = pev->dmg*0.05;
+			pSprite->SetThink( SUB_Remove );
+			pSprite->SetTransparency( kRenderTransAdd, 128, 128, 128, 200, kRenderFxGlowShell );
+		}
+		
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_PARTICLEBURST );
+		WRITE_COORD( pev->origin.x);								// pos
+		WRITE_COORD( pev->origin.y);
+		WRITE_COORD( pev->origin.z);
+		WRITE_SHORT( 8 );
+		WRITE_BYTE( 4 );								// color index into host_basepal
+		WRITE_BYTE( 1 );
+	MESSAGE_END();
+		
+	EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/LsrExpl2.wav", 1.0, ATTN_NORM);
+	SetTouch( NULL );
+	UTIL_Remove( this );
 }
 
 

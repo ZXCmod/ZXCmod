@@ -98,6 +98,7 @@ void CItem::Spawn( void )
 	UTIL_SetSize(pev, Vector(-16, -16, 0), Vector(16, 16, 16));
 	SetTouch(ItemTouch);
 	pev->ltime=0;
+	
 
 	if (DROP_TO_FLOOR(ENT(pev)) == 0)
 	{
@@ -230,8 +231,6 @@ class CItemBattery : public CItem
 			case 0: Create( "trip_beam", pev->origin, pev->angles, edict() ); return; break;
 			case 1: Create( "tombstone", pev->origin, pev->angles, edict() ); return; break; // dual elect
 			case 2: Create( "tombstone", pev->origin, pev->angles, edict() ); return; break;
-			//case 3: continue; break;
-		
 		}
 		
 		Precache( );
@@ -252,25 +251,8 @@ class CItemBattery : public CItem
 
 		if ((pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY) )
 		{
-			/* 			
-			int pct;
-			int pct2;
-			int pct3;
-			char szcharge[64]; */
 
-			/* 			
-			if ((pPlayer->pev->fuser1 < MAX_NORMAL_BATTERY2) )
-			{
-				pPlayer->pev->fuser1 += 5;
-				pPlayer->pev->fuser1 = min(pPlayer->pev->fuser1, MAX_NORMAL_BATTERY2);
-			}
-			if ((pPlayer->pev->fuser2 < MAX_NORMAL_BATTERY3) )
-			{
-				pPlayer->pev->fuser2 += 5;
-				pPlayer->pev->fuser2 = min(pPlayer->pev->fuser2, MAX_NORMAL_BATTERY3);
-			}
-			 */
-			pPlayer->pev->armorvalue += 15; // += RANDOM_LONG(10,20);
+			pPlayer->pev->armorvalue += 20;
 			pPlayer->pev->armorvalue = min(pPlayer->pev->armorvalue, MAX_NORMAL_BATTERY);
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
@@ -279,26 +261,7 @@ class CItemBattery : public CItem
 				WRITE_STRING( STRING(pev->classname) );
 			MESSAGE_END();
 
-			
-			// Suit reports new power level
-			// For some reason this wasn't working in release build -- round it.
-			// pct = (int)( (float)(pPlayer->pev->armorvalue * 100.0) * (1.0/MAX_NORMAL_BATTERY) + 0.5);
-			// pct = (pct / 5);
-			// if (pct > 0)
-				// pct--;
-			// pct2 = (int)( (float)(pPlayer->pev->fuser1* 100.0) * (1.0/MAX_NORMAL_BATTERY2) + 0.5);
-			// pct2 = (pct2 / 5);
-			// if (pct2 > 0)
-				// pct2--;
-			// pct3 = (int)( (float)(pPlayer->pev->fuser2 * 100.0) * (1.0/MAX_NORMAL_BATTERY3) + 0.5);
-			// pct3 = (pct3 / 5);
-			// if (pct3 > 0)
-				// pct3--;
-		
-			// sprintf( szcharge,"!HEV_%1dP", pct );
-			
-			//EMIT_SOUND_SUIT(ENT(pev), szcharge);
-			// pPlayer->SetSuitUpdate(szcharge, FALSE, SUIT_NEXT_IN_30SEC);
+
 			return TRUE;		
 		}
 		return FALSE;
@@ -334,7 +297,7 @@ class CItemBattery2 : public CItem
 		if ((pPlayer->pev->fuser1 < MAX_NORMAL_BATTERY2))
 		{
 
-			pPlayer->pev->fuser1 += 15;
+			pPlayer->pev->fuser1 += 20;
 			pPlayer->pev->fuser1 = min(pPlayer->pev->fuser1, MAX_NORMAL_BATTERY2);
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
@@ -379,7 +342,7 @@ class CItemBattery3 : public CItem
 		if ((pPlayer->pev->fuser2 < MAX_NORMAL_BATTERY3))
 		{
 
-			pPlayer->pev->fuser2 += 15; // += RANDOM_LONG(10,20);
+			pPlayer->pev->fuser2 += 20; // += RANDOM_LONG(10,20);
 			pPlayer->pev->fuser2 = min(pPlayer->pev->fuser2, MAX_NORMAL_BATTERY3);
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );

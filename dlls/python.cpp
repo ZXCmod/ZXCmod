@@ -153,14 +153,10 @@ void CPython::Precache( void )
 	PRECACHE_MODEL("models/p_357.mdl");
 	PRECACHE_MODEL("models/w_antidote.mdl");
 	PRECACHE_MODEL("models/w_antidotet.mdl");
-	//PRECACHE_MODEL("models/xdm_rune.mdl");
 	PRECACHE_MODEL("models/w_rad.mdl");
 	PRECACHE_MODEL("models/w_radt.mdl");
 	
-	
-	BSpr = PRECACHE_MODEL("sprites/laserbeam.spr");
-	
-	
+	BSpr = PRECACHE_MODEL("sprites/laserbeam.spr");	
 
 	PRECACHE_MODEL("models/w_357ammobox.mdl");
 	
@@ -192,19 +188,8 @@ void CPython::Precache( void )
 BOOL CPython::Deploy( )
 {
 	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 );
-#ifdef CLIENT_DLL
-	if ( bIsMultiplayer() )
-#else
-	if ( g_pGameRules->IsMultiplayer() )
-#endif
-	{
-		// enable laser sight geometry.
-		pev->body = 1;
-	}
-	else
-	{
-		pev->body = 0;
-	}
+
+	pev->body = 1;
 
 	return DefaultDeploy( "models/v_357.mdl", "models/p_357.mdl", PYTHON_DRAW, "python", UseDecrement(), pev->body );
 }
@@ -212,15 +197,13 @@ BOOL CPython::Deploy( )
 
 void CPython::Holster( int skiplocal /* = 0 */ )
 {
-	m_fInReload = FALSE;// cancel any reload in progress.
+	m_fInReload = FALSE;
 
 	if ( m_fInZoom )
-	{
 		SecondaryAttack();
-	}
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0;
-	m_flTimeWeaponIdle = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 	SendWeaponAnim( PYTHON_HOLSTER );
 }
 
@@ -230,14 +213,6 @@ void CPython::PrimaryAttack()
 
 	if (allowmonsters10.value == 0) // normaly
 		{
-			// don't fire underwater
-			if (m_pPlayer->pev->waterlevel == 3)
-			{
-				PlayEmptySound( );
-				m_flNextPrimaryAttack = 0.15;
-				return;
-			}
-
 			if (m_iClip <= 0)
 			{
 				if (!m_fFireOnEmpty)
@@ -258,9 +233,7 @@ void CPython::PrimaryAttack()
 
 			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 
-			// player "shoot" animation
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 
 			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
 
@@ -270,72 +243,55 @@ void CPython::PrimaryAttack()
 			Vector vecDir;
 			vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_1DEGREES, 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
-			
-			
-			int flags;
-		#if defined( CLIENT_WEAPONS )
-			flags = FEV_GLOBAL;
-		#else
-			flags = 0;
-		#endif
-
-			PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usFirePython, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
-
-			if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
-				// HEV suit - indicate out of ammo condition
-				m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
+			PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usFirePython, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
 
 			m_flNextPrimaryAttack = 0.75;
-			m_flTimeWeaponIdle = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 		}
 
 	else // charged core
 	{
 		if (m_iClip >= 1)
-			{
-			#ifndef CLIENT_DLL
-				Vector vecThrow = gpGlobals->v_forward * 1650;
-				m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
-				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
-				m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-				m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-				m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-			
-				UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-				Vector GunPosition = m_pPlayer->GetGunPosition( );
-				GunPosition = GunPosition + gpGlobals->v_forward * 0;
-				GunPosition = GunPosition + gpGlobals->v_right   * 7;
-				GunPosition = GunPosition + gpGlobals->v_up      * 0;
-				CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
-				Beam->pev->velocity = vecThrow;
-				Beam->pev->dmg = 79; //shot pos
-				m_iClip-=1; //-2 bullets
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.70; 
-				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.70;
-				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.70;
-				m_pPlayer->pev->punchangle.x -= 4;
-				SendWeaponAnim( 2 ); 
+		{
+			Vector vecThrow = gpGlobals->v_forward * 1650;
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
+			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+		
+			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+			Vector GunPosition = m_pPlayer->GetGunPosition( );
+			GunPosition = GunPosition + gpGlobals->v_forward * 0;
+			GunPosition = GunPosition + gpGlobals->v_right   * 7;
+			GunPosition = GunPosition + gpGlobals->v_up      * 0;
+			CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
+			Beam->pev->velocity = vecThrow;
+			Beam->pev->dmg = 79;
+			m_iClip-=1;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.70; 
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.70;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.70;
+			m_pPlayer->pev->punchangle.x -= 4;
+			SendWeaponAnim( 2 ); 
 
+			float flZVel = m_pPlayer->pev->velocity.z; 
+			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 350; 
 
-				float flZVel = m_pPlayer->pev->velocity.z; 
-				m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 350; 
-			#endif
 		}
-	else //here old code
+	else
 		{
 			if ( m_pPlayer->pev->fov != 0 )
 			{
 				m_fInZoom = FALSE;
 				m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;  // 0 means reset to default fov
 				m_flNextSecondaryAttack = 0.3;
-				//return;
 			}
 			else if ( m_pPlayer->pev->fov != 40 )
 			{
 				m_fInZoom = TRUE;
 				m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 40;
 				m_flNextSecondaryAttack = 0.3;
-				//return;
 			}
 			PlayEmptySound( );
 			m_flNextSecondaryAttack = 0.3;
@@ -353,31 +309,26 @@ void CPython::SecondaryAttack( void )
 {
 	if (allowmonsters9.value == 0)
 		return;
-//removed old code, now create new weapon
+
 	if (m_iClip == 6 && allowmonsters5.value != 0)
-		{
-		#ifndef CLIENT_DLL
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
-			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
-			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-		
-			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-			Vector GunPosition = m_pPlayer->GetGunPosition( );
-			GunPosition = GunPosition + gpGlobals->v_forward * 0;
-			GunPosition = GunPosition + gpGlobals->v_right   * 7;
-			GunPosition = GunPosition + gpGlobals->v_up      * 0;
-			CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
-			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right; //shot pos
-			Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up; //shot pos
-			Beam->pev->dmg = 200;
-			m_iClip-=6; //-6 bullets
+	{
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); 
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
+	
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+		Vector GunPosition = m_pPlayer->GetGunPosition( );
+		GunPosition = GunPosition + gpGlobals->v_forward * 0;
+		GunPosition = GunPosition + gpGlobals->v_right   * 7;
+		GunPosition = GunPosition + gpGlobals->v_up      * 0;
+		CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
+		Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_right; //shot pos
+		Beam->pev->velocity = Beam->pev->velocity + gpGlobals->v_up; //shot pos
+		Beam->pev->dmg = 200;
+		m_iClip-=6;
 
+		float flZVel = m_pPlayer->pev->velocity.z; 
+		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 1500; 
 
-			float flZVel = m_pPlayer->pev->velocity.z; 
-			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 1500; 
-		#endif
 	}
 else //here old code
 	{
@@ -386,14 +337,12 @@ else //here old code
 			m_fInZoom = FALSE;
 			m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;  // 0 means reset to default fov
 			m_flNextSecondaryAttack = 0.3;
-			//return;
 		}
 		else if ( m_pPlayer->pev->fov != 40 )
 		{
 			m_fInZoom = TRUE;
 			m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 40;
 			m_flNextSecondaryAttack = 0.3;
-			//return;
 		}
 		PlayEmptySound( );
 		m_flNextSecondaryAttack = 0.3;
@@ -404,44 +353,39 @@ else //here old code
 }
 
 
-//////v 1.33 new attack
+// v 1.33 new attack
 void CPython::ThirdAttack( void )
 {
 	if (allowmonsters9.value == 0)
 		return;
 		
 	Vector vecSrc = m_pPlayer->pev->origin;
-	Vector vecThrow = gpGlobals->v_forward * 768; //512
+	Vector vecThrow = gpGlobals->v_forward * 768;
 	
 	if (m_iClip == 6 && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 12 && allowmonsters5.value != 0)
 		{
-		#ifndef CLIENT_DLL
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
-			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/bemlsr2.wav", 0.8, ATTN_NORM); //play sound
-			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 
-			CBaseEntity *pSatchel = Create( "weapon_vulcan", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			pSatchel->pev->velocity = vecThrow;
-			pSatchel->pev->avelocity.y = 80;
-			pSatchel->pev->avelocity.x = 50;
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/bemlsr2.wav", 0.8, ATTN_NORM); //play sound
+		
+		CBaseEntity *pSatchel = Create( "weapon_vulcan", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+		pSatchel->pev->velocity = vecThrow;
+		pSatchel->pev->avelocity.y = 80;
+		pSatchel->pev->avelocity.x = 50;
 
-			if ( g_flWeaponCheat != 0)
-			{
-				// - all bullets per shot
-				m_iClip = 0; //-6 bullets
-				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
-			}
-			else
-			{
-				// - 18 bullets per shot
-				m_iClip-=6; //-6 bullets
-				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 12; //-12 ammo
-			}
-			
+		if ( g_flWeaponCheat != 0)
+		{
+			// - all bullets per shot
+			m_iClip = 0;
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
+		}
+		else
+		{
+			// - 18 bullets per shot
+			m_iClip-=6;
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 12; 
+		}
 
-		#endif
 		}
 	m_flNextPrimaryAttack = 1.0;
 	m_flNextSecondaryAttack = 1.0;
@@ -449,7 +393,7 @@ void CPython::ThirdAttack( void )
 }
 
 
-//////v 1.33 attack
+// v 1.33 attack
 void CPython::FourthAttack( void )
 {
 	if (allowmonsters9.value == 0)
@@ -459,29 +403,21 @@ void CPython::FourthAttack( void )
 	Vector vecThrow = gpGlobals->v_forward * 300;
 	
 	if (m_iClip == 6 && allowmonsters5.value != 0)
-		{
-		#ifndef CLIENT_DLL
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
-			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/bemlsr2.wav", 0.8, ATTN_NORM); //play sound
-			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	{
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/bemlsr2.wav", 0.8, ATTN_NORM);
 
-			CBaseEntity *pSatchel = Create( "halo_base", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			pSatchel->pev->velocity = vecThrow;
-			m_iClip-=6; //-6 bullets
-			//m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 6; //-6 ammo
-			
-			float flZVel = m_pPlayer->pev->velocity.z; 
-			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 700; 
-		#endif
-		}
+		CBaseEntity *pSatchel = Create( "halo_base", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+		pSatchel->pev->velocity = vecThrow;
+		m_iClip-=6;
+		
+		float flZVel = m_pPlayer->pev->velocity.z; 
+		m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 700; 
+	}
+	
 	m_flNextPrimaryAttack = 1.0;
 	m_flNextSecondaryAttack = 1.0;
 }
-
-
-
 
 
 void CPython::Reload( void )
@@ -496,11 +432,8 @@ void CPython::Reload( void )
 	}
 
 	int bUseScope = FALSE;
-#ifdef CLIENT_DLL
-	bUseScope = bIsMultiplayer();
-#else
+
 	bUseScope = g_pGameRules->IsMultiplayer();
-#endif
 
 	if (DefaultReload( 6, PYTHON_RELOAD, 2.0, bUseScope ))
 	{
@@ -513,9 +446,6 @@ void CPython::WeaponIdle( void )
 {
 	ResetEmptySound( );
 
-	//m_pPlayer->GetAutoaimVector( AUTOAIM_10DEGREES );
-
-	// ALERT( at_console, "%.2f\n", gpGlobals->time - m_flSoundDelay );
 	if (m_flSoundDelay != 0 && m_flSoundDelay <= UTIL_WeaponTimeBase() )
 	{
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_reload1.wav", 0.8, ATTN_NORM);
@@ -524,38 +454,12 @@ void CPython::WeaponIdle( void )
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
-
-	int iAnim;
-	float flRand = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
-	if (flRand <= 0.5)
-	{
-		iAnim = PYTHON_IDLE1;
-		m_flTimeWeaponIdle = (70.0/30.0);
-	}
-	else if (flRand <= 0.7)
-	{
-		iAnim = PYTHON_IDLE2;
-		m_flTimeWeaponIdle = (60.0/30.0);
-	}
-	else if (flRand <= 0.9)
-	{
-		iAnim = PYTHON_IDLE3;
-		m_flTimeWeaponIdle = (88.0/30.0);
-	}
-	else
-	{
-		iAnim = PYTHON_FIDGET;
-		m_flTimeWeaponIdle = (170.0/30.0);
-	}
 	
 	int bUseScope = FALSE;
-#ifdef CLIENT_DLL
-	bUseScope = bIsMultiplayer();
-#else
+
 	bUseScope = g_pGameRules->IsMultiplayer();
-#endif
 	
-	SendWeaponAnim( iAnim, UseDecrement() ? 1 : 0, bUseScope );
+	SendWeaponAnim( PYTHON_IDLE1, UseDecrement() ? 1 : 0, bUseScope );
 }
 
 
@@ -588,15 +492,7 @@ LINK_ENTITY_TO_CLASS( ammo_357, CPythonAmmo );
 
 #endif
 
-
-
-
-
-
-
-
-
-//////////////////////////new weapon///////////////////////////////////
+//////////// Uranium Bullet ///////////
 void    CU :: Spawn( )
 {
 	Precache( );
@@ -606,11 +502,9 @@ void    CU :: Spawn( )
 	UTIL_SetSize( pev, Vector(2,2,2), Vector(2,2,2) );
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_357" );
-	SetThink( Update );
-	SetTouch( Hit );
+
 	pev->velocity = gpGlobals->v_forward * 125;
-	pev->nextthink = gpGlobals->time + 0.1;
-	pev->effects = EF_MUZZLEFLASH;
+
 	m_flDie = gpGlobals->time + 16;
 	pev->dmg = 195;
 
@@ -648,6 +542,9 @@ void    CU :: Spawn( )
 		WRITE_BYTE( 128 ); // brightness
 	MESSAGE_END();
 
+	SetThink( Update );
+	SetTouch( Hit );
+	pev->nextthink = gpGlobals->time + 0.1;
 }
 
 void    CU :: Precache( )
@@ -693,7 +590,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 	vecEnd = pev->origin + vecEnd.Normalize() * 2048;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
 	
-	//lightings 1
+	// lightings 1
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_BEAMPOINTS );
 			WRITE_COORD(pev->origin.x);
@@ -714,7 +611,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 			WRITE_BYTE( 175 ); // brightness
 			WRITE_BYTE( 8 ); // scroll speed
 	MESSAGE_END();
-	//lightings 2
+	// lightings 2
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_BEAMPOINTS );
 			WRITE_COORD(pev->origin.x);
@@ -728,14 +625,14 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 			WRITE_BYTE( 16  ); // framerate * 0.1
 			WRITE_BYTE( 4 ); // life * 0.1
 			WRITE_BYTE( 5 ); // width
-			WRITE_BYTE( 255 ); // noise
+			WRITE_BYTE( 128 ); // noise
 			WRITE_BYTE( 255 ); // color r,g,b
 			WRITE_BYTE( 255 ); // color r,g,b
 			WRITE_BYTE( 255 ); // color r,g,b
 			WRITE_BYTE( 175 ); // brightness
 			WRITE_BYTE( 12 ); // scroll speed
 	MESSAGE_END();
-	//lightings 3
+	// lightings 3
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_BEAMPOINTS );
 			WRITE_COORD(pev->origin.x);
@@ -749,7 +646,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 			WRITE_BYTE( 24  ); // framerate * 0.1
 			WRITE_BYTE( 5 ); // life * 0.1
 			WRITE_BYTE( 3 ); // width
-			WRITE_BYTE( 255 ); // noise
+			WRITE_BYTE( 64 ); // noise
 			WRITE_BYTE( 255 ); // color r,g,b
 			WRITE_BYTE( 128 ); // color r,g,b
 			WRITE_BYTE( 128 ); // color r,g,b
@@ -762,7 +659,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 		
 	UTIL_DecalTrace( TResult, DECAL_SCORCH2 );
 		
-	//explode
+	// explode
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
 		WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
 		WRITE_COORD( pev->origin.x);
@@ -774,7 +671,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_BYTE( TE_EXPLFLAG_NONE );
 	MESSAGE_END();
 		
-	//beam
+	// beam
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 		WRITE_BYTE( TE_BEAMDISK );
 		WRITE_COORD( pev->origin.x);
@@ -795,6 +692,7 @@ void    CU :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_BYTE( 255 ); // brightness
 		WRITE_BYTE( 8 );		// speed
 	MESSAGE_END();
+	
 	SUB_Remove( );
 }
 
@@ -813,11 +711,11 @@ CU* CU :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 
 void    CU :: Update( void )
 {
-//fixed stuck in sky
+// fixed stuck in sky
 	
 if (gpGlobals->time >= m_flDie) //time out
 	{
-		//explode
+		// explode
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
 			WRITE_COORD( pev->origin.x);
@@ -828,7 +726,9 @@ if (gpGlobals->time >= m_flDie) //time out
 			WRITE_BYTE( 16  ); // framerate
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
+		
 		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 195, 500, CLASS_NONE, DMG_MORTAR  ); //DMG
+		
 		SUB_Remove( );
 	}
 	
@@ -840,24 +740,6 @@ if (gpGlobals->time >= m_flDie) //time out
 	vecSpitDir.x = 0;
 	vecSpitDir.y = 0;
 	vecSpitDir.z = 0;
-	
-
-	// spew the spittle temporary ents.
-/* 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-		WRITE_BYTE( TE_SPRITE_SPRAY );
-		WRITE_COORD( pev->origin.x);	// pos
-		WRITE_COORD( pev->origin.y);	
-		WRITE_COORD( pev->origin.z);	
-		WRITE_COORD( vecSpitDir.x);	// direction
-		WRITE_COORD( vecSpitDir.y);	
-		WRITE_COORD( vecSpitDir.z);	
-		WRITE_SHORT( iSquidSpitSprite );	// model
-		WRITE_BYTE ( 1 );			// count
-		WRITE_BYTE ( 210 );			// speed
-		WRITE_BYTE ( 8 );			// noise ( client will divide by 100 )
-	MESSAGE_END(); */
-	
-
 	
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_IMPLOSION );
@@ -876,17 +758,6 @@ if (gpGlobals->time >= m_flDie) //time out
 
 
 
-
-
-
-
-
-
-///////////////////////////
-///////////////////////////
-///////////////////////////
-
-
 void    CVulcan :: Spawn( )
 {
 	Precache( );
@@ -895,13 +766,13 @@ void    CVulcan :: Spawn( )
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
 	UTIL_SetSize( pev, Vector( -4, -4, 0), Vector(4, 4, 8) );
-	//fix positions for this model
+
 	UTIL_SetOrigin( pev, Vector(pev->origin.x, pev->origin.y,pev->origin.z));
 	pev->classname = MAKE_STRING( "weapon_357" );
 	m_flDie = gpGlobals->time + 17.0;
-	pev->nextthink = gpGlobals->time + 0.1;
 	pev->gravity			= 0.35;
 	pev->friction			= 0.01;
+	pev->dmg				= 64;
 	
 	BeamSprite = PRECACHE_MODEL( "sprites/fexplo1.spr" );
 	BeamSprite2 = PRECACHE_MODEL( "sprites/bluejet1.spr" );
@@ -918,10 +789,9 @@ void    CVulcan :: Spawn( )
 		WRITE_BYTE( 128 ); // brightness
 	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 	
-	
-	
 	SetThink( MoveThink );
 	SetTouch( MoveTouch );
+	pev->nextthink = gpGlobals->time + 0.1;
 }
 
 void CVulcan :: Precache( void )
@@ -932,18 +802,20 @@ void CVulcan :: Precache( void )
 }
 
 
+////////////////////////////////
+//      Explode capsule       //
+////////////////////////////////
 
 void    CVulcan :: MoveThink( )
 {
 	CBaseEntity *pEntity = NULL;
 	Vector direction = Vector(0,0,1); 
 	
-	
 	// Make a lightning strike
 	Vector vecEnd;
 	TraceResult tr;
-	vecEnd.x = pev->origin.x + RANDOM_LONG(-211,211);	// Pick a random direction
-	vecEnd.y = pev->origin.y + RANDOM_LONG(-211,211);
+	vecEnd.x = pev->origin.x + RANDOM_LONG(-256,256);	// Pick a random direction
+	vecEnd.y = pev->origin.y + RANDOM_LONG(-256,256);
 	vecEnd.z = pev->origin.z + RANDOM_LONG(0,64);
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
 	UTIL_ParticleEffect ( vecEnd, g_vecZero, 92, 25 );
@@ -951,10 +823,8 @@ void    CVulcan :: MoveThink( )
 	// first begin, beware lightings 5 sec
 	if (gpGlobals->time <= m_flDie - 12)
 		{
-			// Make a lightning strike
-
 			vecEnd = pev->origin + vecEnd.Normalize() * RANDOM_LONG(16,128);
-
+			
 			// lightings
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 				WRITE_BYTE( TE_BEAMPOINTS );
@@ -976,61 +846,13 @@ void    CVulcan :: MoveThink( )
 				WRITE_BYTE( 175 ); // brightness
 				WRITE_BYTE( 8 ); // scroll speed
 			MESSAGE_END();
-			
-			
-			
-		}
-		
-	// second is hurting 
-	if (gpGlobals->time >= m_flDie - 12)
-		{
-			//spark effects
-			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-				WRITE_BYTE( TE_STREAK_SPLASH );
-				WRITE_COORD( vecEnd.x );		// origin
-				WRITE_COORD( vecEnd.y );
-				WRITE_COORD( vecEnd.z );
-				WRITE_COORD( direction.x );	//// direction
-				WRITE_COORD( direction.y );
-				WRITE_COORD( direction.z );
-				WRITE_BYTE( 255 );	// Streak color 6
-				WRITE_SHORT( 32 );	// count
-				WRITE_SHORT( 1024 );
-				WRITE_SHORT( 1600 );	// Random velocity modifier
-			MESSAGE_END();
-			
-			::RadiusDamage( vecEnd, pev, VARS( pev->owner ), 100, 200, CLASS_NONE, DMG_CRUSH  ); //blast
-			
-			EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "zxc/lrgexpl2.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,110) );
-				
-			// lots of expl
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-				WRITE_BYTE( TE_SPRITE );
-				WRITE_COORD( vecEnd.x );		// origin
-				WRITE_COORD( vecEnd.y );
-				WRITE_COORD( vecEnd.z );
-				WRITE_SHORT( BeamSprite );
-				WRITE_BYTE( 64 ); // scale * 10
-				WRITE_BYTE( 200 ); // brightness
-			MESSAGE_END( );
-			// lots of expl 2
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-				WRITE_BYTE( TE_SPRITE );
-				WRITE_COORD( vecEnd.x );		// origin
-				WRITE_COORD( vecEnd.y );
-				WRITE_COORD( vecEnd.z );
-				WRITE_SHORT( BeamSprite2 );
-				WRITE_BYTE( 64 ); // scale * 10
-				WRITE_BYTE( 200 ); // brightness
-			MESSAGE_END( );
-	
 		}
 
-	if (gpGlobals->time >= m_flDie - 5) //full explode and self destroy
+	// full explode and self destroy
+	if (gpGlobals->time >= m_flDie - 5)
 		{
-
-			//spark effects
-			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			// spark effects
+			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
 				WRITE_BYTE( TE_STREAK_SPLASH );
 				WRITE_COORD( pev->origin.x );		// origin
 				WRITE_COORD( pev->origin.y );
@@ -1044,18 +866,14 @@ void    CVulcan :: MoveThink( )
 				WRITE_SHORT( 1600 );	// Random velocity modifier
 			MESSAGE_END();
 
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 512, CLASS_NONE, DMG_BULLET  ); //end blast
 
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 120, 640, CLASS_NONE, DMG_BULLET  ); //end blast
-			
-
-
-			//lights
-			Vector vecSrc = pev->origin;
-			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+			// lights
+			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
 				WRITE_BYTE(TE_DLIGHT);
-				WRITE_COORD(vecSrc.x);	// X
-				WRITE_COORD(vecSrc.y);	// Y
-				WRITE_COORD(vecSrc.z);	// Z
+				WRITE_COORD(pev->origin.x);	// X
+				WRITE_COORD(pev->origin.y);	// Y
+				WRITE_COORD(pev->origin.z);	// Z
 				WRITE_BYTE( 32 );		// radius * 0.1
 				WRITE_BYTE( 112 );		// r
 				WRITE_BYTE( 112 );		// g
@@ -1064,9 +882,8 @@ void    CVulcan :: MoveThink( )
 				WRITE_BYTE( 0 );		// decay * 0.1
 			MESSAGE_END( );
 			
-
 			// random explosions
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 				WRITE_BYTE( TE_EXPLOSION );		// This just makes a dynamic light now
 				WRITE_COORD( pev->origin.x);
 				WRITE_COORD( pev->origin.y);
@@ -1080,16 +897,50 @@ void    CVulcan :: MoveThink( )
 			SetTouch( NULL );
 			UTIL_Remove( this );
 		}
-	pev->nextthink = gpGlobals->time + 0.15; //dynamic update
+	pev->nextthink = gpGlobals->time + 0.3; // dynamic update
+	
+		
+	if ( (UTIL_PointContents(tr.vecEndPos ) == CONTENTS_SOLID) && tr.flFraction != 1.0 && !tr.fAllSolid  )
+		return;
+	{
+	// second is hurting 
+	if (gpGlobals->time >= m_flDie - 12)
+		{
+
+			::RadiusDamage( vecEnd, pev, VARS( pev->owner ), pev->dmg, 128+pev->dmg, CLASS_NONE, DMG_CRUSH  ); //blast
+			
+			EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "zxc/lrgexpl2.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,110) );
+				
+			// lots of expl
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				WRITE_BYTE( TE_SPRITE );
+				WRITE_COORD( vecEnd.x );
+				WRITE_COORD( vecEnd.y );
+				WRITE_COORD( vecEnd.z );
+				WRITE_SHORT( BeamSprite );
+				WRITE_BYTE( 64 ); // scale * 10
+				WRITE_BYTE( 200 ); // brightness
+			MESSAGE_END( );
+			// lots of expl 2
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				WRITE_BYTE( TE_SPRITE );
+				WRITE_COORD( vecEnd.x );
+				WRITE_COORD( vecEnd.y );
+				WRITE_COORD( vecEnd.z );
+				WRITE_SHORT( BeamSprite2 );
+				WRITE_BYTE( 64 ); // scale * 10
+				WRITE_BYTE( 200 ); // brightness
+			MESSAGE_END( );
+	
+		}
+	}
 
 }
 
 
 void  CVulcan::MoveTouch( CBaseEntity *pOther )
 {
-	
-	
-	//play sounds
+
 	switch(RANDOM_LONG(0,2))
 	{
 	case 0: 
@@ -1103,9 +954,9 @@ void  CVulcan::MoveTouch( CBaseEntity *pOther )
 	break;
 	}
 	
-	pev->velocity.z += 24; //jump
+	pev->velocity.z += 24; // jump
 	
-	//touch explode
+	// touch explode
 	if ( pOther->pev->solid != SOLID_BSP) 
 	{
 		m_flDie = gpGlobals->time - 20;
@@ -1118,10 +969,10 @@ void  CVulcan::MoveTouch( CBaseEntity *pOther )
 
 		
 }
-///////////////////////////
-///////////////////////////
-///////////////////////////
 
+////////////////////////////////
+//   Random motion capsule    //
+////////////////////////////////
 
 void    CHalo :: Spawn( )
 {
@@ -1137,6 +988,7 @@ void    CHalo :: Spawn( )
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->gravity			= 0.15;
 	pev->friction			= 0.01;
+	pev->dmg				= 16;
 	
 	pev->angles = UTIL_VecToAngles (pev->velocity);
 	pev->angles.x -= 90;
@@ -1151,7 +1003,7 @@ void CHalo :: Precache( void )
 	m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
 	iSquidSpitSprite = PRECACHE_MODEL("sprites/xbeam4.spr");// client side spittle.
 
-	//foolow trails
+	// foolow trails
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT( entindex() );
@@ -1163,7 +1015,6 @@ void CHalo :: Precache( void )
 		WRITE_BYTE( 255 );   // r, g, b
 		WRITE_BYTE( 255 );	// brightness
 	MESSAGE_END();
-	
 }
 
 
@@ -1211,10 +1062,10 @@ void    CHalo :: MoveThink( )
 				WRITE_BYTE( 8 ); // scroll speed
 			MESSAGE_END();
 
-			::RadiusDamage( vecEnd, pev, VARS( pev->owner ), 16, 185, CLASS_NONE, DMG_BLAST  ); //end blast
+			::RadiusDamage( vecEnd, pev, VARS( pev->owner ), pev->dmg, 185, CLASS_NONE, DMG_BLAST  ); //end blast
 		}
 
-	if (gpGlobals->time >= m_flDie - 5) //full explode and self destroy
+	if (gpGlobals->time >= m_flDie - 5) // full explode and self destroy
 		{
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 				WRITE_BYTE( TE_IMPLOSION );
@@ -1226,10 +1077,10 @@ void    CHalo :: MoveThink( )
 				WRITE_BYTE( 24 );		// life
 			MESSAGE_END();
 			
-			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 360, CLASS_NONE, DMG_CRUSH  ); //end blast
+			::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 84+pev->dmg, 360, CLASS_NONE, DMG_CRUSH  ); //end blast
 			EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "zxc/lrgexpl2.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,110) );
 
-			//lights
+			// lights
 			Vector vecSrc = pev->origin;
 			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
 				WRITE_BYTE(TE_DLIGHT);
@@ -1257,7 +1108,7 @@ void    CHalo :: MoveThink( )
 				WRITE_BYTE( TE_EXPLFLAG_NONE );
 			MESSAGE_END();
 			
-			//beam
+			// beam
 			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 				WRITE_BYTE( TE_BEAMDISK );
 				WRITE_COORD( pev->origin.x);
@@ -1291,6 +1142,5 @@ void    CHalo :: MoveThink( )
 void  CHalo::MoveTouch( CBaseEntity *pOther )
 {
 	m_flDie = gpGlobals->time - 20;
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 100, 128, CLASS_NONE, DMG_BLAST  ); //end blast
-		
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 84+pev->dmg, 128, CLASS_NONE, DMG_BLAST  ); //end blast
 }

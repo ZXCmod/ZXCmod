@@ -291,7 +291,7 @@ void CTurret::Spawn()
 	Precache( );
 	SET_MODEL(ENT(pev), "models/turret.mdl");
 	pev->health			= 100;
-	pev->fuser2			= 25;
+	pev->dmg			= 6;
 	//pev->max_health = pev->health;
 	m_HackedGunPos		= Vector( 0, 0, 12.75 );
 	m_flMaxSpin =		TURRET_MAXSPIN;
@@ -327,6 +327,7 @@ void CMiniTurret::Spawn()
 	m_HackedGunPos		= Vector( 0, 0, 12.75 );
 	m_flMaxSpin = 0;
 	pev->view_ofs.z = 12.75;
+	pev->dmg = 5;
 	
 
 	CBaseTurret::Spawn( );
@@ -466,25 +467,25 @@ void CBaseTurret::Ping( void )
 				
 				if (pev->ltime >= 9) //loop
 					pev->ltime = 0; // zerro is default msgun
-					
-			if (pev->ltime==0)
-				txt = "Type 0: Mgun";
-			if (pev->ltime==1)
-				txt = "Type 1: Linear Rocket";
-			if (pev->ltime==2)
-				txt = "Type 2: Chaos Rocket";
-			if (pev->ltime==3)
-				txt = "Type 3: BFBomb";
-			if (pev->ltime==4)
-				txt = "Type 4: Arrow";
-			if (pev->ltime==5)
-				txt = "Type 5: MP5 Plasma";
-			if (pev->ltime==6)
-				txt = "Type 6: Gauss Cannon";
-			if (pev->ltime==7)
-				txt = "Type 7: Shotgun Cannon";
-			if (pev->ltime==8)
-				txt = "Type 8: HECapsule";
+						
+				if (pev->ltime==0)
+					txt = "Type 0: Mgun";
+				if (pev->ltime==1)
+					txt = "Type 1: Linear Rocket";
+				if (pev->ltime==2)
+					txt = "Type 2: Chaos Rocket";
+				if (pev->ltime==3)
+					txt = "Type 3: BFBomb";
+				if (pev->ltime==4)
+					txt = "Type 4: Arrow";
+				if (pev->ltime==5)
+					txt = "Type 5: MP5 Plasma";
+				if (pev->ltime==6)
+					txt = "Type 6: Gauss Cannon";
+				if (pev->ltime==7)
+					txt = "Type 7: Shotgun Cannon";
+				if (pev->ltime==8)
+					txt = "Type 8: HECapsule";
 				
 					
 				//print texts
@@ -568,7 +569,7 @@ void CBaseTurret::ActiveThink(void)
 	int fAttack = 0;
 	Vector vecDirToEnemy;
 
-	pev->nextthink = gpGlobals->time + 0.1;
+	pev->nextthink = gpGlobals->time + 0.2;
 	StudioFrameAdvance( );
 
 	if ((!m_iOn) || (m_hEnemy == NULL))
@@ -602,7 +603,9 @@ void CBaseTurret::ActiveThink(void)
 	Vector vecMidEnemy = m_hEnemy->BodyTarget( vecMid );
 
 	// Look for our current enemy
-	int fEnemyVisible = FBoxVisible(pev, m_hEnemy->pev, vecMidEnemy );	
+	int fEnemyVisible = FBoxVisible(pev, m_hEnemy->pev, vecMidEnemy );
+
+
 
 	vecDirToEnemy = vecMidEnemy - vecMid;	// calculate dir and dist to enemy
 	float flDistToEnemy = vecDirToEnemy.Length();
@@ -659,22 +662,20 @@ void CBaseTurret::ActiveThink(void)
 if (m_iSpin && ((fAttack) || (m_fBeserk)))
 	{
 	
-	if (F > 0)
+	if (F > 0.0)
 		F -= 0.1; //float timer
 		
+	if (TripleShot == 1 && F <= 0.1)
+		TripleShot = 0;
 
 	
 	if (pev->ltime == 0) //normal machinegun
 		{
-		switch(RANDOM_LONG(0,1))
-			{
-			case 0: 
-				Vector vecSrc, vecAng;
-				GetAttachment( 0, vecSrc, vecAng );
-				SetTurretAnim(TURRET_ANIM_FIRE);
-				Shoot(vecSrc, gpGlobals->v_forward, 0, VARS( pev->owner ) ); ///need VARS( pev->owner ) - emulate player shooting
-			break;
-			}
+			Vector vecSrc, vecAng;
+			GetAttachment( 0, vecSrc, vecAng );
+			SetTurretAnim(TURRET_ANIM_FIRE);
+			Shoot(vecSrc, gpGlobals->v_forward, NULL, VARS( pev->owner ) ); 
+			F = 0.2;
 		}
 	if (pev->ltime == 1 && F <= 0)
 		{
@@ -683,7 +684,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					pRocket1->pev->dmg = 90;
 					pRocket1->pev->ltime = 80;
 					pRocket1->pev->velocity = gpGlobals->v_forward * 700;
-					F = 1.75;
+					F = 0.8;
 		}
 	if (pev->ltime == 2 && F <= 0) // Random Rocket
 		{
@@ -692,7 +693,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					pRocket2->pev->dmg = 48;
 					pRocket2->pev->ltime = 80;
 					pRocket2->pev->velocity = gpGlobals->v_forward * 700;
-					F = 2.25;
+					F = 1.1;
 		}
 	if (pev->ltime == 3 && F <= 0) // heavy BfBmb
 		{
@@ -702,7 +703,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					pRocket3->pev->gravity = 0.1;
 					pRocket3->pev->ltime = 80;
 					pRocket3->pev->velocity = gpGlobals->v_forward * 700;
-					F = 1.95;
+					F = 1.0;
 					
 		}
 	if (pev->ltime == 4 && F <= 0) // arrow
@@ -711,7 +712,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					CBaseEntity *pRocket4 = CBaseEntity::Create( "bone_follow", pev->origin + gpGlobals->v_forward * 50 + gpGlobals->v_up * 40, pev->angles, pev->owner );
 					pRocket4->pev->dmg = 50;
 					pRocket4->pev->velocity = gpGlobals->v_forward * 2000;
-					F = 2.50;
+					F = 1.0;
 					
 		}
 	if (pev->ltime == 5 && F <= 0) // mp5 plasma
@@ -721,9 +722,9 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					pRocket5->pev->velocity = gpGlobals->v_forward * 2048;
 					
 					if (pev->health > (pev->max_health*0.5))
-						F = 0.10;
+						F = 0.05;
 					else
-						F = 0.25;
+						F = 0.1;
 					
 					//play sounds
 					switch(RANDOM_LONG(0,2))
@@ -763,7 +764,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					CBaseEntity *pRocket6 = CBaseEntity::Create( "virtual_hull", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
 					pRocket6->pev->velocity = gpGlobals->v_forward * 1200;
 					pRocket6->pev->dmg = 90;
-					F = 3.00;
+					F = 1.5;
 		}
 	if (pev->ltime == 7 && F <= 0) // shotgun cannon
 		{
@@ -772,7 +773,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					CBaseEntity *pRocket7 = CBaseEntity::Create( "weapon_tacgun", pev->origin + gpGlobals->v_forward * 40 + gpGlobals->v_up * 40, pev->angles, pev->owner );
 					pRocket7->pev->velocity = gpGlobals->v_forward * 1200;
 					pRocket7->pev->gravity = 0.1;
-					F = 1.75;
+					F = 0.8;
 		}
 	if (pev->ltime == 8 && F <= 0) // magnum think
 		{
@@ -783,10 +784,11 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 					pRocket8->pev->velocity = gpGlobals->v_forward * 700;
 					pRocket8->pev->gravity = 0.1;
 					pRocket8->pev->dmg = 90;
-					F = 2.5;
+					F = 1.5;
 		}
+
 	}
-	
+
 
 	 
 	
@@ -850,7 +852,7 @@ if (m_iSpin && ((fAttack) || (m_fBeserk)))
 //turret fired VARS( pev->owner )
 void CTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, entvars_t *pevAttacker)
 {
-	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, RANDOM_LONG(7,12), 1, RANDOM_LONG(2,9), VARS( pev->owner ) );
+	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, 5, 1, 1, VARS( pev->owner ) );
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "turret/tu_fire1.wav", 1, 0.6);
 	pev->effects = pev->effects | EF_MUZZLEFLASH;
 }
@@ -1473,6 +1475,7 @@ void CSentry::Spawn()
 	m_hOwner = Instance( pev->owner );
 	pev->gravity		= 1;
 	pev->friction		= 1;
+	pev->dmg			= 5;
 
 	pev->flags		|= FL_MONSTER;
 	m_flSize = gpGlobals->time + 1; //set normal bounding size while time out
@@ -1482,7 +1485,7 @@ void CSentry::Spawn()
 void CSentry::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, entvars_t *pevAttacker)
 {
 
-	FireBullets( 1, vecSrc, vecDirToEnemy, Vector( 0.01716, 0.03716, 0.06864 ), TURRET_RANGE, BULLET_MONSTER_MP5, 1, RANDOM_LONG(1,12), pevAttacker );
+	FireBullets( 1, vecSrc, vecDirToEnemy, Vector( 0.01716, 0.03716, 0.06864 ), TURRET_RANGE, BULLET_MONSTER_MP5, 1, 5, pevAttacker );
 
 	//////////////fix fire rate for internet///////////////
 	//switch(RANDOM_LONG(0,2))

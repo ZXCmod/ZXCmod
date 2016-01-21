@@ -199,16 +199,12 @@ void CMP5::PrimaryAttack()
 	
 	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usMP5, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
 
-/* 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
-		// HEV suit - indicate out of ammo condition
-		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); */
-
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
 
 	if ( m_flNextPrimaryAttack < UTIL_WeaponTimeBase() )
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
 
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 }
 
 
@@ -245,17 +241,12 @@ void CMP5::FourthAttack( void )
 	
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 5;// idle pretty soon after shooting.
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 4.0;
 
-	if (!m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType])
-		// HEV suit - indicate out of ammo condition
-		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
+
 }
 
 /////zap-lasers (1.28)
-
-
-
 
 void CMP5::ThirdAttack( void )
 {
@@ -276,43 +267,19 @@ if (allowmonsters10.value == 1)
 
 	TraceResult	tr;	
 	Vector vecSrc;
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors( anglesAim );
+	
 	m_pPlayer->pev->punchangle.x += RANDOM_LONG(0,2);
 	m_pPlayer->pev->punchangle.y += RANDOM_LONG(0,2);
+	
 	vecSrc = m_pPlayer->GetGunPosition( )  + gpGlobals->v_right * 9 + gpGlobals->v_up * -10;
 	Vector vecDir = gpGlobals->v_forward;
 	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 4096, dont_ignore_monsters, m_pPlayer->edict(), &tr);
-		
-	//if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
+
 	if (m_iClip >= 1)
     {
 
 
-	
-		/////beam ray 1
-			// MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-            // WRITE_BYTE( TE_BEAMPOINTS );
-            // WRITE_COORD(vecSrc.x);
-            // WRITE_COORD(vecSrc.y);
-            // WRITE_COORD(vecSrc.z);
-            // WRITE_COORD( tr.vecEndPos.x ); //tr.vecEndPos.
-            // WRITE_COORD( tr.vecEndPos.y );
-            // WRITE_COORD( tr.vecEndPos.z );
-            // WRITE_SHORT( BSpr ); //sprite
-            // WRITE_BYTE( 1 ); // Starting frame
-            // WRITE_BYTE( 0  ); // framerate * 0.1
-            // WRITE_BYTE( 1 ); // life * 0.1
-            // WRITE_BYTE( 30 ); // width
-            // WRITE_BYTE( 8 ); // noise
-            // WRITE_BYTE( 128 ); // color r,g,b
-            // WRITE_BYTE( 128 ); // color r,g,b
-            // WRITE_BYTE( 200 ); // color r,g,b
-            // WRITE_BYTE( 110 ); // brightness
-            // WRITE_BYTE( 100 ); // scroll speed
-			// MESSAGE_END();
-			
-		/////beam ray 2
+		// beam ray
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
             WRITE_BYTE( TE_BEAMPOINTS );
             WRITE_COORD(vecSrc.x);
@@ -334,7 +301,7 @@ if (allowmonsters10.value == 1)
             WRITE_BYTE( 100 ); // scroll speed
 			MESSAGE_END();
 			
-		/////beam ray 3
+		// beam ray
 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
             WRITE_BYTE( TE_BEAMPOINTS );
             WRITE_COORD(vecSrc.x);
@@ -356,19 +323,17 @@ if (allowmonsters10.value == 1)
             WRITE_BYTE( 100 ); // scroll speed
 			MESSAGE_END();
 
-			#ifndef CLIENT_DLL
-				m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecDir, Vector( 0, 0, 0 ), 4096, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-				UTIL_DecalTrace( &tr, DECAL_BIGSHOT1 + RANDOM_LONG(1,4) ); // + RANDOM_LONG(1,4)
-				UTIL_Sparks( tr.vecEndPos );
-				m_iClip--;
-				EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart11.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
-				Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-				SendWeaponAnim( 5 );
-				m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.12;
-				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.12;
-				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.12;
-			#endif
+			m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecDir, Vector( 0, 0, 0 ), 4096, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+			UTIL_DecalTrace( &tr, DECAL_BIGSHOT1 + RANDOM_LONG(1,4) ); // + RANDOM_LONG(1,4)
+			UTIL_Sparks( tr.vecEndPos );
+			m_iClip--;
+			EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "debris/beamstart11.wav", 0.75, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
+			Create( "blaster_bolt", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+			SendWeaponAnim( 5 );
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.12;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.12;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.12;
 	}
 	
 
@@ -387,7 +352,7 @@ void CMP5::SecondaryAttack( void )
 	if (m_pPlayer->pev->waterlevel >= 2)
 	{
 		PlayEmptySound( );
-		m_flNextPrimaryAttack = 0.15;
+		m_flNextSecondaryAttack = 0.15;
 		return;
 	}
 
@@ -395,11 +360,10 @@ if (allowmonsters10.value == 0)
 {
 	if (m_iClip >= 1)
 	{
-			Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
+			Vector vecThrow = gpGlobals->v_forward * 2048; 
 			Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 			UTIL_MakeVectors( anglesAim );
 			
-			#ifndef CLIENT_DLL
 			m_pPlayer->pev->punchangle.x += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
 			m_pPlayer->pev->punchangle.y += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
 			m_spread += 0.150;
@@ -408,12 +372,11 @@ if (allowmonsters10.value == 0)
 			pPlasma->pev->velocity = vecThrow;
 			SendWeaponAnim( 5 );
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.08; //0.08
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.08; 
 			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.08;
 			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.08;
-			#endif
 
-			//play sounds
+			// play sounds
 			switch(RANDOM_LONG(0,2))
 				{
 				case 0: 
@@ -431,45 +394,43 @@ if (allowmonsters10.value == 0)
 else
 	if (m_iClip >= 1)
 	{
-			Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
-			Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-			UTIL_MakeVectors( anglesAim );
-			
-			#ifndef CLIENT_DLL
-			m_pPlayer->pev->punchangle.x += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
-			m_pPlayer->pev->punchangle.y += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
-			m_spread += 0.150;
-			m_iClip--;
-			
-			CBaseEntity *pPlasma = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			CBaseEntity *pPlasma2 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle-45, m_pPlayer->edict() );
-			CBaseEntity *pPlasma3 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle+45, m_pPlayer->edict() );
-			pPlasma->pev->velocity = vecThrow;
-			pPlasma2->pev->dmg = RANDOM_LONG(21,30);
-			pPlasma2->pev->velocity = vecThrow-Vector(105,0,RANDOM_LONG(-45,45));
-			pPlasma2->pev->dmg = RANDOM_LONG(7,11);
-			pPlasma3->pev->velocity = vecThrow+Vector(105,0,RANDOM_LONG(-45,45));
-			pPlasma3->pev->dmg = RANDOM_LONG(7,11);
-			SendWeaponAnim( 5 );
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.16; //0.08
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.16;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.16;
-			#endif
+		Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
+		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+		UTIL_MakeVectors( anglesAim );
+		
 
-			//play sounds
-			switch(RANDOM_LONG(0,2))
-				{
-				case 0: 
-					EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); //play sound
-				break;
-				case 1: 
-					EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM); //play sound
-				break;
-				case 2: 
-					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM); //play sound
-				break;
-				}
+		m_pPlayer->pev->punchangle.x += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
+		m_pPlayer->pev->punchangle.y += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
+		m_spread += 0.150;
+		m_iClip--;
+		
+		CBaseEntity *pPlasma = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+		CBaseEntity *pPlasma2 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle-45, m_pPlayer->edict() );
+		CBaseEntity *pPlasma3 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle+45, m_pPlayer->edict() );
+		pPlasma->pev->velocity = vecThrow;
+		pPlasma2->pev->dmg = RANDOM_LONG(21,30);
+		pPlasma2->pev->velocity = vecThrow-Vector(105,0,RANDOM_LONG(-45,45));
+		pPlasma2->pev->dmg = RANDOM_LONG(7,11);
+		pPlasma3->pev->velocity = vecThrow+Vector(105,0,RANDOM_LONG(-45,45));
+		pPlasma3->pev->dmg = RANDOM_LONG(7,11);
+		SendWeaponAnim( 5 );
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.16; //0.08
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.16;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.16;
+
+		switch(RANDOM_LONG(0,2))
+			{
+			case 0: 
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); //play sound
+			break;
+			case 1: 
+				EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM); //play sound
+			break;
+			case 2: 
+				EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM); //play sound
+			break;
+			}
 	}
 
 }
@@ -488,8 +449,6 @@ void CMP5::Reload( void )
 void CMP5::WeaponIdle( void )
 {
 	ResetEmptySound( );
-
-	//m_pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
 	
 	if (m_spread > 0.0)
 		m_spread -= 0.05;
@@ -497,24 +456,11 @@ void CMP5::WeaponIdle( void )
 	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 
-	int iAnim;
-	switch ( RANDOM_LONG( 0, 1 ) )
-	{
-	case 0:	
-		iAnim = MP5_LONGIDLE;	
-		break;
-	
-	default:
-	case 1:
-		iAnim = MP5_IDLE1;
-		break;
-	}
+	SendWeaponAnim( MP5_LONGIDLE );
 
-	SendWeaponAnim( iAnim );
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 4.0;
 
-	m_flTimeWeaponIdle = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 ); // how long till we do this again.
-
-	}
+}
 
 
 
@@ -647,18 +593,6 @@ void CZap::Spawn( )
 	UTIL_Remove( this );
 }
 
-
-
-
-
-
-
-
-
-
-
-//////////////NEW weapon
-
 class   CPlasma : public CBaseEntity
 {
         public:
@@ -677,15 +611,12 @@ class   CPlasma : public CBaseEntity
 		unsigned short   m_Sprite2;
 		
 };
-
 LINK_ENTITY_TO_CLASS( weapon_laser_rifle, CPlasma );
 
 
 
 void    CPlasma :: Spawn( )
 {
-	Precache( );
-	
 	SET_MODEL( ENT(pev), "sprites/blue_teleport.spr" );
 	pev->movetype = MOVETYPE_FLY;
 	pev->solid = SOLID_BBOX;
@@ -694,17 +625,17 @@ void    CPlasma :: Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmAR" );
 	m_flDie = gpGlobals->time + 3;
-	pev->dmg = RANDOM_LONG(30,38); //dynamyc value
+	pev->dmg = RANDOM_LONG(30,38); // dynamyc value
 	pev->nextthink = gpGlobals->time + 0.1;
 	
 	pev->gravity = 0.0;
 	pev->friction = 0.0;
 	
-	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
+	pev->rendermode = kRenderTransAdd;
 	pev->renderamt = 195;
 	
-	pev->scale = RANDOM_FLOAT(0.25,0.35);
-	pev->frame = RANDOM_LONG(1,10);
+	pev->scale = 0.3;
+	pev->frame = 1;
 	
 	SetTouch( Hit );
 	SetThink( MoveThink );
@@ -717,7 +648,6 @@ void CPlasma :: Precache( void )
 
 }
 
-///////////////
 CPlasma* CPlasma :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 {
 	CPlasma* Beam = GetClassPtr( (CPlasma*)NULL );
@@ -737,7 +667,7 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 	StartPosition = pev->origin - pev->velocity.Normalize() * 32;
 	if ((UTIL_PointContents(pev->origin) == CONTENTS_WATER))
 		Explode();
-	//play hit sounds
+
 	switch(RANDOM_LONG(0,8))
 	{
 		case 0: EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/Build1.wav", 0.6, ATTN_NORM); break;
@@ -748,27 +678,27 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 	
 
 	
-	//check only thinks
+	// check only thinks
 	if (Target->pev->takedamage)
 	{
-		//Target->TraceAttack(pev, RANDOM_LONG(19,24), gpGlobals->v_forward, &TResult, DMG_BULLET ); 
+
 		Target->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_ENERGYBEAM);
 		Target->pev->velocity = Target->pev->velocity*0.25;
 		
 		// animated sprite by entity hit
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_SPRITE );
 			WRITE_COORD( pev->origin.x );
 			WRITE_COORD( pev->origin.y );
 			WRITE_COORD( pev->origin.z );
 			WRITE_SHORT( m_Sprite2 );
-			WRITE_BYTE( RANDOM_LONG(3,8) ); // scale
+			WRITE_BYTE( 4 ); // scale
 			WRITE_BYTE( 172 ); // brightness
 		MESSAGE_END();
 	}
 	else
 	{
-		//lights
+		// lights
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
 			WRITE_BYTE(TE_DLIGHT);
 			WRITE_COORD(pev->origin.x);	// X
@@ -782,7 +712,7 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 			WRITE_BYTE( 32 );		// decay * 0.1
 		MESSAGE_END( );
 		// animated sprite by wall hit
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_SPRITE );
 			WRITE_COORD( pev->origin.x );
 			WRITE_COORD( pev->origin.y );
@@ -793,14 +723,11 @@ void    CPlasma :: Hit( CBaseEntity* Target )
 		MESSAGE_END();
 	}
 
-	//delete this REMOVE_ENTITY( ENT(pev) );
 	UTIL_Remove( this );
 }
 
 void    CPlasma :: MoveThink( )
 {
-
-	
 	if (gpGlobals->time >= m_flDie) //full explode and self destroy
 		Explode();
 			
@@ -821,7 +748,7 @@ void    CPlasma :: Explode( )
 		WRITE_BYTE( 128 ); // brightness
 	MESSAGE_END();
 	
-	//lights
+	// lights
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
 		WRITE_BYTE(TE_DLIGHT);
 		WRITE_COORD(pev->origin.x);	// X
@@ -838,8 +765,6 @@ void    CPlasma :: Explode( )
 	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 640, CLASS_NONE, DMG_SHOCK  ); //end blast
 	EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/LsrExpl2.wav", 1.0, ATTN_STATIC);
 	UTIL_Remove( this );
-
-
 }
 
 

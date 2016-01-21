@@ -85,7 +85,6 @@ enum sbar_data
 	SBAR_END,
 };
 
-#define CHAT_INTERVAL 1.0f
 
 class CBasePlayer : public CBaseMonster
 {
@@ -179,6 +178,9 @@ public:
 	// shared ammo slots
 	int	m_rgAmmo[MAX_AMMO_SLOTS];
 	int	m_rgAmmoLast[MAX_AMMO_SLOTS];
+	
+	// share for paralizing
+	CBaseEntity *cEntity;
 
 	//Vector				m_vecAutoAim;
 	BOOL				m_fOnTarget;
@@ -282,7 +284,7 @@ public:
 	void PlayerUse( void );
 
 	void CheckSuitUpdate();
-	void SetSuitUpdate(char *name, int fgroup, int iNoRepeat);
+	void SetSuitUpdate(char *name, int fgroup, int iNoRepeat); // not used
 	void UpdateGeigerCounter( void );
 	void CheckTimeBasedDamage( void );
 
@@ -318,6 +320,9 @@ public:
 	float m_flNextSBarUpdateTime;
 	float m_flNextSBarUpdateTime3;
 	int	  m_fastShot; // 1.34 fire multiplier, use as powerup item
+	
+	int user;
+	
 	float m_flStatusBarDisappearDelay;
 	char m_SbarString0[ SBAR_STRING_SIZE ];
 	char m_SbarString1[ SBAR_STRING_SIZE ];

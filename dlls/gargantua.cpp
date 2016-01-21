@@ -57,7 +57,7 @@ const float GARG_ATTACKDIST = 80.0;
 
 #define ATTN_GARG					(ATTN_NORM)
 
-#define STOMP_SPRITE_COUNT			10
+#define STOMP_SPRITE_COUNT			3
 
 int gStompSprite = 0, gGargGibModel = 0;
 void SpawnExplosion( Vector center, float randomRange, float time, int magnitude );
@@ -109,7 +109,7 @@ void CStomp::Spawn( void )
 	pev->classname = MAKE_STRING("garg_stomp");
 	pev->dmgtime = gpGlobals->time;
 
-	pev->framerate = 30;
+	pev->framerate = 3;
 	pev->model = MAKE_STRING(GARG_STOMP_SPRITE_NAME);
 	pev->rendermode = kRenderTransTexture;
 	pev->renderamt = 0;
@@ -117,7 +117,7 @@ void CStomp::Spawn( void )
 }
 
 
-#define	STOMP_INTERVAL		0.025
+#define	STOMP_INTERVAL		0.125
 
 void CStomp::Think( void )
 {
@@ -140,7 +140,7 @@ void CStomp::Think( void )
 			pevOwner = VARS(pev->owner);
 
 		if ( pEntity )
-			pEntity->TakeDamage( pev, pevOwner, gSkillData.gargantuaDmgStomp, DMG_BLAST );
+			pEntity->TakeDamage( pev, pevOwner, 100, DMG_BULLET );
 	}
 	
 	// Accelerate the effect
@@ -482,7 +482,9 @@ void CGargantua::StompAttack( void )
 	Vector vecEnd = (vecAim * 1024) + vecStart;
 
 	UTIL_TraceLine( vecStart, vecEnd, ignore_monsters, edict(), &trace );
+	// CStomp::StompCreate( vecStart, trace.vecEndPos+32, 0 );
 	CStomp::StompCreate( vecStart, trace.vecEndPos, 0 );
+	// CStomp::StompCreate( vecStart, trace.vecEndPos-32, 0 );
 	UTIL_ScreenShake( pev->origin, 12.0, 100.0, 2.0, 1000 );
 	EMIT_SOUND_DYN ( edict(), CHAN_WEAPON, pStompSounds[ RANDOM_LONG(0,ARRAYSIZE(pStompSounds)-1) ], 1.0, ATTN_GARG, 0, PITCH_NORM + RANDOM_LONG(-10,10) );
 
@@ -772,7 +774,7 @@ void CGargantua :: Spawn()
 	m_pEyeGlow->SetTransparency( kRenderGlow, 255, 255, 255, 0, kRenderFxNoDissipation );
 	m_pEyeGlow->SetAttachment( edict(), 1 );
 	EyeOff();
-	m_seeTime = gpGlobals->time + 5;
+	m_seeTime = gpGlobals->time + 2;
 	m_flameTime = gpGlobals->time + 2;
 
 }
@@ -1016,7 +1018,7 @@ void CGargantua::HandleAnimEvent(MonsterEvent_t *pEvent)
 
 	case GARG_AE_STOMP:
 		StompAttack();
-		m_seeTime = gpGlobals->time + 12;
+		m_seeTime = gpGlobals->time + 5;
 		break;
 
 	case GARG_AE_BREATHE:
@@ -1058,7 +1060,7 @@ CBaseEntity* CGargantua::GargantuaCheckTraceHullAttack(float flDist, int iDamage
 
 		if ( iDamage > 0 )
 		{
-			pEntity->TakeDamage( pev, pev, iDamage, iDmgType );
+			pEntity->TakeDamage( pev, VARS( pev->owner ), iDamage, iDmgType );
 		}
 
 		return pEntity;

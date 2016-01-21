@@ -130,13 +130,6 @@ void CGameRules::RefreshSkillData ( void )
 
 	ALERT ( at_console, "\nGAME SKILL LEVEL:%d\n",iSkill );
 
-	//Agrunt		
-	gSkillData.agruntHealth = 100;
-	gSkillData.agruntDmgPunch = 7;
-
-	// Apache 
-	gSkillData.apacheHealth = 250;
-
 	// Barney
 	gSkillData.barneyHealth = 100;
 
@@ -170,10 +163,10 @@ void CGameRules::RefreshSkillData ( void )
 	gSkillData.houndeyeDmgBlast = 7;
 
 	// ISlave
-	gSkillData.slaveHealth = 100;
-	gSkillData.slaveDmgClaw = 15;
-	gSkillData.slaveDmgClawrake = 10;
-	gSkillData.slaveDmgZap = 7;
+	// gSkillData.slaveHealth = 100;
+	gSkillData.slaveDmgClaw = 77;
+	gSkillData.slaveDmgClawrake = 94;
+	// gSkillData.slaveDmgZap = RANDOM_LONG(37,73);
 
 	// Icthyosaur
 	gSkillData.ichthyosaurHealth = 4;
@@ -188,9 +181,6 @@ void CGameRules::RefreshSkillData ( void )
 	// Nihilanth
 	gSkillData.nihilanthHealth = 100;
 	gSkillData.nihilanthZap = 7;
-
-	// Scientist
-	gSkillData.scientistHealth = 100;
 
 	// Zombie
 	gSkillData.zombieDmgOneSlash = 7;
@@ -211,13 +201,13 @@ void CGameRules::RefreshSkillData ( void )
 ///	gSkillData.plrDmgCrowbar = GetSkillCvar( "sk_plr_crowbar");
 
 	// Glock Round
-	gSkillData.plrDmg9MM = RANDOM_LONG(7,10);
+	gSkillData.plrDmg9MM = 10;
 
 	// 357 Round
-	gSkillData.plrDmg357 = 60+RANDOM_LONG(1,9);
+	gSkillData.plrDmg357 = 100;
 
 	// MP5 Round
-	gSkillData.plrDmgMP5 = RANDOM_LONG(7,10);
+	gSkillData.plrDmgMP5 = 15;
 
 	// M203 grenade
 	gSkillData.plrDmgM203Grenade = 120;
@@ -235,10 +225,6 @@ void CGameRules::RefreshSkillData ( void )
 	// Gauss gun
 	gSkillData.plrDmgGauss = 17;
 
-	// Egon Gun
-	gSkillData.plrDmgEgonNarrow = 9;
-	gSkillData.plrDmgEgonWide = 9;
-
 	// Hand Grendade
 	gSkillData.plrDmgHandGrenade = 120;
 
@@ -248,13 +234,7 @@ void CGameRules::RefreshSkillData ( void )
 	// Tripmine
 	gSkillData.plrDmgTripmine = 120;
 
-	// MONSTER WEAPONS
-	gSkillData.monDmg12MM = 7;
-	gSkillData.monDmgMP5 = 4;
-	gSkillData.monDmg9MM = 6;
 
-	// MONSTER HORNET
-	gSkillData.monDmgHornet = 9;
 
 	// PLAYER HORNET
 // Up to this point, player hornet damage and monster hornet damage were both using
@@ -267,24 +247,8 @@ void CGameRules::RefreshSkillData ( void )
 
 	// HEALTH/CHARGE
 	gSkillData.suitchargerCapacity = 50;
-	gSkillData.batteryCapacity = 15;
-	gSkillData.healthchargerCapacity = 100;
-	gSkillData.healthkitCapacity = 25;
-	gSkillData.scientistHeal = 250;
 
-	// monster damage adj
-	gSkillData.monHead = 3;
-	gSkillData.monChest = 2;
-	gSkillData.monStomach = 2;
-	gSkillData.monLeg = 1;
-	gSkillData.monArm = 1;
 
-	// player damage adj
-	gSkillData.plrHead = 3;
-	gSkillData.plrChest = 1;
-	gSkillData.plrStomach = 1;
-	gSkillData.plrLeg = 0.9;
-	gSkillData.plrArm = 0.9;
 }
 
 //=========================================================

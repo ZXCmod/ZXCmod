@@ -1154,7 +1154,7 @@ void CDeadScientist :: Spawn( )
 	pev->effects		= 0;
 	pev->sequence		= 0;
 	// Corpses have less health
-	pev->health			= 40;//gSkillData.scientistHealth;
+	pev->health			= 40;
 	
 	m_bloodColor = BLOOD_COLOR_RED;
 

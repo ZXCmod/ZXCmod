@@ -1523,7 +1523,7 @@ void UTIL_Bubbles( Vector mins, Vector maxs, int count )
 	MESSAGE_END();
 }
 
-void UTIL_BubbleTrail( Vector from, Vector to, int count )
+void UTIL_BubbleTrail( Vector from, Vector to, int count ) // trails in watr
 {
 	float flHeight = UTIL_WaterLevel( from,  from.z, from.z + 256 );
 	flHeight = flHeight - from.z;
@@ -1558,18 +1558,40 @@ void UTIL_BubbleTrail( Vector from, Vector to, int count )
 }
 
 
+void UTIL_BubbleTrailDry( Vector from, Vector to, int count ) // trails on air
+{
+	// float flHeight = UTIL_WaterLevel( to,  to.z, to.z + 128 );
+	//flHeight = flHeight - from.z;
+
+
+	
+
+	if (count > 24) 
+		count = 24;
+
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BUBBLETRAIL );
+		WRITE_COORD( from.x );	// mins
+		WRITE_COORD( from.y );
+		WRITE_COORD( from.z );
+		WRITE_COORD( to.x );	// maxz
+		WRITE_COORD( to.y );
+		WRITE_COORD( to.z );
+		WRITE_COORD( -8092 );			// height
+		WRITE_SHORT( g_sModelIndexSmoke );
+		WRITE_BYTE( count ); // count
+		WRITE_COORD( 0 ); // speed
+	MESSAGE_END();
+}
+
 void UTIL_Remove( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return;
 
-	if ( pEntity->infected==1 )
-		{//pEntity->SetAttachment2( NULL, 0 ); 
-		//pEntity->SetThink( SUB_Remove ); 
-		//pEntity->pev->nextthink = gpGlobals->time + 2.0;
-		pEntity->infected=0;
-		}
-		
+	if ( pEntity->infected==1 ) // reset that for lag prevent
+			pEntity->infected=0;
+			
 	pEntity->UpdateOnRemove();
 	pEntity->pev->flags |= FL_KILLME;
 	pEntity->pev->targetname = 0;

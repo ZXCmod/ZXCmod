@@ -136,11 +136,18 @@ public:
 class CBaseEntity 
 {
 public:
-	float				FTime1; //player freeze
-	float				FTime2; //monsters freeze
+	float				FTime2; // player freeze
+	int					PTime; // player paralize
+	int 				m_flDie; // some stuff for timer
+	int					Charge; // lock dmg for players per one shot
+	int					TripleShot; // triple bool
+	int					TripleShotS; // actual triple X dmg for bullets
 	short m_LaserSprite2;
 	short m_iSpriteTexture_s;
 	int infected; // parasite snark bool
+	
+	// set player owner for trigger hurt events 
+	CBaseEntity 			*bEntity;
 	
 	void	TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
 	
@@ -151,6 +158,10 @@ public:
 	// path corners
 	CBaseEntity			*m_pGoalEnt;// path corner we are heading towards
 	CBaseEntity			*m_pLink;// used for temporary link-list operations. 
+	
+	
+	// set player owner for trigger hurt events 
+	// CBaseEntity *bEntity;
 
 	// initialization functions
 	virtual void	Spawn( void ) { return; }
@@ -180,6 +191,7 @@ public:
 	virtual void	TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
 	virtual int		TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 	virtual int		TakeHealth( float flHealth, int bitsDamageType );
+	//virtual void	Spawn( CBaseEntity *pEntity );
 	virtual void	Killed( entvars_t *pevAttacker, int iGib );
 	virtual int		BloodColor( void ) { return DONT_BLEED; }
 	virtual void	TraceBleed( float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType );
@@ -604,6 +616,8 @@ public:
 							// of the switches in the multisource have been triggered, then
 							// the button will be allowed to operate. Otherwise, it will be
 							// deactivated.
+							
+
 };
 #define SetMoveDone( a ) m_pfnCallWhenMoveDone = static_cast <void (CBaseToggle::*)(void)> (a)
 
@@ -734,8 +748,10 @@ public:
 	virtual void Precache( void );
 	void RotSpawn( void );
 	virtual void KeyValue( KeyValueData* pkvd);
+	
 
-	void ButtonActivate( );
+
+	void ButtonActivate( void );
 	void SparkSoundCache( void );
 
 	void EXPORT ButtonShot( void );
@@ -748,6 +764,8 @@ public:
 	virtual int		TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
+	
+	CBaseEntity *pEntityZ;
 	
 	enum BUTTON_CODE { BUTTON_NOTHING, BUTTON_ACTIVATE, BUTTON_RETURN };
 	BUTTON_CODE	ButtonResponseToTouch( void );

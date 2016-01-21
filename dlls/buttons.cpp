@@ -502,6 +502,7 @@ void CBaseButton::Spawn( )
 		SetTouch ( NULL );
 		SetUse	 ( ButtonUse );
 	}
+	// bEntity = NULL;
 }
 
 
@@ -580,7 +581,16 @@ void CBaseButton::ButtonSpark ( void )
 void CBaseButton::ButtonUse ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	// Ignore touches if button is moving, or pushed-in and waiting to auto-come-out.
-	// UNDONE: Should this use ButtonResponseToTouch() too?
+	// UNDONE: Should this use ButtonResponseToTouch() too?++
+/* 	
+	CBaseEntity *pEntity = NULL;
+	while ((pEntity = UTIL_FindEntityByClassname( pEntity, "trigger_hurt" )) != NULL)
+		{
+			if (pActivator != NULL)
+				pEntity->bEntity = pActivator;
+		}
+*/
+
 	if (m_toggle_state == TS_GOING_UP || m_toggle_state == TS_GOING_DOWN )
 		return;		
 
@@ -590,13 +600,15 @@ void CBaseButton::ButtonUse ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 		if (!m_fStayPushed && FBitSet(pev->spawnflags, SF_BUTTON_TOGGLE))
 		{
 			EMIT_SOUND(ENT(pev), CHAN_VOICE, (char*)STRING(pev->noise), 1, ATTN_NORM);
-			
 			//SUB_UseTargets( m_eoActivator );
 			ButtonReturn();
 		}
 	}
 	else
-		ButtonActivate( );
+		{
+			pEntityZ = m_hActivator;
+			ButtonActivate( );
+		}
 }
 
 
@@ -632,7 +644,14 @@ void CBaseButton:: ButtonTouch( CBaseEntity *pOther )
 		return;
 
 	m_hActivator = pOther;
-
+/* 	
+	CBaseEntity *pEntity = NULL;
+	while ((pEntity = UTIL_FindEntityByClassname( pEntity, "trigger_hurt" )) != NULL)
+		{
+			if (m_hActivator != NULL)
+				pEntity->bEntity = m_hActivator;
+		}
+ */
 	BUTTON_CODE code = ButtonResponseToTouch();
 
 	if ( code == BUTTON_NOTHING )
@@ -693,6 +712,8 @@ void CBaseButton::ButtonActivate( )
 void CBaseButton::TriggerAndWait( void )
 {
 	ASSERT(m_toggle_state == TS_GOING_UP);
+	
+	CBaseEntity *pEntity = NULL;
 
 	if (!UTIL_IsMasterTriggered(m_sMaster, m_hActivator))
 		return;
@@ -714,6 +735,15 @@ void CBaseButton::TriggerAndWait( void )
 	else
 	{
 		pev->nextthink = pev->ltime + m_flWait;
+		
+		// set button owner
+		
+		while ((pEntity = UTIL_FindEntityByClassname( pEntity, "trigger_hurt" )) != NULL)
+			{
+				if (pEntityZ != NULL)
+					pEntity->bEntity = pEntityZ;
+			}
+		
 		SetThink( ButtonReturn );
 	}
 	

@@ -12,7 +12,7 @@
 *   without written permission from Valve LLC.
 *
 ****/
-#if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
+
 
 #include "extdll.h"
 #include "util.h"
@@ -45,23 +45,17 @@ enum squeak_e {
 class   Dcrystal : public CBaseEntity
 {
         public:
-
         void    	Spawn           	   ( void );
         void    	EXPORT MoveThink       ( void );
-		// void 		EXPORT MoveTouch	   ( CBaseEntity *pOther );
 		
 		private:
         short	m_LaserSprite;
 		int 	m_iSpriteTexture;
 		int 	m_flDie;
-		// float 	m_flDie2;
 };
 LINK_ENTITY_TO_CLASS( weapon_aicore, Dcrystal );
 
 
-
-
-#ifndef CLIENT_DLL
 class CSqueakGrenade : public CGrenade
 {
 	void Spawn( void );
@@ -126,13 +120,11 @@ float CSqueakGrenade::m_flNextBounceSoundTime = 0;
 LINK_ENTITY_TO_CLASS( monster_snark, CSqueakGrenade );
 
 
-#define SQUEEK_DETONATE_DELAY	9.0
-
 int CSqueakGrenade :: Classify ( )
 {
 	if (m_iMyClass != 0)
 		return m_iMyClass; // protect against recursion
-
+/* 
 	if (m_hEnemy != NULL)
 	{
 		m_iMyClass = CLASS_INSECT; // no one cares about it
@@ -146,8 +138,8 @@ int CSqueakGrenade :: Classify ( )
 		}
 		m_iMyClass = 0;
 	}
-
-	return CLASS_ALIEN_BIOWEAPON;
+*/
+	return CLASS_NONE;
 }
 
 void CSqueakGrenade :: Spawn( void )
@@ -164,11 +156,11 @@ void CSqueakGrenade :: Spawn( void )
 	SetTouch( SuperBounceTouch );
 	SetThink( HuntThink );
 	pev->nextthink = gpGlobals->time + 0.1;
-	m_flNextHunt = gpGlobals->time + 1E6;
+	m_flNextHunt = gpGlobals->time + 0.1;
 
+	// Classify2 = Classify();
 
-
-	m_flDie = gpGlobals->time + SQUEEK_DETONATE_DELAY;
+	m_flDie = gpGlobals->time + 4.0;
 
 	m_flFieldOfView = 0; // 180 degrees
 
@@ -181,15 +173,14 @@ void CSqueakGrenade :: Spawn( void )
 	ResetSequenceInfo( );
 	
 	//pev->flags |= FL_MONSTER;
-	pev->takedamage		= 10;
+	pev->takedamage		= 1;
 	pev->health			= 10;
-	pev->gravity		= 0.35;
-	pev->friction		= 0.4;
+	pev->gravity		= 0.01;
+	pev->friction		= 0.04;
+	pev->dmg			= 36;
 	
-	// +BubbleMod (thanks)
 
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT(entindex()); // entity
 		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
@@ -199,10 +190,9 @@ void CSqueakGrenade :: Spawn( void )
 		WRITE_BYTE( 255 ); // r, g, b
 		WRITE_BYTE( 255 ); // r, g, b
 		WRITE_BYTE( 16 ); // brightness
+	MESSAGE_END(); 
 
-		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 
-	// -BubbleMod	
 }
 	
 	
@@ -280,14 +270,11 @@ void CSqueakGrenade::HuntThink( void )
 		return;
 	}
 	
-	
 	StudioFrameAdvance( );
-	pev->nextthink = gpGlobals->time + 0.1;
 
 	// explode when ready
 	if (gpGlobals->time >= m_flDie)
 	{
-		g_vecAttackDir = pev->velocity.Normalize( );
 		pev->health = -1;
 		Killed( pev, 0 );
 		return;
@@ -296,24 +283,16 @@ void CSqueakGrenade::HuntThink( void )
 	// float
 	if (pev->waterlevel != 0)
 	{
-		if (pev->movetype == MOVETYPE_BOUNCE)
-		{
-			pev->movetype = MOVETYPE_FLY;
-		}
-		pev->velocity = pev->velocity * 0.5;
-		pev->velocity.z += 3.0;
+		pev->health = -1;
+		Killed( pev, 0 );
 	}
-	else if (pev->movetype = MOVETYPE_FLY)
-	{
-		pev->movetype = MOVETYPE_BOUNCE;
-	}
+
 
 	// return if not time to hunt
 	if (m_flNextHunt > gpGlobals->time)
 		return;
 
-	m_flNextHunt = gpGlobals->time + 2.0;
-	//    m_hEnemy->edict() != pev->owner
+	m_flNextHunt = gpGlobals->time + 0.2;
 	
 	Vector vecDir;
 	TraceResult tr;
@@ -333,17 +312,10 @@ void CSqueakGrenade::HuntThink( void )
 	}
 
 
-	// squeek if it's about time blow up
-	if ((m_flDie - gpGlobals->time <= 0.5) && (m_flDie - gpGlobals->time >= 0.3))
-	{
-		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_die1.wav", 1, ATTN_NORM, 0, 100 + RANDOM_LONG(0,0x3F));
-		CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, 256, 0.25 );
-	}
-
 	// higher pitch as squeeker gets closer to detonation time
-	float flpitch = 155.0 - 70.0 * ((m_flDie - gpGlobals->time) / SQUEEK_DETONATE_DELAY);
-	if (flpitch < 80)
-		flpitch = 80;
+	// float flpitch = 155.0 - 70.0 * ((m_flDie - gpGlobals->time) / SQUEEK_DETONATE_DELAY);
+	// if (flpitch < 80)
+		// flpitch = 80;
 
 	if (m_hEnemy != NULL)
 	{
@@ -364,7 +336,7 @@ void CSqueakGrenade::HuntThink( void )
 
 		// ALERT( at_console, "%.0f %.2f %.2f %.2f\n", flVel, m_vecTarget.x, m_vecTarget.y, m_vecTarget.z );
 
-		pev->velocity = pev->velocity * flAdj + m_vecTarget * 250;
+		pev->velocity = pev->velocity * flAdj + m_vecTarget * 750;
 	}
 
 	if (pev->flags & FL_ONGROUND)
@@ -390,6 +362,8 @@ void CSqueakGrenade::HuntThink( void )
 	pev->angles = UTIL_VecToAngles( pev->velocity );
 	pev->angles.z = 0;
 	pev->angles.x = 0;
+	
+	pev->nextthink = gpGlobals->time + 0.15;
 }
 
 
@@ -404,17 +378,17 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 		return;
 
 	// at least until we've bounced once
-	pev->owner = NULL;
+	// pev->owner = NULL;
 
 	pev->angles.x = 0;
 	pev->angles.z = 0;
 
 	// avoid bouncing too much
-	if (m_flNextHit > gpGlobals->time)
-		return;
+	// if (m_flNextHit > gpGlobals->time)
+		// return;
 
 	// higher pitch as squeeker gets closer to detonation time
-	flpitch = 175.0 - 60.0 * ((m_flDie - gpGlobals->time) / SQUEEK_DETONATE_DELAY);
+	flpitch = 100;
 
 	if ( pOther->pev->takedamage && m_flNextAttack < gpGlobals->time )
 	{
@@ -426,21 +400,16 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 			// and it's not another squeakgrenade
 			if (tr.pHit->v.modelindex != pev->modelindex)
 			{
-				// ALERT( at_console, "hit enemy\n");
-				ClearMultiDamage( );
-				pOther->TraceAttack(pev, RANDOM_LONG(25,35), gpGlobals->v_forward, &tr, DMG_POISON ); 
-				if (m_hOwner != NULL)
-					ApplyMultiDamage( pev, m_hOwner->pev );
-				else
-					ApplyMultiDamage( pev, pev );
+				// pOther->TraceAttack(pev, pev->dmg, gpGlobals->v_forward, &tr, DMG_POISON ); 
 
-				g_vecAttackDir = pev->velocity.Normalize( );
+				// g_vecAttackDir = pev->velocity.Normalize( );
+				::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg*2, CLASS_NONE, DMG_POISON  ); 
 				pev->health = -1;
 				Killed( pev, 0 );
 
 				// make bite sound
 				EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "squeek/sqk_deploy1.wav", 1.0, ATTN_NORM, 0, (int)flpitch);
-				m_flNextAttack = gpGlobals->time + 0.5;
+				// m_flNextAttack = gpGlobals->time + 0.5;
 				
 			}
 		}
@@ -479,10 +448,11 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 		CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, 100, 0.1 );
 	}
 
-	m_flNextBounceSoundTime = gpGlobals->time + 0.5;// half second.
+	m_flNextBounceSoundTime = gpGlobals->time + 0.3;
+	pev->nextthink = gpGlobals->time + 0.15;
 }
 
-#endif
+
 
 LINK_ENTITY_TO_CLASS( weapon_snark, CSqueak );
 
@@ -580,21 +550,16 @@ void CSqueak::FourthAttack( void )
 	{
 		if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 18)
 		{
-				Vector vecThrow = gpGlobals->v_forward * 50;
-				
-				// #ifndef CLIENT_DLL
-				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=18;
-				CBaseEntity *pCr = Create( "weapon_aicore", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, Vector(0,0,0), m_pPlayer->edict() );
-				pCr->pev->velocity = vecThrow;
-				SendWeaponAnim( 5 );
-				m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.08; //0.08
-				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.08;
-				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.08;
-				m_pPlayer->m_flNextChatTime16 = gpGlobals->time + 90;
-				// #endif
-
-				// EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); //play sound
+			Vector vecThrow = gpGlobals->v_forward * 50;
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=18;
+			CBaseEntity *pCr = Create( "weapon_aicore", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, Vector(0,0,0), m_pPlayer->edict() );
+			pCr->pev->velocity = vecThrow;
+			SendWeaponAnim( 5 );
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+			m_pPlayer->m_flNextChatTime16 = gpGlobals->time + 90;
 		}
 	}
 }
@@ -623,24 +588,17 @@ void CSqueak::PrimaryAttack()
 		// find place to toss monster
 		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
 
-	int flags;
-	#ifdef CLIENT_WEAPONS
-		flags = FEV_GLOBAL;
-	#else
-		flags = 0;
-	#endif
-
-	    PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usSnarkFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
+	    PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usSnarkFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
 
 		if ( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
 		{
 			// player "shoot" animation
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-	#ifndef CLIENT_DLL
+
 			CBaseEntity *pSqueak = CBaseEntity::Create( "monster_snark", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			pSqueak->pev->velocity = gpGlobals->v_forward * 400 + m_pPlayer->pev->velocity;
-	#endif
+			pSqueak->pev->velocity = gpGlobals->v_forward * 768;
+
 
 			// play hunt sound
 			float flRndSound = RANDOM_FLOAT ( 0.0 , 1.0 );
@@ -665,27 +623,19 @@ void CSqueak::PrimaryAttack()
 
 void CSqueak::SecondaryAttack( void )
 {
-	if (allowmonsters9.value == 0)
+	if (allowmonsters9.value == 0 || allowmonsters10.value == 1)
 		return;
 
-// return;
-	if (allowmonsters10.value == 1)
-		{
-			return;
-		}
-	if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 3 )
+		
+	if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 2 )
 	{
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		TraceResult tr;
 		Vector trace_origin;
 
-		// HACK HACK:  Ugly hacks to handle change in origin based on new physics code for players
-		// Move origin up if crouched and start trace a bit outside of body ( 20 units instead of 16 )
 		trace_origin = m_pPlayer->pev->origin;
 		if ( m_pPlayer->pev->flags & FL_DUCKING )
-		{
 			trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
-		}
 
 		// find place to toss monster
 		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
@@ -694,28 +644,20 @@ void CSqueak::SecondaryAttack( void )
 
 		if ( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
 		{
-			// player "shoot" animation
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-#ifndef CLIENT_DLL
 			CBaseEntity *pSqueak = CBaseEntity::Create( "monster_larve", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			pSqueak->pev->velocity = gpGlobals->v_forward * 160 + m_pPlayer->pev->velocity;
-#endif
+			pSqueak->pev->velocity = gpGlobals->v_forward * 512;
 
-			// play hunt sound
-			float flRndSound = RANDOM_FLOAT ( 0 , 1 );
+			int RND = RANDOM_LONG( 0 , 1 );
 
-			if ( flRndSound <= 0.5 )
-				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 105);
+			if ( RND == 0 )
+				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 115);
 			else 
-				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 105);
+				EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 95);
 
-			m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
-
-			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=3;
-
+			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=2;
 			m_fJustThrown = 1;
-
 			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.1;
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.1;
 		}
@@ -727,47 +669,44 @@ void CSqueak::ThirdAttack( void )
 	if (allowmonsters9.value == 0)
 		return;
 
-	if (allowmonsters10.value == 0)
-		{
-			pev->dmg = 55;
-		}
-	if (allowmonsters10.value == 1)
-		{
-			pev->dmg = 60;
-		}
-		
+	pev->dmg = 50*m_pPlayer->TripleShotS;
+
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 	{
-	CBaseEntity *pEntity = NULL;
-
-	
-	
-	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "garg/gar_stomp1.wav", 1.0, ATTN_NORM);
-	
-
-
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
-	
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
-	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
-
-	
-	m_pPlayer->pev->velocity.z = 340;
-
-	
-
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 130 )) != NULL)
-       		 {
-				if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+		CBaseEntity *pEntity = NULL;
+		
+		while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 128+pev->dmg )) != NULL)
+			{
+			if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict())) //!(pEntity->pev->movetype == MOVETYPE_FLY)
+				{
+					UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 0.7, 1 );
+					if (FVisible( pEntity ))
 					{
-						UTIL_ScreenShake( pEntity->pev->origin, 1024.0, 1.5, 0.7, 1 );
-						if (FVisible( pEntity ))
-							pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_POISON); //destroy all near thinks
-					} 
+						pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_POISON); //destroy all near thinks
+						MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+							WRITE_BYTE( TE_BEAMPOINTS );
+							WRITE_COORD(pev->origin.x);
+							WRITE_COORD(pev->origin.y);
+							WRITE_COORD(pev->origin.z+30);
+							WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+							WRITE_COORD( pEntity->pev->origin.y );
+							WRITE_COORD( pEntity->pev->origin.z );
+							WRITE_SHORT( m_iSpriteTexture ); //sprite
+							WRITE_BYTE( 0 ); // Starting frame
+							WRITE_BYTE( 0  ); // framerate * 0.1
+							WRITE_BYTE( 6 ); // life * 0.1
+							WRITE_BYTE( 12 ); // width
+							WRITE_BYTE( 0 ); // noise
+							WRITE_BYTE( 200 ); // color r,g,b
+							WRITE_BYTE( 25 ); // color r,g,b
+							WRITE_BYTE( 25 ); // color r,g,b
+							WRITE_BYTE( 200 ); // brightness
+							WRITE_BYTE( 0 ); // scroll speed
+						MESSAGE_END();
+					}
+				} 
 			}
-		//beam
+		// draw beam
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_BEAMCYLINDER );
 			WRITE_COORD( pev->origin.x);
@@ -775,22 +714,29 @@ void CSqueak::ThirdAttack( void )
 			WRITE_COORD( pev->origin.z);
 			WRITE_COORD( pev->origin.x);
 			WRITE_COORD( pev->origin.y);
-			WRITE_COORD( pev->origin.z + 300 ); // reach damage radius over .2 seconds
+			WRITE_COORD( pev->origin.z + 500 ); // reach damage radius over .2 seconds
 			WRITE_SHORT( m_iSpriteTexture );
 			WRITE_BYTE( 0 ); // startframe
-			WRITE_BYTE( 16 ); // framerate
-			WRITE_BYTE( 6 ); // life
+			WRITE_BYTE( 0 ); // framerate
+			WRITE_BYTE( 3 ); // life
 			WRITE_BYTE( 10 );  // width
 			WRITE_BYTE( 0 );   // noise
-			WRITE_BYTE( 200 );   // r, g, b
+			WRITE_BYTE( 250 );   // r, g, b
 			WRITE_BYTE( 0 );   // r, g, b
 			WRITE_BYTE( 0 );   // r, g, b
-			WRITE_BYTE( 155 ); // brightness
-			WRITE_BYTE( 4 );		// speed
+			WRITE_BYTE( 100 + pev->dmg ); // brightness
+			WRITE_BYTE( 0 );		// speed
 		MESSAGE_END();
+		
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "garg/gar_stomp1.wav", 1.0, ATTN_NORM);
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		m_pPlayer->pev->velocity.z = 340;
+		
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1*m_pPlayer->TripleShotS;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
 
-	return;
-	
 	}
 
 }
@@ -819,7 +765,7 @@ void CSqueak::WeaponIdle( void )
 		}
 
 		SendWeaponAnim( SQUEAK_UP );
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 5;
 		return;
 	}
 
@@ -843,7 +789,7 @@ void CSqueak::WeaponIdle( void )
 	SendWeaponAnim( iAnim );
 }
 
-#endif
+
 
 
 
@@ -872,34 +818,18 @@ float CSqueakGrenade2::m_flNextBounceSoundTime = 0;
 
 LINK_ENTITY_TO_CLASS( monster_larve, CSqueakGrenade2 );
 
-#define SQUEEK_DETONATE_DELAY2	60.0 // remover time 
-
 int CSqueakGrenade2 :: Classify ( )
 {
 	if (m_iMyClass != 0)
 		return m_iMyClass; // protect against recursion
 
-	if (m_hEnemy != NULL)
-	{
-		m_iMyClass = CLASS_INSECT; // no one cares about it
-		switch( m_hEnemy->Classify( ) )
-		{
-			case CLASS_PLAYER:
-			case CLASS_HUMAN_PASSIVE:
-			case CLASS_HUMAN_MILITARY:
-				m_iMyClass = 0;
-				return CLASS_ALIEN_MILITARY; // barney's get mad, grunts get mad at it
-		}
-		m_iMyClass = 0;
-	}
-
-	return CLASS_ALIEN_BIOWEAPON;
+	return CLASS_NONE;
 }
 
 void CSqueakGrenade2 :: Spawn( void )
 {
 	Precache( );
-	// motor
+
 	pev->classname = MAKE_STRING( "monster_snark" );
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
@@ -907,17 +837,6 @@ void CSqueakGrenade2 :: Spawn( void )
 	SET_MODEL(ENT(pev), "models/w_squeak.mdl");
 	UTIL_SetSize(pev, Vector( -4, -4, 0), Vector(4, 4, 8));
 	UTIL_SetOrigin( pev, pev->origin );
-
-	SetTouch( SuperBounceTouch );
-	SetThink( HuntThink );
-	pev->nextthink = gpGlobals->time + 0.05;
-	m_flNextHunt = gpGlobals->time + 1E6;
-	
-	Classify2 = Classify();
-
-
-
-	m_flDie = gpGlobals->time + SQUEEK_DETONATE_DELAY2;
 
 	m_flFieldOfView = 0; // 180 degrees
 
@@ -929,53 +848,48 @@ void CSqueakGrenade2 :: Spawn( void )
 	pev->sequence = WSQUEAK_RUN;
 	ResetSequenceInfo( );
 	
-	//pev->flags |= FL_MONSTER;
 	pev->takedamage		= DAMAGE_YES;
-	pev->health			= SQUEEK_DETONATE_DELAY2;
-	pev->gravity		= 0.2;
-	pev->friction		= 0.1;
+	pev->health			= 150;
+	pev->gravity		= 0.02;
+	pev->friction		= 0.01;
+	pev->dmg 			= 1.5;
 	
+	m_hEnemy = NULL;
 
-	pev->dmg = 20;
-	// pev->ltime = 0;
-	
-	m_hEnemy=NULL;
-
-
-
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex()); // entity
-		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
-		WRITE_BYTE( 30 ); // life
-		WRITE_BYTE( 1.6 ); // width
-		WRITE_BYTE( 1 ); // r, g, b
-		WRITE_BYTE( 55 ); // r, g, b
-		WRITE_BYTE( 1 ); // r, g, b
-		WRITE_BYTE( 100 ); // brightness
-	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT(entindex()); // entity
 		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
 		WRITE_BYTE( 20 ); // life
 		WRITE_BYTE( 2.6 ); // width
-		WRITE_BYTE( 60 ); // r, g, b
-		WRITE_BYTE( 125 ); // r, g, b
+		WRITE_BYTE( 50 ); // r, g, b
+		WRITE_BYTE( 50 ); // r, g, b
+		WRITE_BYTE( 50 ); // r, g, b
+		WRITE_BYTE( 200 ); // brightness
+	MESSAGE_END();
+	
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
+		WRITE_BYTE( 8 ); // life
+		WRITE_BYTE( 1.6 ); // width
 		WRITE_BYTE( 1 ); // r, g, b
-		WRITE_BYTE( 87 ); // brightness
-	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+		WRITE_BYTE( 1 ); // r, g, b
+		WRITE_BYTE( 255 ); // r, g, b
+		WRITE_BYTE( 100 ); // brightness
+	MESSAGE_END();
+	
+	StudioFrameAdvance( );
+	
 
 
+	SetTouch( SuperBounceTouch );
+	SetThink( HuntThink );
+	pev->nextthink = gpGlobals->time + 0.1;
+	m_flNextHunt = gpGlobals->time + 1E6;
 }
 	
-	
-	
-	
-	
-	
-	
-
 
 void CSqueakGrenade2::Precache( void )
 {
@@ -987,31 +901,30 @@ void CSqueakGrenade2 :: Killed( entvars_t *pevAttacker, int iGib )
 {
 
 
-	pev->model = iStringNull;// make invisible
-	SetThink( SUB_Remove );
-	SetTouch( NULL );
-	pev->nextthink = gpGlobals->time + 0.2;
+	pev->model = iStringNull; // make invisible
 	
-
-	// since squeak grenades never leave a body behind, clear out their takedamage now.
-	// Squeaks do a bit of radius damage when they pop, and that radius damage will
-	// continue to call this function unless we acknowledge the Squeak's death now. (sjb)
 	pev->takedamage = DAMAGE_NO;
 
-	// play squeek blast
 	EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "squeek/sqk_blast1.wav", 1, 0.5, 0, PITCH_NORM);	
 
 	CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, SMALL_EXPLOSION_VOLUME, 3.0 );
 
 	UTIL_BloodDrips( pev->origin, g_vecZero, BloodColor(), 80 );
 
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 30, 50, CLASS_NONE, DMG_NERVEGAS  ); //end blast	
+	if (m_hOwner == NULL)
+		return;
 		
-	// reset owner so death message happens
-	if (m_hOwner != NULL)
-		pev->owner = m_hOwner->edict();
+	if ( m_hOwner->infected == 1 ) // reset that for lag prevent
+		{
+			m_hOwner->infected = 0;
+			m_hOwner->pev->rendermode = kRenderNormal;
+			m_hOwner->pev->renderamt = 255;
+		}
+		
+	SetThink( SUB_Remove );
+	SetTouch( NULL );
+	pev->nextthink = gpGlobals->time + 0.2;
 
-	//CBaseMonster :: Killed( pevAttacker, GIB_ALWAYS );
 }
 
 void CSqueakGrenade2 :: GibMonster( void )
@@ -1030,56 +943,27 @@ void CSqueakGrenade2::HuntThink( void )
 		return;
 	}
 	
-	StudioFrameAdvance( );
-	pev->nextthink = gpGlobals->time + 0.1;
-
-	// explode when ready
-	if (gpGlobals->time >= m_flDie)
+	pev->nextthink = gpGlobals->time + 16;
+	SetThink( SUB_Remove );
+	
+	// explode delay
+	if ( pev->waterlevel != 0 )
 	{
-		g_vecAttackDir = pev->velocity.Normalize( );
 		pev->health = -1;
 		Killed( pev, 0 );
 		return;
-	}
-
-	if (pev->waterlevel != 0)
-	{
-		if (pev->movetype == MOVETYPE_BOUNCE)
-		{
-			pev->movetype = MOVETYPE_FLY;
-		}
-		pev->velocity = pev->velocity * 0.5;
-		pev->velocity.z += 4.0;
-		
-		pev->health = -1;
-		Killed( pev, 0 );
-		return;
-	}
-	else if (pev->movetype = MOVETYPE_FLY)
-	{
-
-		pev->movetype = MOVETYPE_BOUNCE;
 	}
 
 	if (m_flNextHunt > gpGlobals->time)
 		return;
 
-	m_flNextHunt = gpGlobals->time + 0.05;
-	
-	CBaseEntity *pOther = NULL;
-
 	Vector vecDir;
-	TraceResult tr;
-
-	Vector vecFlat = pev->velocity;
-	vecFlat.z = 0;
-	vecFlat = vecFlat.Normalize( );
 
 	UTIL_MakeVectors( pev->angles );
 
 	if (m_hEnemy == NULL || !m_hEnemy->IsAlive())
 	{
-		Look( 120 );
+		Look( 512 );
 		m_hEnemy = BestVisibleEnemy( );
 	}
 
@@ -1097,7 +981,7 @@ void CSqueakGrenade2::HuntThink( void )
 		if (flAdj > 1.2)
 			flAdj = 1.2;
 
-		pev->velocity = pev->velocity * flAdj + m_vecTarget * 400;
+		pev->velocity = pev->velocity * flAdj + m_vecTarget * 1000;
 	}
 	
 
@@ -1109,15 +993,15 @@ void CSqueakGrenade2::HuntThink( void )
 	{
 		if (pev->avelocity == Vector( 0, 0, 0))
 		{
-			pev->avelocity.x = RANDOM_FLOAT( -55, 55 );
-			pev->avelocity.y = RANDOM_FLOAT( -55, 55 );
+			pev->avelocity.x = RANDOM_FLOAT( -155, 155 );
+			pev->avelocity.y = RANDOM_FLOAT( -155, 155 );
 		}
 	}
 
 	if ((pev->origin - m_posPrev).Length() < 1.0)
 	{
-		pev->velocity.x = RANDOM_FLOAT( -65, 65 );
-		pev->velocity.y = RANDOM_FLOAT( -65, 65 );
+		pev->velocity.x = RANDOM_FLOAT( -165, 165 );
+		pev->velocity.y = RANDOM_FLOAT( -165, 165 );
 	}
 	m_posPrev = pev->origin;
 
@@ -1125,6 +1009,8 @@ void CSqueakGrenade2::HuntThink( void )
 	pev->angles.z = 0;
 	pev->angles.x = 0;
 	
+	pev->nextthink = gpGlobals->time + 0.2;
+	m_flNextHunt = gpGlobals->time + 0.2;
 }
 
 
@@ -1132,21 +1018,15 @@ void CSqueakGrenade2::SuperBounceTouch( CBaseEntity *pOther )
 {
 	TraceResult tr = UTIL_GetGlobalTrace( );
 	
-	if ( pev->owner && pOther->edict() == pev->owner )
+	if ( pev->owner && pOther->edict() == pev->owner || ( pOther==NULL ))
 		return;
-
-	if ( pOther==NULL )
-		return;
-
-	pev->angles.x = 0;
-	pev->angles.z = 0;
 
 	// avoid bouncing too much
 	if (m_flNextHit > gpGlobals->time)
 		return;
-
-	m_flNextHit = gpGlobals->time + 0.01;
-	m_flNextHunt = gpGlobals->time;
+		
+	m_flNextHit = gpGlobals->time + 0.1;
+	m_flNextHunt = gpGlobals->time + 0.1;
 	
 	if ( pOther->pev->takedamage && pOther->infected == 0) // && m_flNextAttack < gpGlobals->time
 	{
@@ -1162,85 +1042,104 @@ void CSqueakGrenade2::SuperBounceTouch( CBaseEntity *pOther )
 				{
 					SetAttachment2( pOther->edict(), 0 );
 					UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
-					SetTouch(NULL);
-
-					if ( pOther->pev->flags & FL_MONSTER)
-					{
-						pev->dmg=5;
-					}
-					else
-					{
-						//m_flDie -= 1; // decr timer
-						pev->dmg=3;
-					}
-					
-					m_hEnemy = pOther; // remember target
 					pOther->infected = 1;
-
-					// make bite sound
+					pOther->pev->rendermode = kRenderTransAlpha;
+					pOther->pev->renderamt = 64;
 					EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "squeek/sqk_deploy1.wav", 1.0, ATTN_NORM, 0, 100);
-					m_flNextAttack = gpGlobals->time + 1.0;
+					SetTouch(NULL);
 					SetThink( ParasiteThink );
+					m_flNextAttack = gpGlobals->time + 1.0;
 					pev->nextthink = gpGlobals->time + 1.0;
+					pev->health += 100;
+					if (pOther != NULL)
+						m_hEnemy = pOther; // remember target
 				}
-				
 			}
 		}
+		if (pOther->infected == 1)
+			return;
 	}
-	else if ( pOther->pev->solid != SOLID_BSP) // dont explode with touch
-	{
+		
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
+		WRITE_BYTE( 30 ); // life
+		WRITE_BYTE( 1.6 ); // width
+		WRITE_BYTE( 16 ); // r, g, b
+		WRITE_BYTE( 64 ); // r, g, b
+		WRITE_BYTE( RANDOM_LONG(1,255) ); // r, g, b
+		WRITE_BYTE( 50 ); // brightness
+	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	
+	// draw light
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(pev->origin.x);	// X
+		WRITE_COORD(pev->origin.y);	// Y
+		WRITE_COORD(pev->origin.z);	// Z
+		WRITE_BYTE( 12 );		// radius * 0.1
+		WRITE_BYTE( 16 );		// r
+		WRITE_BYTE( 0 );		// g
+		WRITE_BYTE( 200 );		// b
+		WRITE_BYTE( 1 );		// time * 10
+		WRITE_BYTE( 0 );		// decay * 0.1
+	MESSAGE_END( );
+	
+	// balls ice
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_SPRITETRAIL );// TE_RAILTRAIL);
+		WRITE_COORD( pev->origin.x );
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_COORD( pev->origin.x + tr.vecPlaneNormal.x*3 );
+		WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*4 );
+		WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*5  );
+		WRITE_SHORT( g_sModelIndexSmoke );		// model
+		WRITE_BYTE( 2  );				// count
+		WRITE_BYTE( 1 );				// life * 10
+		WRITE_BYTE( 1 );				// size * 10
+		WRITE_BYTE( 30 );				// amplitude * 0.1
+		WRITE_BYTE( 8 );				// speed * 100
+	MESSAGE_END();
+	// balls hot
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_SPRITETRAIL );// TE_RAILTRAIL);
+		WRITE_COORD( pev->origin.x );
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+		WRITE_COORD( pev->origin.x + tr.vecPlaneNormal.x*3 );
+		WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*4 );
+		WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*5  );
+		WRITE_SHORT( g_sModelIndexFireball );		// model
+		WRITE_BYTE( 2  );				// count
+		WRITE_BYTE( 1 );				// life * 10
+		WRITE_BYTE( 1 );				// size * 10
+		WRITE_BYTE( 64 );				// amplitude * 0.1
+		WRITE_BYTE( 16 );				// speed * 100
+	MESSAGE_END();
+	
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*3, pev->dmg*64, CLASS_NONE, DMG_SHOCK  ); 
 
-		// find target, bounce a bit towards it.
-		//m_hEnemy = NULL;
-		m_flDie = -1;
-	}
+	pev->dmg += 0.5;
 
-
-	m_flNextBounceSoundTime = gpGlobals->time + 1.0;// half second.
+	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build1.wav", 1.0, ATTN_NORM, 0, RANDOM_LONG(200,255));
 }
 
 void CSqueakGrenade2::ParasiteThink( void )
 {
-	// explode when ready
-	if (gpGlobals->time >= m_flDie)
+	if (m_hEnemy!=NULL && ( m_hEnemy->pev->deadflag == DEAD_DYING || m_hEnemy->pev->health <= 0) || ( m_hEnemy->infected == 0 ) )
 	{
-		g_vecAttackDir = pev->velocity.Normalize( );
+		m_hEnemy->pev->rendermode = kRenderTransAlpha;
+		m_hEnemy->pev->renderamt = 255;
 		pev->health = -1;
 		Killed( pev, 0 );
 		return;
 	}
+
+	m_hEnemy->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_POISON);
 	
-	// if ((!m_hEnemy->IsAlive()) && pev->deadflag == DEAD_DEAD)
-	if (m_hEnemy!=NULL && m_hEnemy->pev->deadflag == DEAD_DYING)
-	{
-		pev->health = -1;
-		Killed( pev, 0 );
-	}
-	if ( m_hEnemy->infected==0 )
-		{
-			UTIL_Remove( this );
-		}
-/* 
-	if (m_hEnemy==NULL)
-	{
-		//UTIL_Remove( this );
-		SetThink( SUB_Remove );
-		pev->nextthink = gpGlobals->time + 1.0;
-		pev->movetype = MOVETYPE_FOLLOW;
-		m_hEnemy = this;
-		// ClearBits (m_hEnemy->pev->flags, FL_MONSTER);
-		//return;
-		SetAttachment2( NULL, 0 );
-	}
-	else */
-	if (m_hEnemy->pev->rendermode != kRenderTransTexture) //reset values
-	{
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 33, CLASS_NONE, DMG_CRUSH  ); //end blast	
-		m_flDie -= 2.0;
-		//m_hEnemy->pev->dmg = m_hEnemy->pev->dmg*12;
-		pev->nextthink = gpGlobals->time + 0.63;
-	}
-	
+	pev->nextthink = gpGlobals->time + 0.6;
 }
 
 ////////////////////////////
@@ -1255,17 +1154,16 @@ void Dcrystal::Spawn( void )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->gravity = 0.0;
 	m_flDie = 90;
-	pev->dmg = 100;
+	pev->dmg = 10;
 	
 	pev->avelocity.y = -250;
 	
-	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
+	pev->rendermode = kRenderTransAdd;
 	pev->renderamt = 200;
 	
 	pev->classname = MAKE_STRING( "weapon_satchel" );
 	
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/superphys_launch2.wav", 1.0, ATTN_NORM);
-	// SetTouch( MoveTouch );
 	m_LaserSprite = PRECACHE_MODEL( "sprites/laserbeam.spr" );
 	
 
@@ -1336,7 +1234,7 @@ void Dcrystal::MoveThink( )
 					{
 					if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()))
 						{
-						//shock ray 1
+						// shock ray 1
 						MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 							WRITE_BYTE( TE_BEAMPOINTS );
 							WRITE_COORD(pev->origin.x);
@@ -1350,7 +1248,7 @@ void Dcrystal::MoveThink( )
 							WRITE_BYTE( 0  ); // framerate * 0.1
 							WRITE_BYTE( 4 ); // life * 0.1
 							WRITE_BYTE( 22 ); // width
-							WRITE_BYTE( 8 ); // noise
+							WRITE_BYTE( 0 ); // noise
 							WRITE_BYTE( 100 ); // color r,g,b
 							WRITE_BYTE( 10 ); // color r,g,b
 							WRITE_BYTE( 15 ); // color r,g,b
@@ -1371,8 +1269,8 @@ void Dcrystal::MoveThink( )
 							WRITE_BYTE( 1 ); // Starting frame
 							WRITE_BYTE( 0  ); // framerate * 0.1
 							WRITE_BYTE( 5 ); // life * 0.1
-							WRITE_BYTE( 22 ); // width
-							WRITE_BYTE( 16 ); // noise
+							WRITE_BYTE( 12 ); // width
+							WRITE_BYTE( 0 ); // noise
 							WRITE_BYTE( 100 ); // color r,g,b
 							WRITE_BYTE( 100 ); // color r,g,b
 							WRITE_BYTE( 15 ); // color r,g,b
@@ -1396,9 +1294,9 @@ void Dcrystal::MoveThink( )
 						MESSAGE_END( );
 	
 						
-						UTIL_ScreenShake( pEntity->pev->origin, 12.0, 90.5, 0.3, 1 );
+						UTIL_ScreenShake( pEntity->pev->origin, pev->dmg, 90.5, 0.3, 1 );
 					
-						pEntity->TakeDamage(pev, VARS( pev->owner ), 10, DMG_SHOCK);
+						pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_SHOCK);
 						pEntity->pev->armorvalue -= 1;
 						pEntity->pev->velocity.z += pEntity->pev->velocity.z + 256;
 						//sounds

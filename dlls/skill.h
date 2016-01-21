@@ -20,12 +20,6 @@ struct skilldata_t
 {
 
 	int iSkillLevel; // game skill level
-
-// Monster Health & Damage
-	float	agruntHealth;
-	float agruntDmgPunch;
-
-	float apacheHealth;
 	
 	float barneyHealth;
 
@@ -57,10 +51,10 @@ struct skilldata_t
 	float houndeyeHealth;
 	float houndeyeDmgBlast;
 
-	float slaveHealth;
+	// float slaveHealth;
 	float slaveDmgClaw;
 	float slaveDmgClawrake;
-	float slaveDmgZap;
+	// float slaveDmgZap;
 
 	float ichthyosaurHealth;
 	float ichthyosaurDmgShake;
@@ -75,8 +69,6 @@ struct skilldata_t
 
 	float nihilanthHealth;
 	float nihilanthZap;
-
-	float scientistHealth;
 
 	float snarkHealth;
 	float snarkDmgBite;
@@ -117,24 +109,8 @@ struct skilldata_t
 
 // health/suit charge
 	float suitchargerCapacity;
-	float batteryCapacity;
-	float healthchargerCapacity;
-	float healthkitCapacity;
-	float scientistHeal;
 
-// monster damage adj
-	float monHead;
-	float monChest;
-	float monStomach;
-	float monLeg;
-	float monArm;
 
-// player damage adj
-	float plrHead;
-	float plrChest;
-	float plrStomach;
-	float plrLeg;
-	float plrArm;
 };
 
 extern	DLL_GLOBAL	skilldata_t	gSkillData;

@@ -322,7 +322,7 @@ void CRpg::Reload( void )
 		iResult = DefaultReload( RPG_MAX_CLIP, RPG_RELOAD, 2 );
 	
 	if ( iResult )
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 	
 }
 
@@ -657,42 +657,30 @@ void CRpg::FourthAttack()
 		break;
 		}
 
-		
-		
-		
-		
-		
 		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
 		
 		Vector vecSrc = m_pPlayer->pev->origin;
 		Vector vecThrow = gpGlobals->v_forward * 430;
 
-		#ifndef CLIENT_DLL
 		CBaseEntity *pMine = Create( "player_freeze", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward + gpGlobals->v_right * 4 + gpGlobals->v_up * -8, Vector(0,0,0), m_pPlayer->edict() );
-			
-			//export properties
-			//*
-			pMine->pev->velocity = vecThrow;
-			pMine->pev->skin = 1;
-			//pMine->pev->gravity = 0.5;
-			pMine->pev->friction = 1.0;
-			pMine->pev->movetype = MOVETYPE_TOSS;
-			SET_MODEL( ENT(pMine->pev), "models/fungus(small).mdl" );
-			UTIL_SetSize( pMine->pev, Vector( -8, -8, 0), Vector( 8, 8, 26 ) );
-			//*
-			
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-			//m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
-			PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
-			m_iClip--; 
-			m_pPlayer->m_flNextChatTime14 ++;
 
-		#endif
-		//return;
+		pMine->pev->velocity = vecThrow;
+		pMine->pev->skin = 1;
+		pMine->pev->friction = 1.0;
+		pMine->pev->movetype = MOVETYPE_TOSS;
+		SET_MODEL( ENT(pMine->pev), "models/fungus(small).mdl" );
+		UTIL_SetSize( pMine->pev, Vector( -8, -8, 0), Vector( 8, 8, 26 ) );
+
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
+		PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
+		m_iClip--; 
+		m_pPlayer->m_flNextChatTime14 ++;
+
 		UpdateSpot( );
 	}
 }
@@ -701,96 +689,82 @@ void CRpg::FourthAttack()
 
 void CRpg::WeaponIdle( void )
 {
-UpdateSpot( );
-//start new weapon
+	UpdateSpot( );
 
-
-
-if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
 	
-	//1.30 smart balance
+	// 1.30 smart balance
 	if (g_flWeaponCheat != 0)
 		m_limit = 3;
 	else
 		m_limit = 5;
 
-//big gun part
-if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
-	if (m_iClip >= 1)
-	{
-		//do not create in wall
+	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
+		if (m_iClip >= 1)
 		{
-			if (allowmonsters9.value == 0)
-				return;
-
-			UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-			TraceResult tr;
-			Vector trace_origin;
-
-			// HACK HACK:  Ugly hacks to handle change in origin based on new physics code for players
-			// Move origin up if crouched and start trace a bit outside of body ( 20 units instead of 16 )
-			trace_origin = m_pPlayer->pev->origin;
-			if ( m_pPlayer->pev->flags & FL_DUCKING )
+			// do not create in wall
 			{
-				trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
-			}
-
-			// find place to toss monster
-			UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
-
-
-
-			if ( !tr.fAllSolid && !tr.fStartSolid )
-			{
-			if (m_pPlayer->m_flNextChatTime13 < m_limit)
-				{
-					{
-					if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
-						{
-						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-						m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
-						m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-						m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-
-						// player "shoot" animation
-						m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-						UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-						Vector vecThrow = gpGlobals->v_forward;
-						m_pPlayer->m_flNextChatTime13 ++;
-						CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
-						//multiply hp x2
-						if (g_flWeaponCheat != 0)
-							pHornet->pev->health = pHornet->pev->health * 1.5; 
-
-						PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
-						m_iClip--; 
-						m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
-						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
-						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
-					}
-
-					else
-					{
-						PlayEmptySound( );
-						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
-					}
-					UpdateSpot( );
+				if (allowmonsters9.value == 0)
 					return;
+
+				UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+				TraceResult tr;
+				Vector trace_origin;
+
+				trace_origin = m_pPlayer->pev->origin;
+				if ( m_pPlayer->pev->flags & FL_DUCKING )
+				{
+					trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
+				}
+
+				UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
+
+				if ( !tr.fAllSolid && !tr.fStartSolid )
+				{
+				if (m_pPlayer->m_flNextChatTime13 < m_limit)
+					{
+						{
+						if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
+							{
+							m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+							m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
+							m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+							m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+							// player "shoot" animation
+							m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+							UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+							Vector vecThrow = gpGlobals->v_forward;
+							m_pPlayer->m_flNextChatTime13 ++;
+							CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
+							//multiply hp x2
+							if (g_flWeaponCheat != 0)
+								pHornet->pev->health = pHornet->pev->health * 1.5; 
+
+							PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
+							m_iClip--; 
+							m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
+							m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
+							m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
+							m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+						}
+
+						else
+						{
+							PlayEmptySound( );
+							m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+							m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+						}
+						UpdateSpot( );
+						return;
+						}
 					}
 				}
 			}
 		}
-	}
-	//reload completed
+	// reload completed
 
-
-	
-	
-	
-	
 	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 		
@@ -823,7 +797,7 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 	}
 	else
 	{
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 	}
 }
 

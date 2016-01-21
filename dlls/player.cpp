@@ -417,9 +417,9 @@ int CBasePlayer :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 	
 	// this cast to INT is critical!!! If a player ends up with 0.5 health, the engine will get that
 	// as an int (zero) and think the player is dead! (this will incite a clientside screentilt, etc)
-	fTookDamage = CBaseMonster::TakeDamage(pevInflictor, pevAttacker, (int)flDamage, bitsDamageType);
+	fTookDamage = CBaseMonster::TakeDamage(pevInflictor, pevAttacker, (float)flDamage, bitsDamageType);
 
-	
+	cEntity = pAttacker; // remember last attack owner for paralize
 
 	// tell director about it
 	MESSAGE_BEGIN( MSG_SPEC, SVC_DIRECTOR );
@@ -714,7 +714,7 @@ void CBasePlayer::Killed( entvars_t *pevAttacker, int iGib )
 		pev->velocity.z += RANDOM_FLOAT(0,900);
 
 	// clear out the suit message cache so we don't keep chattering
-	SetSuitUpdate(NULL, FALSE, 0);
+	// SetSuitUpdate(NULL, FALSE, 0);
 
 	// send "health" update message to zero
 	//m_iClientHealth = pev->health;
@@ -1006,7 +1006,7 @@ void CBasePlayer::PlayerDeathThink(void)
 	if (IsAlive() != NULL)
 		return;
 		
-	float flForward;
+ 	float flForward;
 	
 	if (FBitSet(pev->flags, FL_ONGROUND))
 	{
@@ -1017,21 +1017,7 @@ void CBasePlayer::PlayerDeathThink(void)
 			pev->velocity = flForward * pev->velocity.Normalize();
 	}
 
-	if ( HasWeapons() )
-	{
-		// we drop the guns here because weapons that have an area effect and can kill their user
-		// will sometimes crash coming back from CBasePlayer::Killed() if they kill their owner because the
-		// player class sometimes is freed. It's safer to manipulate the weapons once we know
-		// we aren't calling into any of their code anymore through the player pointer.
-		PackDeadPlayerItems();
-		if ( FlashlightIsOn() )
-			FlashlightTurnOff();
-			
-		//reset invisible (<1.26)
-		pev->rendermode = kRenderNormal;
-		pev->renderfx = kRenderFxNone;
-		pev->renderamt = 0;
-	}
+
 
 
 	if (pev->modelindex && (!m_fSequenceFinished) && (pev->deadflag == DEAD_DYING))
@@ -1051,38 +1037,34 @@ void CBasePlayer::PlayerDeathThink(void)
 
 	pev->effects |= EF_NOINTERP;
 	pev->framerate = 0.0;
+
 	
-	//4:30vit
-	// if the player has been dead for one second longer than allowed by forcerespawn, 
-	// forcerespawn isn't on. Send the player off to an intermission camera until they 
-	// choose to respawn.
+	if ( HasWeapons() )
+	{
+		PackDeadPlayerItems();
+		if ( FlashlightIsOn() )
+			FlashlightTurnOff();
+
+		pev->effects |= EF_NODRAW;
+	}
+	
 	if ( g_pGameRules->IsMultiplayer() && ( gpGlobals->time > (m_fDeadTime + 0.5) ) && !(m_afPhysicsFlags & PFLAG_OBSERVER) )
 	{
 		if ( HasWeapons() )
-		{
-			// we drop the guns here because weapons that have an area effect and can kill their user
-			// will sometimes crash coming back from CBasePlayer::Killed() if they kill their owner because the
-			// player class sometimes is freed. It's safer to manipulate the weapons once we know
-			// we aren't calling into any of their code anymore through the player pointer.
 			PackDeadPlayerItems();
-		}
-		// go to dead camera. 
 		StartDeathCam();
 	}
 
 	
 	if ( pev->button & IN_ATTACK )
 	{
-		if (allowmonsters18.value == 0 ) // ||  !g_pGameRules->IsTeamplay()
+		if (allowmonsters18.value == 0 )
 		{
 			pev->button = 0;
 			m_iRespawnFrames = 0;
 			CopyToBodyQue( pev );
 			respawn(pev, !(m_afPhysicsFlags & PFLAG_OBSERVER) );// don't copy a corpse if we're in deathcam.
-			// SpectatorConnect(edict());
 			pev->nextthink = -1;
-			
-			//return;
 		}
 	}
 	// not ideal method
@@ -1097,7 +1079,7 @@ BOOL CBasePlayer :: Spect( void )
 
 	const BOOL pressed = (m_afButtonPressed & IN_ATTACK2);
 	const BOOL pressed2 = (m_afButtonPressed & IN_JUMP);
-	static int user;
+	
 	int users = 1;
 	static t;
 	
@@ -1133,6 +1115,7 @@ BOOL CBasePlayer :: Spect( void )
 			{
 				if (pPlayer != NULL && pPlayer->IsAlive())
 					users++;
+				break;
 			}
 
 			
@@ -1259,6 +1242,9 @@ void CBasePlayer::StartObserver( Vector vecPosition, Vector vecViewAngle )
 	pev->effects |= EF_NODRAW;
     pev->renderamt = 0;
     FTime2 = 0.0; 
+	PTime = 0;
+	Charge = 0; // 0 or 1 bool
+	TripleShot = 0; // 0 or 1 bool change it for multiple dmg (new in 1.35 for Red Crystal)
 	//CopyToBodyQue( pev );
 
 
@@ -1684,10 +1670,17 @@ void CBasePlayer::PreThink(void)
 				 FTime2 = 0.0; 
 			}
 		}
+	if (PTime != 0) // papalize timer, new in 1.35
+		{
+			pev->velocity = pev->velocity*0.7;
+			PTime--;
+			if (cEntity != NULL)
+				TakeDamage(pev, cEntity->pev, 0.2, DMG_PARALYZE);
+		}
 
-	//invisible always updater
-	if (pev->rendermode == kRenderTransTexture)
-		pev->renderamt = pev->health; //dynamic transparency
+	//invisible always updater, disabled in 1.35
+	// if (pev->rendermode == kRenderTransTexture)
+	//	pev->renderamt = pev->health; //dynamic transparency
 		
 	//pev->angles = pev->v_angle+pev->v_angle;
 
@@ -1792,12 +1785,16 @@ void CBasePlayer::PreThink(void)
 	} else if (m_iTrain & TRAIN_ACTIVE)
 		m_iTrain = TRAIN_NEW; // turn off train
 
-	if (pev->button & IN_JUMP)
+/* 	if (pev->button & IN_JUMP)
 	{
 		Jump();
 	}
-
-
+ */
+	if ( FBitSet ( pev->flags, FL_ONGROUND ) && (pev->button & IN_JUMP) )
+	{
+		Jump();
+	}
+	
 	// If trying to duck, already ducked, or in the process of ducking
 	if ((pev->button & IN_DUCK) || FBitSet(pev->flags,FL_DUCKING) || (m_afPhysicsFlags & PFLAG_DUCKING) )
 		Duck();
@@ -1806,6 +1803,8 @@ void CBasePlayer::PreThink(void)
 	{
 		m_flFallVelocity = -pev->velocity.z;
 	}
+	
+
 
 	// Clear out ladder pointer
 	m_hEnemy = NULL;
@@ -1819,11 +1818,11 @@ void CBasePlayer::CheckTimeBasedDamage()
 
 }
 
-#define GEIGERDELAY 0.25
+// #define GAIGERDELAY 0.25
 
 void CBasePlayer :: UpdateGeigerCounter( void )
 {
-	BYTE range;
+/* 	BYTE range;
 
 	// delay per update ie: don't flood net with these msgs
 	if (gpGlobals->time < m_flgeigerDelay)
@@ -1847,7 +1846,7 @@ void CBasePlayer :: UpdateGeigerCounter( void )
 	// reset counter and semaphore
 	if (!RANDOM_LONG(0,3))
 		m_flgeigerRange = 1000;
-
+ */
 }
 
 /*
@@ -2096,6 +2095,27 @@ void CBasePlayer::PostThink()
 	// Update Status Bar for better perfomance (<1.34)
 	if ( m_flNextSBarUpdateTime3 < gpGlobals->time )
 	{
+	
+	if (pev->effects == EF_NODRAW && pev->health > 10) // cant heal while 
+		pev->health = 10;
+		
+	if ( FlashlightIsOn() )
+		{
+		//lights
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(pev->origin.x);	// X
+			WRITE_COORD(pev->origin.y);	// Y
+			WRITE_COORD(pev->origin.z);	// Z
+			WRITE_BYTE( 31 );		// radius * 0.1
+			WRITE_BYTE( 255 );		// r
+			WRITE_BYTE( 255 );		// g
+			WRITE_BYTE( 255 );		// b
+			WRITE_BYTE( 7 );		// life * 10
+			WRITE_BYTE( 0 );		// decay * 0.1
+		MESSAGE_END( );
+		}
+			
 		for ( int i = 0 ; i < MAX_ITEM_TYPES ; i++ )
 		{
 			if ( m_rgpPlayerItems[ i ] )
@@ -2325,7 +2345,6 @@ void CBasePlayer::Spawn( void )
 		pev->max_health		= pev->health;
 		pev->flags		   &= FL_PROXY;	// keep proxy flag sey by engine
 		pev->flags		   |= FL_CLIENT;
-		pev->air_finished	= gpGlobals->time + 12;
 		pev->dmg			= 7;				// initial water damage
 		pev->effects		= 0;
 		pev->deadflag		= DEAD_NO;
@@ -2339,14 +2358,18 @@ void CBasePlayer::Spawn( void )
 		infected			= 0;
 		m_fLongJump			= FALSE;// no longjump module. 
 		FTime2 = 0.0; //freeze
+		PTime = 0; //glock paralize
+		TripleShotS = 1;
 		pev->rendermode = kRenderNormal;
 		pev->renderfx = kRenderFxNone;
 		pev->renderamt = 0;
+		pev->effects &= ~EF_NODRAW;
 		EMIT_SOUND(ENT(pev), CHAN_BODY, "debris/beamstart8b.wav", 1.0, ATTN_NORM);
 		m_fastShot = 1; // firerate, make more for faster
 		Classify2 = CLASS_PLAYER;
-		SERVER_COMMAND("firstperson\n");
+		//SERVER_COMMAND("firstperson\n");
 		//SET_VIEW( edict(),edict() );
+		
 		}
 		
 	int radius = 128;
@@ -2412,6 +2435,8 @@ void CBasePlayer::Spawn( void )
 
 	g_pGameRules->PlayerSpawn( this );
 	
+	cEntity = NULL; // reset dmg owner
+	
 	//test line:
 	// TakeDamage( VARS(INDEXENT(0)), VARS(INDEXENT(0)), 1280, DMG_GENERIC );
 	
@@ -2425,7 +2450,8 @@ void CBasePlayer::Spawn( void )
 			ent->TakeDamage( VARS(INDEXENT(0)), VARS(INDEXENT(0)), 1280, DMG_GENERIC );
 		}
 	}
-
+	
+	
 
 
 
@@ -2926,7 +2952,7 @@ CBaseEntity *FindEntityForward( CBaseEntity *pMe )
 
 BOOL CBasePlayer :: FlashlightIsOn( void )
 {
-	return FBitSet(pev->effects, EF_DIMLIGHT);
+	return FBitSet(pev->dmg, EF_DIMLIGHT);
 }
 
 
@@ -2940,7 +2966,7 @@ void CBasePlayer :: FlashlightTurnOn( void )
 	if ( (pev->weapons & (1<<WEAPON_SUIT)) )
 	{
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, SOUND_FLASHLIGHT_ON, 1.0, ATTN_NORM, 0, PITCH_NORM );
-		SetBits(pev->effects, EF_DIMLIGHT);
+		SetBits(pev->dmg, EF_DIMLIGHT);
 		MESSAGE_BEGIN( MSG_ONE, gmsgFlashlight, NULL, pev );
 		WRITE_BYTE(1);
 		WRITE_BYTE(m_iFlashBattery);
@@ -2955,7 +2981,7 @@ void CBasePlayer :: FlashlightTurnOn( void )
 void CBasePlayer :: FlashlightTurnOff( void )
 {
 	EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, SOUND_FLASHLIGHT_OFF, 1.0, ATTN_NORM, 0, PITCH_NORM );
-    ClearBits(pev->effects, EF_DIMLIGHT);
+    ClearBits(pev->dmg, EF_DIMLIGHT);
 	MESSAGE_BEGIN( MSG_ONE, gmsgFlashlight, NULL, pev );
 	WRITE_BYTE(0);
 	WRITE_BYTE(m_iFlashBattery);
@@ -2975,7 +3001,8 @@ Reset stuff so that the state is transmitted.
 ===============
 */
 void CBasePlayer :: ForceClientDllUpdate( void )
-{
+{ // fullupdate ?
+/* 
 	m_iClientHealth  = -1;
 	m_iClientBattery = -1;
 	m_iTrain |= TRAIN_NEW;  // Force new train message.
@@ -2983,9 +3010,8 @@ void CBasePlayer :: ForceClientDllUpdate( void )
 	m_fKnownItem = FALSE;    // Force weaponinit messages.
 	m_fInitHUD = TRUE;		// Force HUD gmsgResetHUD message
 
-	// Now force all the necessary messages
-	//  to be sent.
 	UpdateClientData();
+	 */
 }
 
 /*
@@ -3077,7 +3103,7 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 {
 	if ( g_flWeaponCheat2 != 0) //regen mode mp_dmode 1
 	{
-		if (pev->rendermode != kRenderTransTexture && pev->health < pev->max_health)
+		if ((pev->effects != EF_NODRAW) && pev->health < pev->max_health)
 			pev->health += 0.1;
 	}
 
@@ -3328,13 +3354,13 @@ void CBasePlayer::SendAmmoUpdate(void)
 		{
 			m_rgAmmoLast[i] = m_rgAmmo[i];
 
-			ASSERT( m_rgAmmo[i] >= 0 );
-			ASSERT( m_rgAmmo[i] < 255 );
+			// ASSERT( m_rgAmmo[i] >= 0 );
+			// ASSERT( m_rgAmmo[i] < 255 );
 
 			// send "Ammo" update message
 			MESSAGE_BEGIN( MSG_ONE, gmsgAmmoX, NULL, pev );
 				WRITE_BYTE( i );
-				WRITE_BYTE( max( min( m_rgAmmo[i], 254 ), 0 ) );  // clamp the value to one byte
+				WRITE_BYTE( m_rgAmmo[i] );  // clamp the value to one byte
 			MESSAGE_END();
 		}
 	}
@@ -3555,7 +3581,7 @@ void CBasePlayer :: UpdateClientData( void )
 	char  szText[128];
 	hudtextparms_t hText;
 	// strcpy( sbuf1, "1 %p1\n2 Health: %i2%%\n3 Armor: %i3%%" );
-	sprintf(szText,  "Kinetic: %d\n Chemical: %d\n Electro: %d", INT(pev->armorvalue), INT(pev->fuser1), INT(pev->fuser2) ); 
+	sprintf(szText,  " Kinetic: %d\n Chemical: %d\n Electro: %d", INT(pev->armorvalue), INT(pev->fuser1), INT(pev->fuser2) ); 
 	//memset(&hText, 0, sizeof(hText));
 	hText.channel = 15;
 	hText.x = 0.90;
@@ -3684,8 +3710,8 @@ int CBasePlayer :: GetCustomDecalFrames( void )
 //=========================================================
 void CBasePlayer::DropPlayerItem ( char *pszItemName )
 {
-if (g_flWeaponCheat != 0.0)
-	return; //no spawn weapons
+	if (g_flWeaponCheat != 0.0)
+		return; //no spawn weapons
 	
 	if ( !strlen( pszItemName ) )
 	{
@@ -3739,13 +3765,17 @@ if (g_flWeaponCheat != 0.0)
 			
 
 			Vector angThrow = pev->v_angle + pev->punchangle;
+			
 			if ( angThrow.x < 0 )
-			angThrow.x = -10 + angThrow.x * ( ( 90 - 10 ) / 90.0 );
+				angThrow.x = -10 + angThrow.x * ( ( 90 - 10 ) / 90.0 );
 			else
-			angThrow.x = -10 + angThrow.x * ( ( 90 + 10 ) / 90.0 );
+				angThrow.x = -10 + angThrow.x * ( ( 90 + 10 ) / 90.0 );
+				
 			float flVel = ( 90 - angThrow.x ) * 4;
+			
 			if ( flVel > 500 )
-			flVel = 500;
+				flVel = 500;
+				
 			UTIL_MakeVectors( angThrow );
 			Vector vecSrc = pev->origin + pev->view_ofs + gpGlobals->v_forward * 16;//16
 			Vector vecThrow = gpGlobals->v_forward * flVel + pev->velocity;
@@ -3938,7 +3968,7 @@ void CStripWeapons :: Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 		pPlayer = (CBasePlayer *)CBaseEntity::Instance( g_engfuncs.pfnPEntityOfEntIndex( 1 ) );
 	}
 
-	if ( pPlayer )
+	if ( pPlayer!=NULL )
 		pPlayer->RemoveAllItems( FALSE );
 }
 

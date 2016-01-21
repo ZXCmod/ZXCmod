@@ -247,7 +247,7 @@ extern CVoiceGameMgr g_VoiceGameMgr;
 // say blah blah blah
 // or as
 // blah blah blah
-//
+// simpled in 1.35
 void Host_Say( edict_t *pEntity, int teamonly )
 {
 	CBasePlayer *client;
@@ -256,7 +256,6 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	char	text[128];
 	char    szTemp[256];
 	const char *cpSay = "say";
-	const char *cpSayTeam = "say_team";
 	const char *pcmd = CMD_ARGV(0);
 
 	// We can get a raw string now, without the "say " prepended
@@ -270,7 +269,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	if ( player->m_flNextChatTime > gpGlobals->time )
 		 return;
 
-	if ( !stricmp( pcmd, cpSay) || !stricmp( pcmd, cpSayTeam ) )
+	if ( !stricmp( pcmd, cpSay) )
 	{
 		if ( CMD_ARGC() >= 2 )
 		{
@@ -286,7 +285,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	{
 		if ( CMD_ARGC() >= 2 )
 		{
-			sprintf( szTemp, "%s %s", ( char * )pcmd, (char *)CMD_ARGS() );
+			// sprintf( szTemp, "i am TrollFace %s %s",  (char *)CMD_ARGS() );
 		}
 		else
 		{
@@ -315,11 +314,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	if ( pc != NULL )
 		return;  // no character found, so say nothing
 
-// turn on color set 2  (color on,  no sound)
-	if ( teamonly )
-		sprintf( text, "%c(TEAM) %s: ", 2, STRING( pEntity->v.netname ) );
-	else
-		sprintf( text, "%c%s: ", 2, STRING( pEntity->v.netname ) );
+	sprintf( text, "%c%s: ", 2, STRING( pEntity->v.netname ) );
 
 	j = sizeof(text) - 2 - strlen(text);  // -2 for /n and null terminator
 	if ( (int)strlen(p) > j )
@@ -328,8 +323,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	strcat( text, p );
 	strcat( text, "\n" );
 
-
-	player->m_flNextChatTime = gpGlobals->time + CHAT_INTERVAL;
+	player->m_flNextChatTime = gpGlobals->time + 0.3;
 
 	// loop through all players
 	// Start with the first player.
@@ -352,13 +346,6 @@ void Host_Say( edict_t *pEntity, int teamonly )
 		if ( g_VoiceGameMgr.PlayerHasBlockedPlayer( client, player ) )
 			continue;
 
-		if ( teamonly && g_pGameRules->PlayerRelationship(client, CBaseEntity::Instance(pEntity)) != GR_TEAMMATE )
-			continue;
-//HERE!
-
-
-
-
 		MESSAGE_BEGIN( MSG_ONE, gmsgSayText, NULL, client->pev );
 			WRITE_BYTE( ENTINDEX(pEntity) );
 			WRITE_STRING( text );
@@ -376,32 +363,17 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	g_engfuncs.pfnServerPrint( text );
 
 	char * temp;
-	if ( teamonly )
-		temp = "say_team";
-	else
-		temp = "say";
+	temp = "say";
 	
-	// team match?
-	if ( g_teamplay )
-	{
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" %s \"%s\"\n", 
-			STRING( pEntity->v.netname ), 
-			GETPLAYERUSERID( pEntity ),
-			GETPLAYERAUTHID( pEntity ),
-			g_engfuncs.pfnInfoKeyValue( g_engfuncs.pfnGetInfoKeyBuffer( pEntity ), "model" ),
-			temp,
-			p );
-	}
-	else
-	{
-		UTIL_LogPrintf( "\"%s<%i><%s><%i>\" %s \"%s\"\n", 
-			STRING( pEntity->v.netname ), 
-			GETPLAYERUSERID( pEntity ),
-			GETPLAYERAUTHID( pEntity ),
-			GETPLAYERUSERID( pEntity ),
-			temp,
-			p );
-	}
+
+	UTIL_LogPrintf( "\"%s<%i><%s><%i>\" %s \"%s\"\n", 
+		STRING( pEntity->v.netname ), 
+		GETPLAYERUSERID( pEntity ),
+		GETPLAYERAUTHID( pEntity ),
+		GETPLAYERUSERID( pEntity ),
+		temp,
+		p );
+
 }
 
 
@@ -472,7 +444,7 @@ void ClientCommand( edict_t *pEntity )
 	{
 		GetClassPtr((CBasePlayer *)pev)->SelectLastItem();
 	}
-	else if ( FStrEq( pcmd, "spectate2" ) && (pev->flags & FL_PROXY) )	// added for proxy support
+	else if ( FStrEq( pcmd, "spectate" ) && (pev->flags & FL_PROXY) )	// added for proxy support
 	{
 		CBasePlayer * pPlayer = GetClassPtr((CBasePlayer *)pev);
 
@@ -515,13 +487,16 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 	if ( !pEntity->pvPrivateData )
 		return;
 		
+		
+	/* 		
 		// team match?
 		if ( g_teamplay )
 		{
 				CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
-				pPlayer->AddPoints(-99, false);
+				pPlayer->pev->frags = 0;
 		}
-		
+	*/
+	
 	// msg everyone if someone changes their name,  and it isn't the first time (changing no name to current name)
 	if ( pEntity->v.netname && STRING(pEntity->v.netname)[0] != 0 && !FStrEq( STRING(pEntity->v.netname), g_engfuncs.pfnInfoKeyValue( infobuffer, "name" )) )
 	{
@@ -625,10 +600,6 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 		{
 			pClass->Activate();
 		}
-		else
-		{
-			ALERT( at_console, "Can't instance %s\n", STRING(pEdictList[i].v.classname) );
-		}
 	}
 
 	// Link user messages here to make sure first client can get them...
@@ -648,7 +619,6 @@ Need fixing this
 */
 void PlayerPreThink( edict_t *pEntity )
 {
-	//entvars_t *pev = &pEntity->v;  //1.32 edit (nothink here)
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
 	if (pPlayer!=NULL)
@@ -664,7 +634,6 @@ Called every frame after physics are run
 */
 void PlayerPostThink( edict_t *pEntity )
 {
-	//entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
 	if (pPlayer!=NULL)
@@ -833,7 +802,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.34";
+		return "Half-Life zxc mod 1.35";
 }
 
 /*
@@ -1479,7 +1448,7 @@ void RegisterEncoders( void )
 	DELTA_ADDENCODER( "Player_Encode", Player_Encode );
 }
 
-//debugger found it as reason of crash, close code
+//debugger found it as reason of crash, maybe close code?
 int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 {
 #if defined( CLIENT_WEAPONS )

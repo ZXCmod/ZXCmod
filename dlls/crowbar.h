@@ -61,4 +61,4 @@ class   CRc2 : public CGrenade
 LINK_ENTITY_TO_CLASS( weapon_rocketlauncher, CRc2 );
 LINK_ENTITY_TO_CLASS( weapon_stoner, CRC );
 LINK_ENTITY_TO_CLASS( weapon_crowbar, CCrowbar );
-
+							

@@ -861,6 +861,8 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 
 	flBonus = ARMOR_BONUS;
 	flRatio = ARMOR_RATIO;
+	
+	//flDamage = 9999;
 
 	if (!pev->takedamage)
 		return 0;
@@ -917,7 +919,7 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 			pev->armorvalue -= flArmor;
 			
 		
-		flDamage = flNew*1.15;
+		flDamage = flNew*1.2;
 	}
 	// Armor 2. 
 	if (pev->fuser1 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_CRUSH|DMG_MORTAR|DMG_BLAST|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM)) )// armor doesn't protect against fall or drown damage!
@@ -936,7 +938,7 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 		else
 			pev->fuser1 -= flArmor;
 		
-		flDamage = flNew*1.15;
+		flDamage = flNew*1.2;
 	}
 	// Armor 3. 
 	if (pev->fuser2 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_NERVEGAS|DMG_CRUSH|DMG_MORTAR|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_POISON)) )// armor doesn't protect against fall or drown damage!
@@ -955,7 +957,7 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 		else
 			pev->fuser2 -= flArmor;
 		
-		flDamage = flNew*1.15;
+		flDamage = flNew*1.2;
 	}
 	
 	
@@ -1224,16 +1226,11 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 	m_LaserSprite = PRECACHE_MODEL( "sprites/bolt1.spr" ); //1.29
 	float m_damage;
 	
-	if (allowmonsters10.value == 0)
-		m_damage = 1;
-	else
-		m_damage = 3.25;
 	
-	if (allowmonsters10.value == 1)
-		{
-			flDamage*=1.07;
-			flRadius*=1.93;
-		}
+	// if (pEntity == NULL)
+		// return;
+
+	m_damage = 1;
 	
 	if ( flRadius )
 		falloff = flDamage / flRadius;
@@ -1340,6 +1337,7 @@ void CBaseMonster :: RadiusDamage(entvars_t* pevInflictor, entvars_t*	pevAttacke
 void CBaseMonster :: RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int iClassIgnore, int bitsDamageType )
 {
 	::RadiusDamage( vecSrc, pevInflictor, pevAttacker, flDamage, flDamage * 2.5, iClassIgnore, bitsDamageType );
+
 }
 
 
@@ -1406,28 +1404,30 @@ BOOL CBaseMonster :: FInViewCone ( CBaseEntity *pEntity )
 	
 if (FTime2 > 0)
     {
-      if (FTime2 <= gpGlobals->time)
-      {
-         //EnableControl(TRUE);
-         pev->rendermode = kRenderNormal;
-         pev->renderfx = kRenderFxNone;
-         pev->renderamt = 0;
-         FTime2 = 0;
-      }
+		  if (FTime2 <= gpGlobals->time)
+		  {
+			 //EnableControl(TRUE);
+			 pev->rendermode = kRenderNormal;
+			 pev->renderfx = kRenderFxNone;
+			 pev->renderamt = 0;
+			 FTime2 = 0;
+		  }
 	  }
       if (FTime2 >= gpGlobals->time)
       {
-	  if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
-			{
-			pev->nextthink = gpGlobals->time + 0.1;
-			}
+		// if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
+			// pev->nextthink = gpGlobals->time + 0.1;
+				
 		pev->nextthink = gpGlobals->time + 3.5; //freeze
 	  }
 	
 	
 	
-	
-	
+	if (PTime != 0) // monsters papalize timer, new in 1.35
+		{
+			pev->velocity = g_vecZero;// only change move
+			PTime--;
+		}
 	
 	if ( flDot > m_flFieldOfView )
 	{
@@ -1438,6 +1438,8 @@ if (FTime2 > 0)
 		return FALSE;
 	}
 	
+	
+
 
 }
 
@@ -1587,21 +1589,21 @@ void CBaseMonster :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector
 		case HITGROUP_GENERIC:
 			break;
 		case HITGROUP_HEAD:
-			flDamage *= gSkillData.monHead;
+			flDamage *= 3;
 			break;
 		case HITGROUP_CHEST:
-			flDamage *= gSkillData.monChest;
+			flDamage *= 2;
 			break;
 		case HITGROUP_STOMACH:
-			flDamage *= gSkillData.monStomach;
+			flDamage *= 1;
 			break;
 		case HITGROUP_LEFTARM:
 		case HITGROUP_RIGHTARM:
-			flDamage *= gSkillData.monArm;
+			flDamage *= 1;
 			break;
 		case HITGROUP_LEFTLEG:
 		case HITGROUP_RIGHTLEG:
-			flDamage *= gSkillData.monLeg;
+			flDamage *= 1;
 			break;
 		default:
 			break;
@@ -1656,7 +1658,6 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 
 		UTIL_ParticleEffect ( tr.vecEndPos, g_vecZero, 64, 25 ); ////
 		
-
 		
 		tracer = 0;
 		if (iTracerFreq != 0 && (tracerCount++ % iTracerFreq) == 0)
@@ -1697,7 +1698,7 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 		{
 			CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
 
-			if ( iDamage )
+			if ( iDamage != NULL )
 			{
 				pEntity->TraceAttack(pevAttacker, iDamage, vecDir, &tr, DMG_BULLET | ((iDamage > 16) ? DMG_ALWAYSGIB : DMG_NEVERGIB) );
 				
@@ -1708,7 +1709,7 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 			{
 			default:
 			case BULLET_MONSTER_9MM:
-				pEntity->TraceAttack(pevAttacker, gSkillData.monDmg9MM, vecDir, &tr, DMG_BULLET);
+				pEntity->TraceAttack(pevAttacker, 9, vecDir, &tr, DMG_BULLET);
 				
 				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
 				DecalGunshot( &tr, iBulletType );
@@ -1716,7 +1717,7 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 				break;
 
 			case BULLET_MONSTER_MP5:
-				pEntity->TraceAttack(pevAttacker, gSkillData.monDmgMP5, vecDir, &tr, DMG_BULLET);
+				pEntity->TraceAttack(pevAttacker, 5, vecDir, &tr, DMG_BULLET);
 				
 				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
 				DecalGunshot( &tr, iBulletType );
@@ -1724,7 +1725,7 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 				break;
 
 			case BULLET_MONSTER_12MM:		
-				pEntity->TraceAttack(pevAttacker, gSkillData.monDmg12MM, vecDir, &tr, DMG_BULLET); 
+				pEntity->TraceAttack(pevAttacker, 12, vecDir, &tr, DMG_BULLET); 
 				if ( !tracer )
 				{
 					TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
@@ -1846,20 +1847,20 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 			{
 			default:
 			case BULLET_PLAYER_9MM:		
-				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg9MM, vecDir, &tr, DMG_BULLET); 
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg9MM*TripleShotS, vecDir, &tr, DMG_BULLET); 
 				break;
 
 			case BULLET_PLAYER_MP5:		
-				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgMP5, vecDir, &tr, DMG_BULLET); 
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgMP5*TripleShotS, vecDir, &tr, DMG_BULLET); 
 				break;
 
 			case BULLET_PLAYER_BUCKSHOT:	
 				 // make distance based!
-				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgBuckshot, vecDir, &tr, DMG_BULLET); 
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgBuckshot*TripleShotS, vecDir, &tr, DMG_BULLET); 
 				break;
 			
 			case BULLET_PLAYER_357:		
-				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg357, vecDir, &tr, DMG_BULLET); 
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg357*TripleShotS, vecDir, &tr, DMG_BULLET); 
 				break;
 				
 			case BULLET_NONE: // FIX 
@@ -1868,13 +1869,15 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 				// only decal glass
 				if ( !FNullEnt(tr.pHit) && VARS(tr.pHit)->rendermode != 0)
 				{
-					UTIL_DecalTrace( &tr, DECAL_GLASSBREAK1 + RANDOM_LONG(0,2) );
+					UTIL_DecalTrace( &tr, DECAL_GLASSBREAK1 ); //  + RANDOM_LONG(0,2)
 				}
 
 				
 				break;
 			}
 		}
+		if (TripleShot == 1) // nice vis effect
+			UTIL_BubbleTrailDry( vecSrc, tr.vecEndPos, (flDistance * tr.flFraction) / 64.0 );
 		// make bullet trails
 		UTIL_BubbleTrail( vecSrc, tr.vecEndPos, (flDistance * tr.flFraction) / 64.0 );
 		UTIL_DecalTrace( &tr, DECAL_GUNSHOT1 + RANDOM_LONG(0,2) );

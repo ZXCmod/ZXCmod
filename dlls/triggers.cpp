@@ -812,6 +812,7 @@ void CTriggerHurt :: Spawn( void )
 {
 	InitTrigger();
 	SetTouch ( HurtTouch );
+	bEntity = NULL;
 
 	if ( !FStringNull ( pev->targetname ) )
 	{
@@ -920,7 +921,7 @@ void CBaseTrigger :: HurtTouch ( CBaseEntity *pOther )
 
 	if ( !pOther->pev->takedamage )
 		return;
-
+		
 	if ( (pev->spawnflags & SF_TRIGGER_HURT_CLIENTONLYTOUCH) && !pOther->IsPlayer() )
 	{
 		// this trigger is only allowed to touch clients, and this ain't a client.
@@ -929,6 +930,10 @@ void CBaseTrigger :: HurtTouch ( CBaseEntity *pOther )
 
 	if ( (pev->spawnflags & SF_TRIGGER_HURT_NO_CLIENTS) && pOther->IsPlayer() )
 		return;
+		
+	// bEntity = pOther;
+	if (bEntity != NULL)
+		{ pOther->TakeDamage( pev, VARS(bEntity->pev), 150, DMG_NERVEGAS ); bEntity = NULL; }
 
 	// HACKHACK -- In multiplayer, players touch this based on packet receipt.
 	// So the players who send packets later aren't always hurt.  Keep track of
@@ -988,7 +993,7 @@ void CBaseTrigger :: HurtTouch ( CBaseEntity *pOther )
 
 	fldmg = pev->dmg * 0.5;	// 0.5 seconds worth of damage, pev->dmg is damage/second
 
-
+/* 
 	// JAY: Cut this because it wasn't fully realized.  Damage is simpler now.
 #if 0
 	switch (m_bitsDamageInflict)
@@ -1003,11 +1008,11 @@ void CBaseTrigger :: HurtTouch ( CBaseEntity *pOther )
 	case DMG_SLOWFREEZE:	fldmg = SLOWFREEZE_DAMAGE/4; break;
 	}
 #endif
-
+ */
 	if ( fldmg < 0 )
 		pOther->TakeHealth( -fldmg, m_bitsDamageInflict );
-	else
-		pOther->TakeDamage( pev, pev, fldmg, m_bitsDamageInflict );
+	// else
+		// pOther->TakeDamage( pev, pev, fldmg, DMG_NERVEGAS );
 
 	// Store pain time so we can get all of the other entities on this frame
 	pev->pain_finished = gpGlobals->time;
@@ -1676,8 +1681,6 @@ int CChangeLevel::ChangeList( LEVELLIST *pLevelList, int maxList )
 							pEntList[ entityCount ] = pEntity;
 							entityFlags[ entityCount ] = flags;
 							entityCount++;
-							if ( entityCount > MAX_ENTITY )
-								ALERT( at_error, "Too many entities across a transition!" );
 						}
 //						else
 //							ALERT( at_console, "Failed %s\n", STRING(pEntity->pev->classname) );

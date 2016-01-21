@@ -20,6 +20,8 @@
 #include	"decals.h"
 #include	"gamerules.h"
 #include	"game.h"
+#include "player.h"
+
 
 void EntvarsKeyvalue( entvars_t *pev, KeyValueData *pkvd );
 
@@ -141,6 +143,24 @@ int DispatchSpawn( edict_t *pent )
 
 		pEntity->Spawn();
 
+		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pEntity->pev->owner ); //get weapon
+		// CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
+		if (pl != NULL && pl->TripleShot == 1)
+		{
+			pEntity->Charge = 1;
+		
+			// vis effects for sure
+			if (pEntity->pev->rendermode == kRenderNormal )
+			{
+				// pEntity->pev->rendermode = kRenderTransAdd;
+				pEntity->pev->renderfx = kRenderFxGlowShell;
+				pEntity->pev->rendercolor.x = 250;  // red
+				pEntity->pev->rendercolor.y = 200;  // green
+				pEntity->pev->rendercolor.z = 200; // blue
+				pEntity->pev->renderamt = 128;
+			}
+		}
+
 		// Try to get the pointer again, in case the spawn function deleted the entity.
 		// UNDONE: Spawn() should really return a code to ask that the entity be deleted, but
 		// that would touch too much code for me to do that right now.
@@ -213,7 +233,14 @@ void DispatchTouch( edict_t *pentTouched, edict_t *pentOther )
 
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pentTouched);
 	CBaseEntity *pOther = (CBaseEntity *)GET_PRIVATE( pentOther );
+	
+	// entities for triple dmg, >1.35
+	if (pEntity->Charge == 1)
+	{
+		pEntity->pev->dmg *= 3;
+		pEntity->Charge = 2; // prevent this
 
+	}
 	if ( pEntity && pOther && ! ((pEntity->pev->flags | pOther->pev->flags) & FL_KILLME) )
 		pEntity->Touch( pOther );
 }
@@ -774,10 +801,8 @@ CBaseEntity * CBaseEntity::Create( char *szName, const Vector &vecOrigin, const 
 
 	pent = CREATE_NAMED_ENTITY( MAKE_STRING( szName ));
 	if ( FNullEnt( pent ) )
-	{
-		ALERT ( at_console, "NULL Ent in Create!\n" );
 		return NULL;
-	}
+		
 	pEntity = Instance( pent );
 	pEntity->pev->owner = pentOwner;
 	pEntity->pev->origin = vecOrigin;

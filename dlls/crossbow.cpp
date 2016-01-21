@@ -644,6 +644,7 @@ void CCrossbow::FireSniperBolt()
 		 WRITE_BYTE( 64 ); // brightness
 		 WRITE_BYTE( 0 ); // speed?
 		MESSAGE_END(); 
+
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	}
 	else
@@ -853,38 +854,12 @@ void CCrossbow::Reload( void )
 
 void CCrossbow::WeaponIdle( void )
 {
-	//m_pPlayer->GetAutoaimVector( AUTOAIM_2DEGREES );  // get the autoaim vector but ignore it;  used for autoaim crosshair in DM
-
 	ResetEmptySound( );
 	
 	if ( m_flTimeWeaponIdle < UTIL_WeaponTimeBase() )
 	{
-		float flRand = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 0, 1 );
-		if (flRand <= 0.75)
-		{
-			if (m_iClip)
-			{
-				SendWeaponAnim( CROSSBOW_IDLE1 );
-			}
-			else
-			{
-				SendWeaponAnim( CROSSBOW_IDLE2 );
-			}
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
-		}
-		else
-		{
-			if (m_iClip)
-			{
-				SendWeaponAnim( CROSSBOW_FIDGET1 );
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 90.0 / 30.0;
-			}
-			else
-			{
-				SendWeaponAnim( CROSSBOW_FIDGET2 );
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 80.0 / 30.0;
-			}
-		}
+		SendWeaponAnim( CROSSBOW_IDLE2 );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 7.0;
 	}
 }
 
