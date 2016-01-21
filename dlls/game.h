@@ -41,6 +41,8 @@ extern cvar_t	allowmonsters3; //1.27
 extern cvar_t	allowmonsters4;
 extern cvar_t	allowmonsters5;
 extern cvar_t	allowmonsters6;
+extern cvar_t	allowmonsters7;
+extern cvar_t	allowmonsters8;
 // Engine Cvars
 extern cvar_t	*g_psv_gravity;
 extern cvar_t	*g_psv_aim;

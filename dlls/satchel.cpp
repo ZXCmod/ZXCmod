@@ -82,6 +82,18 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_satchel, CSatchelCharge );
 
+//1.31 new wp
+class CSatchelCharge2 : public CGrenade
+{
+	void Spawn( void );
+	void EXPORT SatchelSlide( CBaseEntity *pOther );
+	void EXPORT SatchelThink( void );
+
+public:
+	void Deactivate( void );
+};
+LINK_ENTITY_TO_CLASS( monster_pipebomb, CSatchelCharge2 );
+
 //=========================================================
 // Deactivate - do whatever it is we do to an orphaned 
 // satchel when we don't want it in the world anymore.
@@ -93,6 +105,13 @@ void CSatchelCharge::Deactivate( void )
 	UTIL_Remove( this );
 }
 
+void CSatchelCharge2::Deactivate( void )
+{
+	pev->takedamage = DAMAGE_NO;
+	pev->solid = SOLID_NOT;
+	
+	UTIL_Remove( this );
+}
 
 void CSatchelCharge :: Spawn( void )
 {
@@ -196,6 +215,11 @@ void CSatchelCharge :: Precache( void )
 	PRECACHE_MODEL( "sprites/shrinkf.spr" );
 	
 	PRECACHE_MODEL( "models/crystal.mdl" );
+	PRECACHE_SOUND("zxc/warningbell1.wav");
+	PRECACHE_SOUND("zxc/sg_24.wav");
+	
+	
+	PRECACHE_MODEL( "sprites/xflare1.spr" );
 }
 
 void CSatchelCharge :: BounceSound( void )
@@ -207,6 +231,8 @@ void CSatchelCharge :: BounceSound( void )
 	case 2:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce3.wav", 1, ATTN_NORM);	break;
 	}
 }
+
+
 
 
 LINK_ENTITY_TO_CLASS( weapon_satchel, CSatchel );
@@ -274,6 +300,12 @@ void CSatchel::Precache( void )
 	PRECACHE_MODEL("models/p_satchel.mdl");
 	PRECACHE_MODEL("models/p_satchel_radio.mdl");
 	PRECACHE_MODEL("models/w_medkit.mdl");
+	PRECACHE_MODEL("models/snapbug.mdl");
+	
+	PRECACHE_SOUND("weapons/dryfire1.wav");
+	PRECACHE_SOUND("weapons/pl_gun1.wav");
+	
+	
 	
 
 	UTIL_PrecacheOther( "monster_satchel" );
@@ -379,35 +411,39 @@ void CSatchel::PrimaryAttack()
 	{
 	case 0:
 		{
-		Throw( );
+			Throw( );
 		}
 		break;
 	case 1:
 		{
-		SendWeaponAnim( SATCHEL_RADIO_FIRE );
+			SendWeaponAnim( SATCHEL_RADIO_FIRE );
 
-		edict_t *pPlayer = m_pPlayer->edict( );
+			edict_t *pPlayer = m_pPlayer->edict( );
 
-		CBaseEntity *pSatchel = NULL;
+			CBaseEntity *pSatchel = NULL;
 
-		while ((pSatchel = UTIL_FindEntityInSphere( pSatchel, m_pPlayer->pev->origin, 4096 )) != NULL)
-		{
-			if (FClassnameIs( pSatchel->pev, "monster_satchel"))
+			while ((pSatchel = UTIL_FindEntityInSphere( pSatchel, m_pPlayer->pev->origin, 8192 )) != NULL)
 			{
-				if (pSatchel->pev->owner == pPlayer)
+				if (FClassnameIs( pSatchel->pev, "monster_satchel") || FClassnameIs( pSatchel->pev, "monster_pipebomb"))
 				{
-					m_pPlayer->m_flNextChatTime4 = 0;
-					pSatchel->Use( m_pPlayer, m_pPlayer, USE_ON, 0 );
-					m_chargeReady = 2;
+					//if (FClassnameIs( pSatchel->pev, "weapon_pipebomb"))
+					//	pSatchel->pev->classname = MAKE_STRING( "monster_satchel" );
+					if (pSatchel->pev->owner == pPlayer)
+					{
+						m_pPlayer->m_flNextChatTime4 = 0;
+						pSatchel->Use( m_pPlayer, m_pPlayer, USE_ON, 0 );
+						m_chargeReady = 2;
+					}
 				}
 			}
-		}
+			
+			
 
-		m_chargeReady = 2;
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-		break;
+			m_chargeReady = 2;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+			break;
 		}
 
 	case 2:
@@ -422,14 +458,14 @@ void CSatchel::PrimaryAttack()
 void CSatchel::SecondaryAttack( void )
 {
 	if (  m_pPlayer->m_flNextChatTime4 < 10 ) //now player can throw only 10 satchel's
-{
-
-	if ( m_chargeReady != 2 )
 	{
-		Throw( );
+
+		if ( m_chargeReady != 2 )
+		{
+			Throw( );
+		}
+		
 	}
-	
-}
 	
 }
 
@@ -463,7 +499,40 @@ void CSatchel::ThirdAttack( void )
 		}
 }
 
+void CSatchel::FourthAttack()
+{
+		
+	//throw
+	if ( (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 2) && m_chargeReady != 2)
+	{
+		Vector vecSrc = m_pPlayer->pev->origin;
+		Vector vecThrow = gpGlobals->v_forward * 274 + m_pPlayer->pev->velocity;
 
+		#ifndef CLIENT_DLL
+		CBaseEntity *pSatchel = Create( "monster_pipebomb", vecSrc, Vector( 0, 0, 0), m_pPlayer->edict() );
+		pSatchel->pev->velocity = vecThrow;
+		#endif
+
+		//SendWeaponAnim( SATCHEL_RADIO_DRAW );
+		SendWeaponAnim( SATCHEL_RADIO_FIRE );
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio.mdl");
+		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_satchel_radio.mdl");
+
+		
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+		m_chargeReady = 1;
+		
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=2;
+		
+	}
+		
+
+
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+}
 
 
 
@@ -631,6 +700,25 @@ void DeactivateSatchels( CBasePlayer *pOwner ) ///wha
 
 		pFind = FIND_ENTITY_BY_CLASSNAME( pFind, "monster_satchel" );
 	}
+	
+	///////////////
+	edict_t *pFind2; 
+	pFind2 = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_pipebomb" );
+	while ( !FNullEnt( pFind2 ) )
+	{
+		CBaseEntity *pEnt = CBaseEntity::Instance( pFind2 );
+		CSatchelCharge *pSatchel = (CSatchelCharge *)pEnt;
+
+		if ( pSatchel )
+		{
+			if ( pSatchel->pev->owner == pOwner->edict() )
+			{
+				pSatchel->Deactivate();
+			}
+		}
+
+		pFind2 = FIND_ENTITY_BY_CLASSNAME( pFind2, "monster_pipebomb" );
+	}
 }
 
 #endif
@@ -671,6 +759,7 @@ void    CBlasterBeam4 :: Spawn( )
 		pev->gravity = 0;
 		pev->friction = 1;
 
+		EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/sg_24.wav", 1.0, ATTN_NORM);
 }
 
 void    CBlasterBeam4 :: Precache( )
@@ -695,13 +784,14 @@ void    CBlasterBeam4:: Explode(int DamageType)
 		if (pEntity->pev->friction != 1.0) //1.30a antifriction
 			pEntity->pev->friction = 1.0;
 		
-		if (pEntity->pev->takedamage==DAMAGE_AIM || pEntity->pev->movetype==MOVETYPE_WALK) ///check only players
+		if ((pEntity->pev->takedamage==DAMAGE_AIM || pEntity->pev->movetype==MOVETYPE_WALK) && (FVisible( pEntity ))) ///check only players
 			{
-			pEntity->TakeHealth(7, DMG_GENERIC); //give health all around
-			pEntity->pev->armorvalue += 1; //give more armor all (v 1.21)
+				pEntity->TakeHealth(7, DMG_GENERIC); //give health all around
+				pEntity->pev->armorvalue += 1; //give more armor all (v 1.21)
 			}
 		}
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 1.0, ATTN_NORM); //play sound
+	
+	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.8, ATTN_NORM); //play sound
 	pev->nextthink = gpGlobals->time + 1.0;
 	SetThink(MoveThink);
 }
@@ -742,35 +832,25 @@ void    CBlasterBeam4 :: MoveThink( )
 			WRITE_BYTE( 0 );		// speed
 		MESSAGE_END();
 		
-		
-		
 
-
-
-
-Explode(DMG_GENERIC);
-		//EMIT_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav", 1, 0.25 );
+	Explode(DMG_GENERIC);
 		
 
-		
-		
-if (gpGlobals->time >= m_flDie)
-	{
+	if (gpGlobals->time >= m_flDie)
+		{
 			// lots of smoke
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_SMOKE );
-			WRITE_COORD( pev->origin.x + RANDOM_FLOAT( -16, 16 ) );
-			WRITE_COORD( pev->origin.y + RANDOM_FLOAT( -16, 16 ) );
-			WRITE_COORD( pev->origin.z - 32 );
-			WRITE_SHORT( g_sModelIndexSmoke );
-			WRITE_BYTE( 55 ); // scale * 10
-			WRITE_BYTE( 1 ); // framerate
-		MESSAGE_END();
-		
-		
-	//creload = 0;
-	SetThink( SUB_Remove );
-	}
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				WRITE_BYTE( TE_SMOKE );
+				WRITE_COORD( pev->origin.x + RANDOM_FLOAT( -16, 16 ) );
+				WRITE_COORD( pev->origin.y + RANDOM_FLOAT( -16, 16 ) );
+				WRITE_COORD( pev->origin.z - 32 );
+				WRITE_SHORT( g_sModelIndexSmoke );
+				WRITE_BYTE( 55 ); // scale * 10
+				WRITE_BYTE( 1 ); // framerate
+			MESSAGE_END();
+
+		SetThink( SUB_Remove );
+		}
 }
 
 
@@ -779,7 +859,110 @@ if (gpGlobals->time >= m_flDie)
 
 
 
+////////////////////////
+////////////////////////
+///////////////////////
+/////////////////////
+void CSatchelCharge2 :: Spawn( void )
+{
+	pev->movetype = MOVETYPE_BOUNCE;
+	pev->solid = SOLID_BBOX;
+
+	SET_MODEL(ENT(pev), "models/snapbug.mdl");
+	UTIL_SetSize(pev, Vector( -4, -4, -4), Vector(4, 4, 4));	// Uses point-sized, and can be stepped over
+	UTIL_SetOrigin( pev, pev->origin );
+
+	SetTouch( SatchelSlide );
+	SetUse( DetonateUse2 );
+	SetThink( SatchelThink );
+	pev->nextthink = gpGlobals->time + 0.9;
+	//relision
+	//rezzorhv
+	//sg4
+	pev->gravity = 0.5;
+	pev->friction = 0.5;
+
+	pev->dmg = 206;
+	pev->sequence = 1;
+	
+	pev->health = 150;
+	pev->takedamage = DAMAGE_YES;
+	
+
+}
 
 
+void CSatchelCharge2::SatchelSlide( CBaseEntity *pOther )
+{
+	entvars_t	*pevOther = pOther->pev;
 
+	// don't hit the guy that launched this grenade
+	if ( pOther->edict() == pev->owner )
+		return;
+
+	// pev->avelocity = Vector (300, 300, 300);
+	pev->gravity = 1;// normal gravity now
+
+	// HACKHACK - On ground isn't always set, so look for ground underneath
+	TraceResult tr;
+	UTIL_TraceLine( pev->origin, pev->origin - Vector(0,0,10), ignore_monsters, edict(), &tr );
+
+	if ( tr.flFraction < 1.0 )
+	{
+		// add a bit of static friction
+		pev->velocity = pev->velocity * 0.95;
+		pev->avelocity = pev->avelocity * 0.9;
+		// play sliding sound, volume based on velocity
+	}
+	
+	StudioFrameAdvance( );
+	
+}
+
+
+void CSatchelCharge2 :: SatchelThink( void )
+{
+
+
+	if (!IsInWorld())
+	{
+		UTIL_Remove( this );
+		return;
+	}
+
+	
+	if (pev->velocity.Length2D() < 3 && (pev->flags & FL_ONGROUND))
+	{
+	
+		pev->velocity.x += RANDOM_FLOAT ( -450, 450 );
+		pev->velocity.y += RANDOM_FLOAT ( -450, 450 );
+		pev->velocity.z += 160;
+
+	}
+	
+	//angle
+	switch ( RANDOM_LONG( 0, 1 ) )
+	{
+	case 0:	
+		{
+		//EMIT_SOUND_DYN( ENT(pev), CHAN_BODY, "weapons/dryfire1.wav", 0.35, ATTN_NORM, 1.0, RANDOM_LONG(90,100) );
+		pev->avelocity.y += 90;
+		pev->angles.y += 90;
+		break;
+		}
+	case 1:	
+		{
+		EMIT_SOUND_DYN( ENT(pev), CHAN_BODY, "weapons/pl_gun1.wav", 0.35, ATTN_NORM, 1.0, RANDOM_LONG(85,100) );
+		pev->avelocity.y -= 90;
+		pev->angles.y -= 90;
+		break;
+		}
+	}
+	
+	//FireBullets( 8, pev->origin, gpGlobals->v_forward , VECTOR_CONE_10DEGREES, 768, 35, 1, 70, VARS( pev->owner ) );
+
+	
+	pev->nextthink = gpGlobals->time + 1.5;
+
+}
 

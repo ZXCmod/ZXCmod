@@ -152,7 +152,7 @@ void CTripmineGrenade :: Spawn( void )
 {
 	Precache( );
 	// motor
-	pev->movetype = MOVETYPE_FLY;
+	pev->movetype = MOVETYPE_NONE;
 	pev->solid = SOLID_NOT;
 
 	SET_MODEL(ENT(pev), "models/v_tripmine.mdl");
@@ -535,7 +535,7 @@ void CTripmine::PrimaryAttack( void )
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
-	m_pPlayer->pev->nextthink = gpGlobals->time + 0.5;
+	//m_pPlayer->pev->nextthink = gpGlobals->time + 0.5;
 }
 
 
@@ -719,7 +719,7 @@ void CTripmineGrenade2 :: Spawn( void )
 	Precache( );
 
 	// motor
-	pev->movetype = MOVETYPE_FLY;
+	pev->movetype = MOVETYPE_NONE;
 	pev->solid = SOLID_NOT;
     pev->classname = MAKE_STRING( "weapon_tripmine" );
 	SET_MODEL(ENT(pev), "models/v_tripmine.mdl");
@@ -763,7 +763,7 @@ void CTripmineGrenade2 :: Spawn( void )
 
 	m_vecDir = gpGlobals->v_forward;
 	m_vecEnd = pev->origin + m_vecDir * 2048;
-	m_flNextChatTime5 = gpGlobals->time+180; //start timer
+	m_flNextChatTime5 = gpGlobals->time+120; //start timer
 }
 
 
@@ -940,10 +940,10 @@ void CTripmineGrenade2 :: BeamBreakThink( void  )
 		//return;
 
 	}
-KillBeam();
-MakeBeam();
-//SetThink( BeamBreakThink );
-//pev->nextthink = gpGlobals->time + 0.3;
+	KillBeam();
+	MakeBeam();
+	//SetThink( BeamBreakThink );
+	//pev->nextthink = gpGlobals->time + 0.3;
 }
 
 int CTripmineGrenade2 :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType )
@@ -1005,7 +1005,7 @@ void CTripmineGrenade3 :: Spawn( void )
 {
 	Precache( );
 	// motor
-	pev->movetype = MOVETYPE_FLY;
+	pev->movetype = MOVETYPE_NONE;
 	pev->solid = SOLID_NOT;
 
 	SET_MODEL(ENT(pev), "models/v_tripmine.mdl");
@@ -1033,7 +1033,7 @@ void CTripmineGrenade3 :: Spawn( void )
 	pev->nextthink = gpGlobals->time + 0.2;
 
 	pev->takedamage = DAMAGE_YES;
-	pev->dmg = 50;
+	pev->dmg = 20;
 	pev->health = 5; // don't let die normally
 
 	if (pev->owner != NULL)
@@ -1231,6 +1231,8 @@ int CTripmineGrenade3 :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAtta
 
 void CTripmineGrenade3::Killed( entvars_t *pevAttacker, int iGib )
 {
+
+
 	pev->takedamage = DAMAGE_NO;
 	
 	if ( pevAttacker && ( pevAttacker->flags & FL_CLIENT ) )
@@ -1248,23 +1250,26 @@ void CTripmineGrenade3::Killed( entvars_t *pevAttacker, int iGib )
 
 void CTripmineGrenade3::DelayDeathThink( void )
 {
+	CBaseEntity *pEntity = NULL;
+	
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 250 )) != NULL)
+		{
+		if (pEntity->IsPlayer() && FVisible( pEntity ))
+			{	
+			pEntity->pev->friction = 0.07;
+			pEntity->pev->armorvalue = (pEntity->pev->armorvalue * .50);
+			pEntity->pev->max_health = (pEntity->pev->max_health * .90);
+			
+			}
+		}
+		
 	KillBeam();
 	TraceResult tr;
 	UTIL_TraceLine ( pev->origin + m_vecDir * 8, pev->origin - m_vecDir * 64,  dont_ignore_monsters, ENT(pev), & tr);
 
-	CBaseEntity *pEntity = NULL;
-	
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 200 )) != NULL)
-		{
-		if (pEntity->IsPlayer() && FVisible( pEntity )) //!(pEntity->pev->movetype == MOVETYPE_FLY)
-			{	
-			pEntity->pev->friction = 0.05; //just for fun
-			}
-		}
-	
-	
-	
-	Explode( &tr, DMG_BLAST );
+
+		
+Explode( &tr, DMG_BLAST );
 }
 
 

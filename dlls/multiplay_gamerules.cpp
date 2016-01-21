@@ -137,22 +137,22 @@ void CHalfLifeMultiplay::RefreshSkillData( void )
 	gSkillData.suitchargerCapacity = 50;
 
 	// Crowbar whack
-	gSkillData.plrDmgCrowbar = 30;
+	gSkillData.plrDmgCrowbar = RANDOM_LONG(20,30);
 
 	// Glock Round
-	gSkillData.plrDmg9MM = RANDOM_LONG(9,15);
+	gSkillData.plrDmg9MM = RANDOM_LONG(7,11);
 
 	// 357 Round
 	gSkillData.plrDmg357 = RANDOM_LONG(47,87);
 
 	// MP5 Round
-	gSkillData.plrDmgMP5 = RANDOM_LONG(9,15);
+	gSkillData.plrDmgMP5 = RANDOM_LONG(10,15);
 
 	// M203 grenade
 	gSkillData.plrDmgM203Grenade = 105;
 
 	// Shotgun buckshot
-	gSkillData.plrDmgBuckshot = 23;// fewer pellets in deathmatch
+	gSkillData.plrDmgBuckshot = 15;
 
 	// Crossbow
 	gSkillData.plrDmgCrossbowClient = 60;
@@ -551,6 +551,22 @@ void CHalfLifeMultiplay :: ClientDisconnected( edict_t *pClient )
 		}
 		pFind3 = FIND_ENTITY_BY_CLASSNAME( pFind3, "player_freeze" );
 	}	
+///////
+	edict_t *pFind4; 
+	pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_pipebomb" );
+	while ( !FNullEnt( pFind4 ) )
+	{
+		CBaseEntity *pEnt = CBaseEntity::Instance( pFind4 );
+		if ( pEnt )
+		{
+			if ( pEnt->pev->owner == pPlayer->edict() )
+			{
+				//pEnt->SUB_Remove();
+				pEnt->TakeDamage(pEnt->pev, pEnt->pev, 1000, 1 );
+			}
+		}
+		pFind4 = FIND_ENTITY_BY_CLASSNAME( pFind4, "monster_pipebomb" );
+	}
 		
 		
 			FireTargets( "game_playerleave", pPlayer, pPlayer, USE_TOGGLE, 0 );

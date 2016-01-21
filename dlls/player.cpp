@@ -1738,31 +1738,28 @@ void CBasePlayer::PreThink(void)
 
 
 
-///freeze always updater
-if (FTime2 > 0)
-    {
-      if (FTime2 <= gpGlobals->time)
-      {
-         EnableControl(TRUE);
-         pev->rendermode = kRenderNormal;
-         pev->renderfx = kRenderFxNone;
-         pev->renderamt = 0;
-         FTime2 = 0; 
-      }
-	  }
+	///freeze always updater
+	if (FTime2 > 0)
+		{
+			if (FTime2 <= gpGlobals->time)
+			{
+				 EnableControl(TRUE);
+				 pev->rendermode = kRenderNormal;
+				 pev->renderfx = kRenderFxNone;
+				 pev->renderamt = 0;
+				 FTime2 = 0; 
+			}
+		}
 
-///invisible always updater
+	///invisible always updater
 
-//pev->button & IN_ATTACK|IN_ATTACK2|IN_RELOAD
-//if ( pl->m_pActiveItem->m_iId == WEAPON_CROWBAR
+	//pev->button & IN_ATTACK|IN_ATTACK2|IN_RELOAD
+	//if ( pl->m_pActiveItem->m_iId == WEAPON_CROWBAR
 
-if (pev->rendermode == kRenderTransTexture)
-	pev->renderamt = pev->health; //dynamic transparency
+	if (pev->rendermode == kRenderTransTexture)
+		pev->renderamt = pev->health; //dynamic transparency
 
 
-	
-
-	  
 	int buttonsChanged = (m_afButtonLast ^ pev->button);	// These buttons have changed this frame
 	
 	// Debounced button codes for pressed/released
@@ -1775,7 +1772,7 @@ if (pev->rendermode == kRenderTransTexture)
 	if ( g_fGameOver )
 		return;         // intermission or finale
 
-	UTIL_MakeVectors(pev->v_angle);             // is this still used?
+	UTIL_MakeVectors(pev->v_angle);             // is this still used? YES!
 	
 	ItemPreFrame( );
 	WaterMove();
@@ -1785,19 +1782,21 @@ if (pev->rendermode == kRenderTransTexture)
 	else
 		m_iHideHUD |= HIDEHUD_FLASHLIGHT;
 
-
-	// JOHN: checks if new client data (for HUD and view control) needs to be sent to the client
-	UpdateClientData();
+	if (pev != NULL)
+		UpdateClientData();
 	
-	CheckTimeBasedDamage();
-
-	CheckSuitUpdate();
+	CheckTimeBasedDamage(); //is crashed
 
 	if (pev->deadflag >= DEAD_DYING)
 	{
 		PlayerDeathThink();
 		return;
 	}
+	
+	/////bug
+	// JOHN: checks if new client data (for HUD and view control) needs to be sent to the client
+
+	CheckSuitUpdate();
 
 	// So the correct flags get sent to client asap.
 	//
@@ -2469,14 +2468,14 @@ void CBasePlayer :: UpdatePlayerSound ( void )
 	//ALERT ( at_console, "%d/%d\n", iVolume, m_iTargetVolume );
 }
 
-
+//crashing here
 void CBasePlayer::PostThink()
 {
 	if ( g_fGameOver )
-		goto pt_end;         // intermission or finale
+		return;
 
 	if (!IsAlive())
-		goto pt_end;
+		return;
 
 	// Handle Tank controlling
 	if ( m_pTank != NULL )
@@ -2565,17 +2564,13 @@ void CBasePlayer::PostThink()
 	// Track button info so we can detect 'pressed' and 'released' buttons next frame
 	m_afButtonLast = pev->button;
 
-	pt_end:
-#if defined( CLIENT_WEAPONS )
-		// Decay timers on weapons
-	// go through all of the weapons and make a list of the ones to pack
 	for ( int i = 0 ; i < MAX_ITEM_TYPES ; i++ )
 	{
 		if ( m_rgpPlayerItems[ i ] )
 		{
 			CBasePlayerItem *pPlayerItem = m_rgpPlayerItems[ i ];
 
-			while ( pPlayerItem )
+			while ( pPlayerItem != NULL )
 			{
 				CBasePlayerWeapon *gun;
 
@@ -2630,9 +2625,9 @@ void CBasePlayer::PostThink()
 	}
 	
 
-#else
-	return;
-#endif
+// #else
+	// return;
+// #endif
 }
 
 
@@ -2752,7 +2747,7 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 			// increment pSpot
 			
 			pSpot = UTIL_FindEntityByClassname( pSpot, "info_player_deathmatch" );
-			pPlayer->pev->nextthink = gpGlobals->time + 0.5;
+			//pPlayer->pev->nextthink = gpGlobals->time + 0.5;
 	}
 	
 	/////////////////////////////
@@ -2813,6 +2808,7 @@ void CBasePlayer::Spawn( void )
     pev->renderfx = kRenderFxNone;
     pev->renderamt = 0;
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "debris/beamstart8b.wav", 1.0, ATTN_NORM);
+	
 	
 	
 	
@@ -2928,7 +2924,7 @@ void CBasePlayer :: Precache( void )
 	PRECACHE_MODEL("models/hgrunt.mdl");
 	PRECACHE_MODEL("models/player/hgrunt/Hgrunt.mdl");
 	
-	
+
 
 }
 
@@ -3979,24 +3975,24 @@ void CBasePlayer :: UpdateClientData( void )
 		gDisplayTitle = 0;
 	}
 
-	if (pev->health != m_iClientHealth)
+	if (pev->health >= 0)
 	{
-		int iHealth = max( pev->health, 0 );  // make sure that no negative health values are sent
+		//int iHealth = max( pev->health, 0 );  // make sure that no negative health values are sent
 
 		// send "health" update message
 		MESSAGE_BEGIN( MSG_ONE, gmsgHealth, NULL, pev );
-			WRITE_BYTE( iHealth );
+			WRITE_BYTE( (int)pev->health );
 		MESSAGE_END();
 
-		m_iClientHealth = pev->health;
+		//m_iClientHealth = pev->health;
 	}
 
 
-	if (pev->armorvalue != m_iClientBattery)
+	if (pev->armorvalue >= 0)
 	{
-		m_iClientBattery = pev->armorvalue;
+		//m_iClientBattery = pev->armorvalue;
 
-		ASSERT( gmsgBattery > 0 );
+		//ASSERT( gmsgBattery > 0 );
 		// send "health" update message
 		MESSAGE_BEGIN( MSG_ONE, gmsgBattery, NULL, pev );
 			WRITE_SHORT( (int)pev->armorvalue);
@@ -4037,30 +4033,18 @@ void CBasePlayer :: UpdateClientData( void )
 		m_bitsDamageType &= DMG_TIMEBASED;
 	}
 
-	// Update Flashlight
+	// Update Flashlight, maked unlimited
 	if ((m_flFlashLightTime) && (m_flFlashLightTime <= gpGlobals->time))
 	{
 		if (FlashlightIsOn())
 		{
 			if (m_iFlashBattery)
 			{
-				m_flFlashLightTime = FLASH_DRAIN_TIME + gpGlobals->time;
-				m_iFlashBattery--;
-				
 				if (!m_iFlashBattery)
 					FlashlightTurnOff();
 			}
 		}
-		else
-		{
-			if (m_iFlashBattery < 100)
-			{
-				m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
-				m_iFlashBattery++;
-			}
-			else
-				m_flFlashLightTime = 0;
-		}
+
 
 		MESSAGE_BEGIN( MSG_ONE, gmsgFlashBattery, NULL, pev );
 		WRITE_BYTE(m_iFlashBattery);
@@ -4086,20 +4070,6 @@ void CBasePlayer :: UpdateClientData( void )
 	{
 		m_fKnownItem = TRUE;
 
-	// WeaponInit Message
-	// byte  = # of weapons
-	//
-	// for each weapon:
-	// byte		name str length (not including null)
-	// bytes... name
-	// byte		Ammo Type
-	// byte		Ammo2 Type
-	// byte		bucket
-	// byte		bucket pos
-	// byte		flags	
-	// ????		Icons
-		
-		// Send ALL the weapon info now
 		int i;
 
 		for (i = 0; i < MAX_WEAPONS; i++)
@@ -4130,25 +4100,31 @@ void CBasePlayer :: UpdateClientData( void )
 	}
 
 
+
 	SendAmmoUpdate();
-
-	// Update all the items
-	for ( int i = 0; i < MAX_ITEM_TYPES; i++ )
-	{
-		if ( m_rgpPlayerItems[i] )  // each item updates it's successors
-			m_rgpPlayerItems[i]->UpdateClientData( this );
-	}
-
-	// Cache and client weapon change
-	m_pClientActiveItem = m_pActiveItem;
-	m_iClientFOV = m_iFOV;
 
 	// Update Status Bar
 	if ( m_flNextSBarUpdateTime < gpGlobals->time )
 	{
 		UpdateStatusBar();
-		m_flNextSBarUpdateTime = gpGlobals->time + 0.2;
+		
+		// Cache and client weapon change
+		m_pClientActiveItem = m_pActiveItem;
+		m_iClientFOV = m_iFOV;
+
+		
+
+		// Update all the items
+		for ( int i = 0; i < MAX_ITEM_TYPES; i++ )
+		{
+			if ( m_rgpPlayerItems[i] )  // each item updates it's successors
+				m_rgpPlayerItems[i]->UpdateClientData( this );
+		}
+		
+		m_flNextSBarUpdateTime = gpGlobals->time + 0.1;
+		
 	}
+	
 }
 
 
@@ -4194,6 +4170,7 @@ int CBasePlayer :: Illumination( void )
 	if (iIllum > 255)
 		return 255;
 	return iIllum;
+	
 }
 
 

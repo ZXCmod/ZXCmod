@@ -37,12 +37,14 @@ cvar_t	decalfrequency = {"decalfrequency","20", FCVAR_SERVER };
 cvar_t	teamlist = {"mp_teamlist","hgrunt;scientist", FCVAR_SERVER };
 cvar_t	teamoverride = {"mp_teamoverride","1" };
 cvar_t	defaultteam = {"mp_defaultteam","0" };
-cvar_t	allowmonsters={"mp_allowmonsters","0", FCVAR_SERVER };
-cvar_t	allowmonsters2={"mp_fragmonsters","1", FCVAR_SERVER };
+cvar_t	allowmonsters={"mp_allowmonsters","1", FCVAR_SERVER };
+cvar_t	allowmonsters2={"mp_fragmonsters","0", FCVAR_SERVER };
 cvar_t	allowmonsters3={"mp_crowbar","1", FCVAR_SERVER };
-cvar_t	allowmonsters4={"mp_dmode","1", FCVAR_SERVER }; //1.29, regeneration mod
+cvar_t	allowmonsters4={"mp_dmode","0", FCVAR_SERVER }; //1.29, regeneration mod
 cvar_t	allowmonsters5={"mp_python","1", FCVAR_SERVER }; //1.30a, python
 cvar_t	allowmonsters6={"mp_gauss","1", FCVAR_SERVER }; //1.30a, gauss
+cvar_t	allowmonsters7={"mp_tank","0", FCVAR_SERVER }; //1.31, func_tank
+cvar_t	allowmonsters8={"mp_teleport","1", FCVAR_SERVER }; //1.31, cwb teleportation
 
 	// CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	// CVAR_SET_STRING("sv_stepsize", "18");
@@ -491,6 +493,8 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&allowmonsters4); //1.29
 	CVAR_REGISTER (&allowmonsters5); //python
 	CVAR_REGISTER (&allowmonsters6); //gauss
+	CVAR_REGISTER (&allowmonsters7); //tnk
+	CVAR_REGISTER (&allowmonsters8); //tlp
 
 	CVAR_REGISTER (&mp_chattime);
 

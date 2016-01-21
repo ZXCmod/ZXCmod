@@ -26,6 +26,7 @@
 #include "saverestore.h"
 #include "nodes.h"
 #include "doors.h"
+#include "gamerules.h"
 
 extern CGraph WorldGraph;
 
@@ -58,30 +59,39 @@ LINK_ENTITY_TO_CLASS(info_null,CNullEntity);
 
 class CBaseDMStart : public CPointEntity
 {
+private:
     //1.27
 	//set targetname for crowbar third attack
-	void Spawn( void )
+	virtual void Spawn( void )
 	{ 
 	pev->targetname=75;
+	pev->takedamage = DAMAGE_NO;
+	return;
 	}
 
-public:
+
 	void		KeyValue( KeyValueData *pkvd );
 	BOOL		IsTriggered( CBaseEntity *pEntity );
 
-private:
-};
 
-class CBaseDMStart2 : public CPointEntity
+};
+//coop ent
+class CBaseDMStart2 : public CBaseEntity
 {
-	void Spawn( void )
+private:
+	virtual void Spawn( void )
 	{ 
+	if ( !g_pGameRules->IsTeamplay())
+		UTIL_Remove(this);
+	
 	pev->targetname=500;
+	pev->takedamage = DAMAGE_NO;
+	return;
 	}
 };
 
 // These are the new entry points to entities. 
-LINK_ENTITY_TO_CLASS(info_player_coop,CBaseDMStart2);
+LINK_ENTITY_TO_CLASS(info_player_coop,CBaseDMStart2); //repeat initalizing, metamod have error
 LINK_ENTITY_TO_CLASS(info_player_deathmatch,CBaseDMStart);
 LINK_ENTITY_TO_CLASS(info_player_start,CPointEntity);
 LINK_ENTITY_TO_CLASS(info_landmark,CPointEntity);

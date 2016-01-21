@@ -31,6 +31,7 @@ public:
 	typedef enum { SATCHEL_DETONATE = 0, SATCHEL_RELEASE } SATCHELCODE;
 
 	static CGrenade *ShootTimed( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time );
+	static CGrenade *ShootTimed2( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time );
 	static CGrenade *ShootContact( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity );
 	static CGrenade *ShootSatchelCharge( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity );
 	static void UseSatchelCharges( entvars_t *pevOwner, SATCHELCODE code );
@@ -46,7 +47,9 @@ public:
 	void EXPORT PreDetonate( void );
 	void EXPORT Detonate( void );
 	void EXPORT DetonateUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void EXPORT DetonateUse2( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void EXPORT TumbleThink( void );
+	void EXPORT TumbleThink2( void );
 
 	virtual void BounceSound( void );
 	virtual int	BloodColor( void ) { return DONT_BLEED; }
@@ -327,6 +330,7 @@ public:
 	virtual void PrimaryAttack( void ) { return; }				// do "+ATTACK"
 	virtual void SecondaryAttack( void ) { return; }			// do "+ATTACK2"
 	virtual void ThirdAttack( void ) { return; }				// do "+ATTACK3"
+	virtual void FourthAttack( void ) { return; }				// do "+ATTACK4"
 	virtual void Reload( void ) { return; }						// do "+RELOAD"
 	virtual void WeaponIdle( void ) { return; }					// called when no buttons pressed
 	virtual int UpdateClientData( CBasePlayer *pPlayer );		// sends hud info to client dll, if things have changed
@@ -346,7 +350,7 @@ public:
 	int		m_fInSpecialReload;									// Are we in the middle of a reload for the shotguns
 	float	m_flNextPrimaryAttack;								// soonest time ItemPostFrame will call PrimaryAttack
 	float	m_flNextSecondaryAttack;							// soonest time ItemPostFrame will call SecondaryAttack
-	float	m_flNextThirdAttack;							// 
+	//float	m_flNextThirdAttack;							// 
 	float	m_flTimeWeaponIdle;									// soonest time ItemPostFrame will call WeaponIdle
 	int		m_iPrimaryAmmoType;									// "primary" ammo index into players m_rgAmmo[]
 	int		m_iSecondaryAmmoType;								// "secondary" ammo index into players m_rgAmmo[]
@@ -483,11 +487,15 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void ); // 1.27 wp
+	void FourthAttack( void );
 	void GlockFire( float flSpread, float flCycleTime, BOOL fUseAutoAim );
 	void GlockFire2( float flSpread, float flCycleTime, BOOL fUseAutoAim );
 	BOOL Deploy( void );
 	void Reload( void );
 	void WeaponIdle( void );
+	void Holster( int skiplocal = 0 );
+	BOOL m_fInZoom;
+	
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -522,12 +530,14 @@ public:
 	void WeaponIdle( void );
 	float m_flNextChatTime11; //delay
 	void ThirdAttack( void ); // 1.27 wp
+	void FourthAttack( void ); // 1.31 wp
 	int Swing( int fFirst );
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	int m_iSwing;
 	TraceResult m_trHit;
 	int index;
+	int m_touch;
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -584,13 +594,15 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void );
+	void FourthAttack( void );
 	int SecondaryAmmoIndex( void );
 	BOOL Deploy( void );
 	void Reload( void );
 	void WeaponIdle( void );
 	float m_flNextAnimTime;
+	float   m_spread;
 	int m_iShell;
-short BSpr;
+	short BSpr;
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -618,6 +630,8 @@ public:
 	void FireSniperBolt( void );
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
+	void FourthAttack( void );
 	int AddToPlayer( CBasePlayer *pPlayer );
 	BOOL Deploy( );
 	void Holster( int skiplocal = 0 );
@@ -660,6 +674,7 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void );
+	void FourthAttack( void );
 	BOOL Deploy( );
 	void Reload( void );
 	void WeaponIdle( void );
@@ -818,6 +833,7 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void ); //3 attack
+	void FourthAttack( void ); //4 attack
 	void Reload( void );
 	void WeaponIdle( void );
 	
@@ -836,6 +852,10 @@ public:
 	// was this weapon just fired primary or secondary?
 	// we need to know so we can pick the right set of effects. 
 	BOOL m_fPrimaryFire;
+	BOOL m_fFourthFire;
+	
+	
+	short m_iSpriteTexture2;
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -854,11 +874,11 @@ private:
 class CEgon : public CBasePlayerWeapon
 {
 public:
-#ifndef CLIENT_DLL
-	int		Save( CSave &save );
-	int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
-#endif
+	#ifndef CLIENT_DLL
+		int		Save( CSave &save );
+		int		Restore( CRestore &restore );
+		static	TYPEDESCRIPTION m_SaveData[];
+	#endif
 
 	void Spawn( void );
 	void Precache( void );
@@ -881,13 +901,16 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void ); // 1.27 wp
+	void FourthAttack( void ); // 1.31 wp
 
 	void WeaponIdle( void );
 
 	float m_flAmmoUseTime;// since we use < 1 point of ammo per update, we subtract ammo on a timer.
-float XXX;
+	float XXX;
 	float GetPulseInterval( void );
 	float GetDischargeInterval( void );
+	float m_flNextChatTime10;
+	float m_flNextChatTime15;
 
 	void Fire( const Vector &vecOrigSrc, const Vector &vecDir );
 
@@ -901,14 +924,15 @@ float XXX;
 	CBeam				*m_pNoise;
 	CSprite				*m_pSprite;
 	short m_LaserSprite;
+	
 
 	virtual BOOL UseDecrement( void )
 	{ 
-#if defined( CLIENT_WEAPONS )
-		return TRUE;
-#else
-		return FALSE;
-#endif
+		#if defined( CLIENT_WEAPONS )
+				return TRUE;
+		#else
+				return FALSE;
+		#endif
 	}
 
 	unsigned short m_usEgonStop;
@@ -975,6 +999,8 @@ public:
 	float m_flNextChatTime6; //delay
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
+	void FourthAttack( void );
 	void Reload( void );
 	BOOL Deploy( void );
 	BOOL CanHolster( void );
@@ -982,7 +1008,7 @@ public:
 	void WeaponIdle( void );
 	void WriteBeamColor ( void );
 	int m_iTrail;
-	void ThirdAttack( void ); //3 attack
+	int m_type;
 	virtual BOOL UseDecrement( void )
 
 	{ 
@@ -1012,6 +1038,7 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void );
+	void FourthAttack( void );
 	int AddDuplicate( CBasePlayerItem *pOriginal );
 	BOOL CanDeploy( void );
 	BOOL Deploy( void );

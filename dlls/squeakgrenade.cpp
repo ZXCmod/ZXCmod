@@ -176,12 +176,12 @@ void CSqueakGrenade :: Spawn( void )
 		WRITE_BYTE( TE_BEAMFOLLOW );
 		WRITE_SHORT(entindex()); // entity
 		WRITE_SHORT(g_sModelIndexSmokeTrail ); // model
-		WRITE_BYTE( RANDOM_FLOAT(20, 50) ); // life
-		WRITE_BYTE( RANDOM_FLOAT(1.2, 3.6) ); // width
+		WRITE_BYTE( 16 ); // life
+		WRITE_BYTE( 1.5 ); // width
 		WRITE_BYTE( 255 ); // r, g, b
 		WRITE_BYTE( 255 ); // r, g, b
 		WRITE_BYTE( 255 ); // r, g, b
-		WRITE_BYTE( 40 ); // brightness
+		WRITE_BYTE( 16 ); // brightness
 
 		MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 

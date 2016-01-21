@@ -35,9 +35,6 @@ class CCrossbowBolt : public CBaseEntity
 	void Spawn( void );
 	void Precache( void );
 	int  Classify ( void );
-	void EXPORT BubbleThink( void );
-	void EXPORT BoltTouch( CBaseEntity *pOther );
-	void EXPORT ExplodeThink( void );
 
 
 public:
@@ -71,12 +68,6 @@ void CCrossbowBolt::Spawn( )
 	pev->nextthink = gpGlobals->time + 7.5;
 	SetThink( SUB_Remove );
 	
-
-
-	
-	
-	
-
 }
 
 
@@ -95,22 +86,243 @@ int	CCrossbowBolt :: Classify ( void )
 {
 	return	CLASS_NONE;
 }
+//end
 
-void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
+//HE-bolt
+class CCrossbowBolt2 : public CBaseEntity
 {
 
-}
+	void Spawn( void );
+	void EXPORT Update( void );
+	short g_sModelIndexLaser;
+	BOOL  g_lock;
+public:
+	static CCrossbowBolt2*   Create( CBaseEntity* );
+	void   Hit        ( CBaseEntity* );
+	CBaseEntity *m_hEnemy;
+};
 
-void CCrossbowBolt::BubbleThink( void )
+LINK_ENTITY_TO_CLASS( bone_follow, CCrossbowBolt2 );
+
+
+CCrossbowBolt2* CCrossbowBolt2 :: Create( CBaseEntity* Owner )
 {
-
+	CCrossbowBolt2 *pBolt = GetClassPtr( (CCrossbowBolt2 *)NULL );
+	pBolt->pev->classname = MAKE_STRING("bolt");
+	pBolt->Spawn();
+	pBolt->SetTouch( CCrossbowBolt2 :: Hit );
+	pBolt->pev->owner = Owner->edict( );
+	return pBolt;
 }
 
-void CCrossbowBolt::ExplodeThink( void ) //touch explode. Clear, if explode been replaced on other.
+void CCrossbowBolt2::Spawn( )
 {
+	pev->movetype = MOVETYPE_FLY;
+	pev->solid = SOLID_BBOX;
+	
+	pev->ltime = 1.0;
+	pev->gravity = 0.0;
+	pev->friction = 0.0;
+	
+	g_lock = FALSE;
+	
+	Vector vecThrow;
+	vecThrow = gpGlobals->v_forward * 3000;
+	pev->velocity = vecThrow;
+	
+	g_sModelIndexLaser = PRECACHE_MODEL( "sprites/plasma.spr" );
+	
+	pev->angles = UTIL_VecToAngles (pev->velocity);
+	
+	//set trails
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		WRITE_BYTE( TE_BEAMFOLLOW );
+		WRITE_SHORT(entindex()); // entity
+		WRITE_SHORT( g_sModelIndexLaser ); // model
+		WRITE_BYTE( 10 ); // life
+		WRITE_BYTE( 1 ); // width
+		WRITE_BYTE( 64 ); // r, g, b
+		WRITE_BYTE( 128 ); // r, g, b
+		WRITE_BYTE( 255 ); // r, g, b
+		WRITE_BYTE( 255 ); // brightness
+	MESSAGE_END(); // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 
+
+	SET_MODEL(ENT(pev), "models/crossbow_bolt.mdl");
+
+	UTIL_SetOrigin( pev, pev->origin );
+	UTIL_SetSize(pev, Vector(-2, -2, -1), Vector(2, 2, 1));
+
+	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/xbow_hit1.wav", 1.0, ATTN_NORM);
+	pev->nextthink = gpGlobals->time + 0.01;
+	SetThink( Update );
+	SetTouch( Hit );
+	
 }
 
+void CCrossbowBolt2::Update( )
+{
+	pev->ltime += 1.0;
+
+
+	if (g_lock == TRUE)
+	{
+		//capture Entity from Hit event
+		CBaseEntity *pOther = m_hEnemy;
+	
+		//stop moving
+		pev->velocity = g_vecZero;
+	
+		//remove
+		if (pev->ltime >= (50.0+RANDOM_LONG(1,16)))
+		{
+			pev->takedamage = DAMAGE_NO;
+			pOther = NULL;
+			UTIL_Remove( this );
+			SetTouch( NULL );
+		}
+		
+	
+		
+		
+		if (pOther == NULL)
+		{
+			pOther = NULL;
+			UTIL_Remove( this );
+			return;
+		}
+		
+		/* 		
+		if( !pOther->IsAlive( ) ) //destroy think after object kill
+		{
+			g_lock = FALSE;
+			//UTIL_Remove( this );
+		} 
+		*/
+	
+		pOther->pev->velocity.x = ( (( pev->velocity.x + pev->origin.x) - pOther->pev->origin.x));
+		pOther->pev->velocity.y = ( (( pev->velocity.y + pev->origin.y) - pOther->pev->origin.y));
+		pOther->pev->velocity.z = ( (( pev->velocity.z + pev->origin.z) - pOther->pev->origin.z));
+		
+		
+		//always hurt
+		if ( pOther != NULL && pOther->pev->takedamage )
+		{
+			pOther->TakeDamage(pev, VARS( pev->owner ), 1, DMG_BULLET);	
+			
+			//draw line
+			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+				WRITE_BYTE( TE_BEAMPOINTS );
+				WRITE_COORD(pev->origin.x);
+				WRITE_COORD(pev->origin.y);
+				WRITE_COORD(pev->origin.z);
+				WRITE_COORD( pOther->pev->origin.x );
+				WRITE_COORD( pOther->pev->origin.y );
+				WRITE_COORD( pOther->pev->origin.z );
+				WRITE_SHORT( g_sModelIndexLaser ); //sprite
+				WRITE_BYTE( 1 ); // Starting frame
+				WRITE_BYTE( 0  ); // framerate * 0.1
+				WRITE_BYTE( 1 ); // life * 0.1
+				WRITE_BYTE( 8 ); // width
+				WRITE_BYTE( 1 ); // noise
+				WRITE_BYTE( 250 ); // color r,g,b
+				WRITE_BYTE( 250 ); // color r,g,b
+				WRITE_BYTE( 250 ); // color r,g,b
+				WRITE_BYTE( 255 ); // brightness
+				WRITE_BYTE( 255 ); // scroll speed
+			MESSAGE_END();
+		
+			pev->nextthink = gpGlobals->time + 0.1;
+		}
+	}
+	else	//no targets
+	{
+		//explode
+		if (pev->ltime >= 5.0)
+		{
+			pev->takedamage = DAMAGE_NO;
+			//pOther = NULL;
+			UTIL_Remove( this );
+			SetTouch( NULL );
+		}
+		
+		pev->nextthink = gpGlobals->time + 1.0;
+		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/xbow_hit1.wav", 0.5, ATTN_NORM);
+	}
+	
+}
+
+void    CCrossbowBolt2 :: Hit( CBaseEntity* pOther )
+{
+	//set new position
+
+	TraceResult tr = UTIL_GetGlobalTrace( );
+	//Vector      StartPosition;
+	pev->enemy = pOther->edict( );
+	//StartPosition = pev->origin - pev->velocity.Normalize() * 32;
+	
+	//private direction
+	Vector vecSrc = pev->origin;
+	Vector vecDir;
+	UTIL_MakeVectorsPrivate( pev->angles, vecDir, NULL, NULL );
+
+
+
+
+
+	//check only thinks
+	if (pOther->pev->takedamage)
+	{
+		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 4096, ignore_monsters, edict(), &tr);
+		UTIL_BloodDecalTrace( &tr, BLOOD_COLOR_RED );
+		//setPos
+		pev->origin = tr.vecEndPos;
+		
+		//lights
+		Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(vecSrc.x);	// X
+			WRITE_COORD(vecSrc.y);	// Y
+			WRITE_COORD(vecSrc.z);	// Z
+			WRITE_BYTE( 16 );		// radius * 0.1
+			WRITE_BYTE( 254 );		// r
+			WRITE_BYTE( 0 );		// g
+			WRITE_BYTE( 0 );		// b
+			WRITE_BYTE( 128 );		// time * 10
+			WRITE_BYTE( 16 );		// decay * 0.1
+		MESSAGE_END( );
+		
+		pev->solid = SOLID_NOT;
+		
+		g_lock = TRUE;
+		m_hEnemy = pOther;
+		
+
+		pev->velocity = g_vecZero; //try
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 10, 512, CLASS_NONE, DMG_MORTAR|DMG_BULLET  ); //DMG
+		
+		if ( tr.pHit && Instance( tr.pHit )->pev->solid != SOLID_BSP) 
+		{
+			SetTouch( NULL );
+			UTIL_Remove( this );
+		}
+	
+		pev->nextthink = gpGlobals->time + 0.01;
+		
+		
+		
+	}
+	//else
+		
+	
+	
+	SetTouch( NULL );
+	//UTIL_Remove( this );
+}
+
+
+//end.
 
 enum crossbow_e {
 	CROSSBOW_IDLE1 = 0,	// full
@@ -157,6 +369,7 @@ void CCrossbow::Precache( void )
 	PRECACHE_MODEL("models/w_crossbow.mdl");
 	PRECACHE_MODEL("models/v_crossbow.mdl");
 	PRECACHE_MODEL("models/p_crossbow.mdl");
+	PRECACHE_MODEL( "sprites/plasma.spr" );
 
 	PRECACHE_SOUND("weapons/xbow_fire1.wav");
 	PRECACHE_SOUND("weapons/xbow_reload1.wav");
@@ -212,10 +425,11 @@ void CCrossbow::Holster( int skiplocal /* = 0 */ )
 void CCrossbow::PrimaryAttack( void )
 {
 	//low accuracy
-	if (!(m_pPlayer->pev->button & IN_DUCK))
+	//if (!(m_pPlayer->pev->button & IN_DUCK))
+	if ( !FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) //the true sensor
 	{
-		m_pPlayer->pev->punchangle.x -= 1;
-		m_pPlayer->pev->punchangle.y += RANDOM_LONG(-2,4);
+		m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(-0.5,0.5);
+		m_pPlayer->pev->punchangle.y -= RANDOM_FLOAT(-0.75,0.75);
 	}
 	
 #ifdef CLIENT_DLL
@@ -274,39 +488,36 @@ void CCrossbow::FireSniperBolt()
 	UTIL_MakeVectors( anglesAim ); //Vector( 0.03268, 0.13716, 0.13134 )
 	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
 	Vector vecDir = gpGlobals->v_forward ; // + Vector( RANDOM_FLOAT( -0.005, 0.005 ), RANDOM_FLOAT( -0.005, 0.005 ),RANDOM_FLOAT( -0.005, 0.005 )
-
 	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+	UTIL_PlayerDecalTrace( &tr, playernum, pev->frame, TRUE );
 
-	
-			UTIL_PlayerDecalTrace( &tr, playernum, pev->frame, TRUE );
-	
-	
-	
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-					 WRITE_BYTE( TE_BEAMPOINTS );
-					 WRITE_COORD( vecSrc.x);
-					 WRITE_COORD( vecSrc.y);
-					 WRITE_COORD( vecSrc.z);
-					 WRITE_COORD( tr.vecEndPos.x);
-					 WRITE_COORD( tr.vecEndPos.y);
-					 WRITE_COORD( tr.vecEndPos.z);
-					 WRITE_SHORT(g_sModelIndexLaser ); // model
-					 WRITE_BYTE( 0 ); // framestart?
-					 WRITE_BYTE( 0 ); // framerate?
-					 WRITE_BYTE( 7 ); // life
-					 WRITE_BYTE( RANDOM_LONG(1,2) ); // width
-					 WRITE_BYTE( 0 ); // noise
-					 WRITE_BYTE( RANDOM_LONG(200,255)); // r, g, b
-					 WRITE_BYTE( RANDOM_LONG(10,100)); // r, g, b
-					 WRITE_BYTE( 0 ); // r, g, b
-					 WRITE_BYTE( RANDOM_LONG(1,64) ); // brightness
-					 WRITE_BYTE( 0 ); // speed?
-			MESSAGE_END(); 
 
-			PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
 
-			CBaseEntity *pSatchel = Create( "crossbow_bolt", tr.vecEndPos, m_pPlayer->pev->angles, m_pPlayer->edict() ); //Vector(0,0,0)
-			
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		 WRITE_BYTE( TE_BEAMPOINTS );
+		 WRITE_COORD( vecSrc.x);
+		 WRITE_COORD( vecSrc.y);
+		 WRITE_COORD( vecSrc.z);
+		 WRITE_COORD( tr.vecEndPos.x);
+		 WRITE_COORD( tr.vecEndPos.y);
+		 WRITE_COORD( tr.vecEndPos.z);
+		 WRITE_SHORT(g_sModelIndexLaser ); // model
+		 WRITE_BYTE( 0 ); // framestart?
+		 WRITE_BYTE( 0 ); // framerate?
+		 WRITE_BYTE( 7 ); // life
+		 WRITE_BYTE( RANDOM_LONG(1,2) ); // width
+		 WRITE_BYTE( 0 ); // noise
+		 WRITE_BYTE( RANDOM_LONG(200,255)); // r, g, b
+		 WRITE_BYTE( RANDOM_LONG(10,100)); // r, g, b
+		 WRITE_BYTE( 0 ); // r, g, b
+		 WRITE_BYTE( RANDOM_LONG(1,64) ); // brightness
+		 WRITE_BYTE( 0 ); // speed?
+	MESSAGE_END(); 
+
+	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
+
+	CBaseEntity *pSatchel = Create( "crossbow_bolt", tr.vecEndPos, m_pPlayer->pev->angles, m_pPlayer->edict() ); //Vector(0,0,0)
+	
 			
 #ifndef CLIENT_DLL
 	if ( tr.pHit->v.takedamage )
@@ -320,66 +531,15 @@ void CCrossbow::FireSniperBolt()
 
 void CCrossbow::FireBolt()
 {
-/* 	TraceResult tr;
 
-	if (m_iClip == 0)
-	{
-		PlayEmptySound( );
-		return;
-	}
+//deprecated
 
-	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
-
-	m_iClip--;
-
-	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
-
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors( anglesAim );
-	
-	anglesAim.x		= -anglesAim.x;
-	Vector vecSrc	 = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
-	Vector vecDir	 = gpGlobals->v_forward;
-
-#ifndef CLIENT_DLL
-	CCrossbowBolt *pBolt = CCrossbowBolt::BoltCreate();
-	pBolt->pev->origin = vecSrc;
-	pBolt->pev->angles = anglesAim;
-	pBolt->pev->owner = m_pPlayer->edict();
-	
-	if (m_pPlayer->pev->waterlevel == 3)
-	{
-		pBolt->pev->velocity = vecDir * BOLT_WATER_VELOCITY;
-		pBolt->pev->speed = BOLT_WATER_VELOCITY;
-	}
-	else
-	{
-		pBolt->pev->velocity = vecDir * BOLT_AIR_VELOCITY;
-		pBolt->pev->speed = BOLT_AIR_VELOCITY;
-	}
-	pBolt->pev->avelocity.z = RANDOM_LONG(9, 11);
-#endif
-
-	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
-		// HEV suit - indicate out of ammo condition
-		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
-
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
-
-	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
-
-	if (m_iClip != 0)
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 5.0;
-	else
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75; */
 }
 
 
 void CCrossbow::SecondaryAttack()
 {
+	
 	if ( m_pPlayer->pev->fov != 0 )
 	{
 		m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
@@ -393,18 +553,118 @@ void CCrossbow::SecondaryAttack()
 	
 	pev->nextthink = UTIL_WeaponTimeBase() + 0.1;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
-	/*//line init
-	TraceResult tr;
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors( anglesAim );
-	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
-	Vector vecDir = gpGlobals->v_forward;
-	//draw
-	*///UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
-
 
 }
 
+void CCrossbow::ThirdAttack()
+{
+
+
+	TraceResult	tr;	
+
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.03;
+
+	if (m_iClip == 0)
+	{
+		PlayEmptySound( );
+		return;
+	}
+
+
+	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
+	m_iClip--;
+
+
+	// player "shoot" animation
+	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+	
+	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+	UTIL_MakeVectors( anglesAim ); //Vector( 0.03268, 0.13716, 0.13134 )
+	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
+	Vector vecDir = gpGlobals->v_forward ; 
+
+	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+
+	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
+
+	Create( "crossbow_bolt", tr.vecEndPos, m_pPlayer->pev->angles, m_pPlayer->edict() ); //Vector(0,0,0)
+	
+	if ( !FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) //the true sensor
+	{
+		m_pPlayer->pev->punchangle.y = RANDOM_FLOAT(-2.75,2.75);
+		pev->dmg = 75;
+	}
+	else
+	{
+		m_pPlayer->pev->punchangle.y = RANDOM_FLOAT(-0.8,0.8);
+		pev->dmg = 35;
+	}
+			
+	#ifndef CLIENT_DLL
+		if ( tr.pHit->v.takedamage )
+		{
+			ClearMultiDamage( );
+			CBaseEntity::Instance(tr.pHit)->TraceAttack(m_pPlayer->pev, pev->dmg, vecDir, &tr, DMG_BULLET | DMG_NEVERGIB ); 
+			ApplyMultiDamage( pev, m_pPlayer->pev );
+		}
+	#endif
+	
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+			 WRITE_BYTE( TE_BEAMPOINTS );
+			 WRITE_COORD( vecSrc.x);
+			 WRITE_COORD( vecSrc.y);
+			 WRITE_COORD( vecSrc.z);
+			 WRITE_COORD( tr.vecEndPos.x);
+			 WRITE_COORD( tr.vecEndPos.y);
+			 WRITE_COORD( tr.vecEndPos.z);
+			 WRITE_SHORT(g_sModelIndexLaser ); // model
+			 WRITE_BYTE( 0 ); // framestart?
+			 WRITE_BYTE( 0 ); // framerate?
+			 WRITE_BYTE( 12 ); // life
+			 WRITE_BYTE( 1 ); // width
+			 WRITE_BYTE( 0 ); // noise
+			 WRITE_BYTE( pev->dmg ); // r, g, b
+			 WRITE_BYTE( 128 ); // r, g, b
+			 WRITE_BYTE( 255 ); // r, g, b
+			 WRITE_BYTE( 128 ); // brightness
+			 WRITE_BYTE( 0 ); // speed?
+	MESSAGE_END(); 
+	
+	pev->nextthink = UTIL_WeaponTimeBase() + 0.1;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1;
+
+}
+
+void CCrossbow::FourthAttack()
+{
+
+	Vector vecThrow = gpGlobals->v_forward * 1000; //1600
+
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+
+	if (m_iClip == 0)
+	{
+		PlayEmptySound( );
+		return;
+	}
+
+
+	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
+	m_iClip--;
+
+	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usCrossbow, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0, 0, m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType], 0, 0 );
+
+	CBaseEntity *pCr = Create( "bone_follow",  m_pPlayer->GetGunPosition( ) + gpGlobals->v_up * -6 + gpGlobals->v_right * 5, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+	pCr->pev->velocity = vecThrow;
+	
+	
+	pev->nextthink = UTIL_WeaponTimeBase() + 1.0;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+
+}
 
 void CCrossbow::Reload( void )
 {
@@ -416,7 +676,7 @@ void CCrossbow::Reload( void )
 		SecondaryAttack();
 	}
 
-	if ( DefaultReload( 5, CROSSBOW_RELOAD, 4.5 ) )
+	if ( DefaultReload( 5, CROSSBOW_RELOAD, 3.5 ) ) //5, 4.5
 	{
 		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/xbow_reload1.wav", RANDOM_FLOAT(0.95, 1.0), ATTN_NORM, 0, 93 + RANDOM_LONG(0,0xF));
 	}

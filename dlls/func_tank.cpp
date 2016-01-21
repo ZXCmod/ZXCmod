@@ -18,6 +18,7 @@
 #include "effects.h"
 #include "weapons.h"
 #include "explode.h"
+#include "game.h"
 
 #include "player.h"
 
@@ -50,7 +51,7 @@ public:
 	void	Precache( void );
 	void	KeyValue( KeyValueData *pkvd );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void	Think( void );
+	void	EXPORT Think( void );
 	void	TrackTarget( void );
 
 	virtual void Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
@@ -179,6 +180,10 @@ static Vector gTankSpread[] =
 void CFuncTank :: Spawn( void )
 {
 	Precache();
+	
+	//remove
+	if ( allowmonsters7.value != 1 )
+		UTIL_Remove( this );
 
 	pev->movetype	= MOVETYPE_PUSH;  // so it doesn't get pushed by anything
 	pev->solid		= SOLID_BSP;
@@ -690,7 +695,7 @@ void CFuncTank::AdjustAnglesForBarrel( Vector &angles, float distance )
 
 
 // Fire targets and spawn sprites
-////WTF? Fucking original coders.
+////WTF? 
 void CFuncTank::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
 	if ( m_fireLast != 0 )
@@ -832,7 +837,7 @@ public:
 	void	Activate( void );
 	void	KeyValue( KeyValueData *pkvd );
 	void	Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
-	void	Think( void );
+	void	EXPORT Think( void );
 	CLaser *GetLaser( void );
 
 	//virtual int	Save( CSave &save );
@@ -1151,7 +1156,7 @@ public:
 	virtual int	ObjectCaps( void );
 	void Spawn( void );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void Think( void );
+	void EXPORT Think( void );
 
 	//virtual int	Save( CSave &save );
 	//virtual int	Restore( CRestore &restore );

@@ -328,7 +328,7 @@ public:
 	float m_flNextChatTime12; //shotgun flare delay
 	int m_flNextChatTime13; //turrets limit
 	int m_flNextChatTime14; //freeze bags limit
-	float m_flNextChatTime15;
+	float m_flNextChatTime15; //egon Storm delay
 
 };
 

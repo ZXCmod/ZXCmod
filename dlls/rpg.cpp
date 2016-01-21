@@ -640,71 +640,71 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 
 //big gun part
 if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
-if (m_iClip >= 1)
+	if (m_iClip >= 1)
 	{
-	//do not create in wall
-	{
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		TraceResult tr;
-		Vector trace_origin;
-
-		// HACK HACK:  Ugly hacks to handle change in origin based on new physics code for players
-		// Move origin up if crouched and start trace a bit outside of body ( 20 units instead of 16 )
-		trace_origin = m_pPlayer->pev->origin;
-		if ( m_pPlayer->pev->flags & FL_DUCKING )
+		//do not create in wall
 		{
-			trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
+			UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+			TraceResult tr;
+			Vector trace_origin;
+
+			// HACK HACK:  Ugly hacks to handle change in origin based on new physics code for players
+			// Move origin up if crouched and start trace a bit outside of body ( 20 units instead of 16 )
+			trace_origin = m_pPlayer->pev->origin;
+			if ( m_pPlayer->pev->flags & FL_DUCKING )
+			{
+				trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
+			}
+
+			// find place to toss monster
+			UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
+
+
+
+			if ( !tr.fAllSolid && !tr.fStartSolid )
+			{
+			if (m_pPlayer->m_flNextChatTime13 < m_limit)
+				{
+					{
+					if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
+						{
+						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+						m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
+						m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+						m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+						// player "shoot" animation
+						m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+						UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+						Vector vecThrow = gpGlobals->v_forward;
+						m_pPlayer->m_flNextChatTime13 ++;
+						CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
+						//multiply hp x2
+						if (g_flWeaponCheat != 0)
+							pHornet->pev->health = pHornet->pev->health * 1.5; 
+
+						PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
+						m_iClip--; 
+						m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
+						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
+						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
+						m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+					}
+
+					else
+					{
+						PlayEmptySound( );
+						m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+						m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+					}
+					UpdateSpot( );
+					return;
+					}
+				}
+			}
 		}
-
-		// find place to toss monster
-		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
-
-
-
-	if ( !tr.fAllSolid && !tr.fStartSolid )
-	{
-	if (m_pPlayer->m_flNextChatTime13 < m_limit)
-	{
-	{
-	if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
-		{
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-		m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
-		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecThrow = gpGlobals->v_forward;
-		m_pPlayer->m_flNextChatTime13 ++;
-		CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
-		//multiply hp x2
-		if (g_flWeaponCheat != 0)
-			pHornet->pev->health = pHornet->pev->health * 1.5; 
-
-		PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
-		m_iClip--; 
-		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
 	}
-
-	else
-	{
-		PlayEmptySound( );
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
-	}
-	UpdateSpot( );
-	return;
-	}
-	}
-	}
-	}
-	}
-//reload completed
+	//reload completed
 
 
 	
@@ -713,6 +713,7 @@ if (m_iClip >= 1)
 	
 	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
+		
 	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
 	{
 		int iAnim;
@@ -760,7 +761,7 @@ void CRpg::UpdateSpot( void )
 		}
 
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecSrc = m_pPlayer->GetGunPosition( );;
+		Vector vecSrc = m_pPlayer->GetGunPosition( );
 		Vector vecAiming = gpGlobals->v_forward;
 
 		TraceResult tr;
@@ -768,35 +769,28 @@ void CRpg::UpdateSpot( void )
 		
 		UTIL_SetOrigin( m_pSpot->pev, tr.vecEndPos );
 		
-		
-		
-		
-		
-		
-		
-		
-		/*
+/* 
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-					 WRITE_BYTE( TE_BEAMPOINTS );
-					 WRITE_COORD( pev->origin.x);
-					 WRITE_COORD( pev->origin.y);
-					 WRITE_COORD( pev->origin.z);
-					 WRITE_COORD( tr.vecEndPos.x);
-					 WRITE_COORD( tr.vecEndPos.y);
-					 WRITE_COORD( tr.vecEndPos.z);
-					 WRITE_SHORT(g_sModelIndexLaser ); // model
-					 WRITE_BYTE( 0 ); // framestart?
-					 WRITE_BYTE( 0 ); // framerate?
-					 WRITE_BYTE( 0.1 ); // life
-					 WRITE_BYTE( 8 ); // width
-					 WRITE_BYTE( 0 ); // noise
-					 WRITE_BYTE( 64 ); // r, g, b
-					 WRITE_BYTE( 0); // r, g, b
-					 WRITE_BYTE( 0 ); // r, g, b
-					 WRITE_BYTE( 200 ); // brightness
-					 WRITE_BYTE( 0 ); // speed?
+			 WRITE_BYTE( TE_BEAMPOINTS );
+			 WRITE_COORD( pev->origin.x);
+			 WRITE_COORD( pev->origin.y);
+			 WRITE_COORD( pev->origin.z);
+			 WRITE_COORD( tr.vecEndPos.x);
+			 WRITE_COORD( tr.vecEndPos.y);
+			 WRITE_COORD( tr.vecEndPos.z);
+			 WRITE_SHORT(g_sModelIndexLaser ); // model
+			 WRITE_BYTE( 0 ); // framestart?
+			 WRITE_BYTE( 0 ); // framerate?
+			 WRITE_BYTE( 1 ); // life
+			 WRITE_BYTE( 8 ); // width
+			 WRITE_BYTE( 0 ); // noise
+			 WRITE_BYTE( 64 ); // r, g, b
+			 WRITE_BYTE( 0); // r, g, b
+			 WRITE_BYTE( 0 ); // r, g, b
+			 WRITE_BYTE( 200 ); // brightness
+			 WRITE_BYTE( 0 ); // speed?
 		MESSAGE_END(); 
-		*/
+ */
 	}
 #endif
 

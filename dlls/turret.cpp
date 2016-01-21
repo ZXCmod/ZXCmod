@@ -224,27 +224,15 @@ void CBaseTurret::Spawn()
 	
 
 	SetBits (pev->flags, FL_MONSTER);
-	//SetUse( TurretUse );
-
-	//if (( pev->spawnflags & SF_MONSTER_TURRET_AUTOACTIVATE ) 
-	//	 && !( pev->spawnflags & SF_MONSTER_TURRET_STARTINACTIVE ))
-	//{
-		m_iAutoStart = TRUE;
-	//}
-	//m_flNextChatTime7 = gpGlobals->time+180; //start timer
-
+	m_iAutoStart = TRUE;
 	ResetSequenceInfo( );
 	SetBoneController( 0, 0 );
 	SetBoneController( 1, 0 );
 	m_flFieldOfView = VIEW_FIELD_FULL;
-	// m_flSightRange = TURRET_RANGE;
 	
-	
-/* 	    if (pEntity != NULL)
-		{
-		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-		pPlayer->m_flNextChatTime13 ++; //limit
-		} */
+	if (!IsInWorld())
+		TakeDamage(pev, pev, 10000, 1 );
+
 	
 }
 
@@ -297,11 +285,15 @@ void CTurret::Precache()
 void CMiniTurret::Spawn()
 { 
 	Precache( );
+	
+	UTIL_Remove( this );
+	
 	SET_MODEL(ENT(pev), "models/miniturret.mdl");
 	pev->health			= gSkillData.miniturretHealth;
 	m_HackedGunPos		= Vector( 0, 0, 12.75 );
 	m_flMaxSpin = 0;
 	pev->view_ofs.z = 12.75;
+	
 
 	CBaseTurret::Spawn( );
 	m_iRetractHeight = 16;

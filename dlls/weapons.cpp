@@ -486,7 +486,7 @@ void CBasePlayerItem :: FallInit( void )
 	pev->solid = SOLID_BBOX;
 
 	UTIL_SetOrigin( pev, pev->origin );
-	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0) );//pointsize until it lands on the ground.
+	UTIL_SetSize(pev, Vector( -2, -2, 0), Vector(2, 2, 2) );//pointsize until it lands on the ground.
 	
 	SetTouch( DefaultTouch );
 	SetThink( FallThink );
@@ -676,7 +676,35 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_fInReload = FALSE;
 	}
 
-	if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
+	// << fourth attack (<1.31)
+	if ((m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
+	{
+		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
+		{
+			m_fFireOnEmpty = TRUE;
+		}
+		if ( (m_iClip != 0 ))
+		{
+			m_pPlayer->TabulateAmmo();
+			FourthAttack();
+		}
+		
+		//reset values when invisibled
+		if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+		{
+			if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+			{
+				m_pPlayer->pev->rendermode = kRenderNormal;
+				m_pPlayer->pev->renderfx = kRenderFxNone;
+				m_pPlayer->pev->renderamt = 0;
+				UTIL_ScreenFade( m_pPlayer, Vector(100,0,0), 0.95, 0.75, 70, FFADE_IN );
+				
+			}
+		}
+	} 
+	
+	//secondary
+	else if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
 	
 	//work here with reset invisible
@@ -1507,8 +1535,8 @@ ALERT ( at_console, "packed %s\n", STRING(pWeapon->pev->classname) );
 
 if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_crowbar")))
 {
-SET_MODEL( ENT(pev), "models/w_crowbar.mdl");
-return FALSE;
+	SET_MODEL( ENT(pev), "models/w_crowbar.mdl");
+	return FALSE;
 }
 
 else if ((!strcmp((char *)STRING( pWeapon->pev->classname ), "weapon_9mmhandgun")))

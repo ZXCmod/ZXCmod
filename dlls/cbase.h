@@ -136,9 +136,12 @@ public:
 class CBaseEntity 
 {
 public:
-	float				FTime1; //frrrreeeeezzzzzz
-	float				FTime2; //frrrreeeeezzzzzz2
+	float				FTime1; //player freeze
+	float				FTime2; //monsters freeze
+
+	
 	void	TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
+	
 	// Constructor.  Set engine to use C/C++ callback functions
 	// pointers to engine data
 	entvars_t *pev;		// Don't need to save/restore this pointer, the engine resets it

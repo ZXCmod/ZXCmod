@@ -439,7 +439,7 @@ void ClientCommand( edict_t *pEntity )
 	{
 		GetClassPtr((CBasePlayer *)pev)->SelectLastItem();
 	}
-	else if ( FStrEq( pcmd, "spectate" ) && (pev->flags & FL_PROXY) )	// added for proxy support
+	else if ( FStrEq( pcmd, "spectate2" ) && (pev->flags & FL_PROXY) )	// added for proxy support
 	{
 		CBasePlayer * pPlayer = GetClassPtr((CBasePlayer *)pev);
 
@@ -606,14 +606,16 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 
 /*
 ================
-PlayerPreThink
+PlayerPreThink, weapon hud updater
 
 Called every frame before physics are run
+
+Need fixing this
 ================
 */
 void PlayerPreThink( edict_t *pEntity )
 {
-	entvars_t *pev = &pEntity->v;
+	//entvars_t *pev = &pEntity->v;  //1.32 edit (nothink here)
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
 	if (pPlayer)
@@ -629,10 +631,13 @@ Called every frame after physics are run
 */
 void PlayerPostThink( edict_t *pEntity )
 {
-	entvars_t *pev = &pEntity->v;
+	//entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
-	if (pPlayer)
+	if ( pPlayer==NULL )
+		return;
+
+	if (pPlayer != NULL)
 		pPlayer->PostThink( );
 }
 
@@ -797,7 +802,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.30";
+		return "Half-Life zxc mod 1.31";
 }
 
 /*
@@ -1553,55 +1558,6 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 
 
 
-/* #if defined( CLIENT_WEAPONS )
-	if ( sendweapons )
-	{
-		entvars_t *pev = (entvars_t *)&ent->v;
-		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev );
-
-		if ( pl )
-		{
-			cd->m_flNextAttack	= pl->m_flNextAttack;
-			cd->fuser2			= pl->m_flNextAmmoBurn;
-			cd->fuser3			= pl->m_flAmmoStartCharge;
-			cd->vuser1.x		= pl->ammo_9mm;
-			cd->vuser1.y		= pl->ammo_357;
-			cd->vuser1.z		= pl->ammo_argrens;
-			cd->ammo_nails		= pl->ammo_bolts;
-			cd->ammo_shells		= pl->ammo_buckshot;
-			cd->ammo_rockets	= pl->ammo_rockets;
-			cd->ammo_cells		= pl->ammo_uranium;
-			cd->vuser2.x		= pl->ammo_hornets;
-			
-
-			if ( pl->m_pActiveItem )
-			{
-				CBasePlayerWeapon *gun;
-				gun = (CBasePlayerWeapon *)pl->m_pActiveItem->GetWeaponPtr();
-				if ( gun && gun->UseDecrement() )
-				{
-					ItemInfo II;
-					memset( &II, 0, sizeof( II ) );
-					gun->GetItemInfo( &II );
-
-					cd->m_iId = II.iId;
-
-					cd->vuser3.z	= gun->m_iSecondaryAmmoType;
-					cd->vuser4.x	= gun->m_iPrimaryAmmoType;
-					cd->vuser4.y	= pl->m_rgAmmo[gun->m_iPrimaryAmmoType];
-					cd->vuser4.z	= pl->m_rgAmmo[gun->m_iSecondaryAmmoType];
-					
-					// if ( pl->m_pActiveItem->m_iId == WEAPON_RPG )
-					// {
-						// cd->vuser2.y = ( ( CRpg * )pl->m_pActiveItem)->m_fSpotActive;
-						// cd->vuser2.z = ( ( CRpg * )pl->m_pActiveItem)->m_cActiveRockets;
-					// }
-
-				}
-			} //////
-		}
-	}
-#endif */
 }
 
 /*
