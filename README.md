@@ -1,4 +1,4 @@
-# ZXCmod 1.33 free source 2008-2010.
+# ZXCmod 1.34 free source 2008-2011.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -6,6 +6,16 @@ Get current HL SDK [here](https://github.com/ValveSoftware/halflife).
 Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other information. 
 
 #Changelog
+ 
+###1.34
+ 
+- third attack on 357: inferno capsule - (python.cpp, weapons.h)
+- added new cvars: `zxc_megaweps[0]`, `zxc_sfrad[800]`, `zxc_sflife[0]`, `zxc_sfshake[1]`, `zxc_sfreload[180]`, `zxc_triple[0]`
+- GravBullet now weak - (hl_wpn_glock.cpp)
+- All monsters have same armor calculation, as player! - (combat.cpp)
+- hornetgun flashes half draw screen teammates.
+- and much anothers.
+ 
  
 ###1.33
 
@@ -29,7 +39,7 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 - more resistance by all shots with type DMG_BULLET, if have armor - (player.cpp).
 - rebalanced most weapons.
   
-  
+   
 ###1.32
 
 - fourth attack on RPG - (rpg.cpp, hornetgun.cpp, weapons.h)
