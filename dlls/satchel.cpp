@@ -195,6 +195,8 @@ void CSatchelCharge :: Precache( void )
 	PRECACHE_SOUND("weapons/g_bounce2.wav");
 	PRECACHE_SOUND("weapons/g_bounce3.wav");
 	PRECACHE_SOUND("zxc/crystal_heal.wav");
+	
+	
 	PRECACHE_MODEL( "models/crystal.mdl" );
 }
 
@@ -434,6 +436,40 @@ void CSatchel::SecondaryAttack( void )
 }
 
 
+
+void CSatchel::ThirdAttack( void )
+{
+//Invisible weapon
+//new code for 1.26
+
+	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6)
+		{
+		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
+
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart1.wav", 0.9, ATTN_NORM); //play sound
+	
+		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		m_pPlayer->pev->health = 1; //invisible hurt
+
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+		//m_iClip -= 6;
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 6;
+		//invisible effect
+		m_pPlayer->pev->rendermode = kRenderTransTexture;
+        m_pPlayer->pev->renderamt = 1;
+		pl->m_pActiveItem->m_iId = WEAPON_CROWBAR;
+		return;
+		}
+}
+
+
+
+
+
+
+
 void CSatchel::Throw( void )
 {
 	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
@@ -657,8 +693,11 @@ void    CBlasterBeam4:: Explode(int DamageType)
 	CBaseEntity *pEntity = NULL;
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 250 )) != NULL)
        	{
-		pEntity->TakeHealth(7, DMG_GENERIC); //give health all around
-		pEntity->pev->armorvalue += 1; //give more armor all (v 1.21)
+		if (pEntity->pev->takedamage==DAMAGE_AIM || pEntity->pev->movetype==MOVETYPE_WALK) ///check only players
+			{
+			pEntity->TakeHealth(7, DMG_GENERIC); //give health all around
+			pEntity->pev->armorvalue += 1; //give more armor all (v 1.21)
+			}
 		}
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 1.0, ATTN_NORM); //play sound
 	pev->nextthink = gpGlobals->time + 1.0;

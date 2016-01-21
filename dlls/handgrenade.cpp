@@ -158,7 +158,7 @@ void CHandGrenade::SecondaryAttack()
 
 void CHandGrenade::WeaponIdle( void )
 {
-if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 5) 
+if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
 {
 	if (  m_pPlayer->m_flNextChatTime6 < gpGlobals->time ) //need delay
 	
@@ -389,7 +389,7 @@ Vector vecThrow = gpGlobals->v_forward * 650 + m_pPlayer->pev->velocity*2;
 #endif
 
 	m_fInAttack = 0;
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 5;
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10; //(<1.26)
 }
 
 class   CGrav1 : public CBaseEntity

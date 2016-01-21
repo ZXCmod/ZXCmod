@@ -412,6 +412,7 @@ void W_Precache(void)
 	PRECACHE_SOUND ("weapons/debris1.wav");
 	PRECACHE_SOUND ("weapons/debris2.wav");
 	PRECACHE_SOUND ("weapons/debris3.wav");
+	PRECACHE_SOUND("debris/beamstart14.wav");
 
 	PRECACHE_SOUND ("weapons/grenade_hit1.wav");//grenade
 	PRECACHE_SOUND ("weapons/grenade_hit2.wav");//grenade
@@ -446,14 +447,17 @@ TYPEDESCRIPTION	CBasePlayerWeapon::m_SaveData[] =
 #if defined( CLIENT_WEAPONS )
 	DEFINE_FIELD( CBasePlayerWeapon, m_flNextPrimaryAttack, FIELD_FLOAT ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_flNextSecondaryAttack, FIELD_FLOAT ),
+//	DEFINE_FIELD( CBasePlayerWeapon, m_flNextThirdAttack, FIELD_TIME ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_flTimeWeaponIdle, FIELD_FLOAT ),
 #else	// CLIENT_WEAPONS
 	DEFINE_FIELD( CBasePlayerWeapon, m_flNextPrimaryAttack, FIELD_TIME ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_flNextSecondaryAttack, FIELD_TIME ),
+//	DEFINE_FIELD( CBasePlayerWeapon, m_flNextThirdAttack, FIELD_TIME ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_flTimeWeaponIdle, FIELD_TIME ),
 #endif	// CLIENT_WEAPONS
 	DEFINE_FIELD( CBasePlayerWeapon, m_iPrimaryAmmoType, FIELD_INTEGER ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_iSecondaryAmmoType, FIELD_INTEGER ),
+//	DEFINE_FIELD( CBasePlayerWeapon, m_flNextThirdAttack, FIELD_TIME ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_iClip, FIELD_INTEGER ),
 	DEFINE_FIELD( CBasePlayerWeapon, m_iDefaultAmmo, FIELD_INTEGER ),
 //	DEFINE_FIELD( CBasePlayerWeapon, m_iClientClip, FIELD_INTEGER )	 , reset to zero on load so hud gets updated correctly
@@ -646,41 +650,101 @@ BOOL CanAttack( float attack_time, float curtime, BOOL isPredicted )
 
 void CBasePlayerWeapon::ItemPostFrame( void )
 {
+	CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); //get weapon
+	
 	if ((m_fInReload) && ( m_pPlayer->m_flNextAttack <= UTIL_WeaponTimeBase() ) )
 	{
 		// complete the reload. 
 		int j = min( iMaxClip() - m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]);	
-
 		// Add them to the clip
 		m_iClip += j;
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= j;
-
 		m_pPlayer->TabulateAmmo();
-
 		m_fInReload = FALSE;
 	}
 
 	if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
+	
+	//work here with reset invisible
+	//reset values when invisibled
+	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+	{
+	if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+	{
+		m_pPlayer->pev->rendermode = kRenderNormal;
+		m_pPlayer->pev->renderfx = kRenderFxNone;
+		m_pPlayer->pev->renderamt = 0;
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+	}
+	}
+	
+	
+	
+	
+	//!(m_pPlayer->pev->button & IN_USE) && //cuted
 		if ( pszAmmo2() && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
 		{
 			m_fFireOnEmpty = TRUE;
 		}
-
 		m_pPlayer->TabulateAmmo();
 		SecondaryAttack();
 		m_pPlayer->pev->button &= ~IN_ATTACK2;
+		
+	
 	}
-	else if ((m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
+	else if (!(m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
+	{
+	
+	//reset values when invisibled
+	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+	{
+	if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+	{
+		m_pPlayer->pev->rendermode = kRenderNormal;
+		m_pPlayer->pev->renderfx = kRenderFxNone;
+		m_pPlayer->pev->renderamt = 0;
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "debris/beamstart14.wav", 0.9, ATTN_NORM);
+	}
+	}
+	
+	
+		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
+		{
+			m_fFireOnEmpty = TRUE;
+		}
+		m_pPlayer->TabulateAmmo();
+		PrimaryAttack();
+	}
+	
+	// << third attack
+	else if ((m_pPlayer->pev->button & IN_USE) && (m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
 	{
 		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
 		{
 			m_fFireOnEmpty = TRUE;
 		}
-
+		if ( (m_iClip != 0 ))
+		{
 		m_pPlayer->TabulateAmmo();
-		PrimaryAttack();
+		ThirdAttack();
+		}
+		
+		
+	//reset values when invisibled
+	if ( pl->m_pActiveItem->m_iId != WEAPON_CROWBAR)
+	{
+	if (m_pPlayer->pev->rendermode == kRenderTransTexture) //reset values
+	{
+		m_pPlayer->pev->rendermode = kRenderNormal;
+		m_pPlayer->pev->renderfx = kRenderFxNone;
+		m_pPlayer->pev->renderamt = 0;
+		
 	}
+	}
+	} 
+	
+	
 	else if ( m_pPlayer->pev->button & IN_RELOAD && iMaxClip() != WEAPON_NOCLIP && !m_fInReload ) 
 	{
 		// reload when reload is pressed, or if no buttons are down and weapon is empty.
@@ -692,7 +756,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 
 		m_fFireOnEmpty = FALSE;
 
-		if ( !IsUseable() && m_flNextPrimaryAttack < ( UseDecrement() ? 0.0 : gpGlobals->time ) ) 
+		if ( !IsUseable() && m_flNextPrimaryAttack || !IsUseable() ) 
 		{
 			// weapon isn't useable, switch.
 			if ( !(iFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) && g_pGameRules->GetNextBestWeapon( m_pPlayer, this ) )

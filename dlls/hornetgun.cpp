@@ -242,16 +242,28 @@ switch(RANDOM_LONG(1,2))
             WRITE_BYTE( 100 ); // color r,g,b
             WRITE_BYTE( 255 ); // color r,g,b
             WRITE_BYTE( 240 ); // brightness
-            WRITE_BYTE( 1 ); // scroll speed
+            WRITE_BYTE( 70 ); // scroll speed
     MESSAGE_END();
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 2; // -2 ammo
 	//Reload( );
 	m_flRechargeTime = gpGlobals->time + 0.5;
     pEntity = CBaseEntity::Instance(tr.pHit);
-    if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
+    if (pEntity != NULL && pEntity->pev->takedamage != pEntity->IsPlayer()) //in 1.26 allow to freeze monsters
     {
+//need to be remove pPlayer 
+	
 		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-        UTIL_ScreenFade( pPlayer, Vector(0,0,255), 5.0, 1.0, 140, FFADE_IN );
+        pPlayer->pev->rendermode = kRenderNormal;
+        pPlayer->pev->renderfx = kRenderFxGlowShell;
+        pPlayer->pev->rendercolor.x = 200;  // red
+        pPlayer->pev->rendercolor.y = 200;  // green
+        pPlayer->pev->rendercolor.z = 255; // blue
+        pPlayer->pev->renderamt = 70;
+        pPlayer->FTime2 = gpGlobals->time + 24.1; //freeze timer of m0nters
+		
+	    if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
+		{
+		UTIL_ScreenFade( pPlayer, Vector(0,0,255), 5.0, 1.0, 140, FFADE_IN );
         pPlayer->pev->rendermode = kRenderNormal;
         pPlayer->pev->renderfx = kRenderFxGlowShell;
         pPlayer->pev->rendercolor.x = 200;  // red
@@ -259,8 +271,10 @@ switch(RANDOM_LONG(1,2))
         pPlayer->pev->rendercolor.z = 255; // blue
         pPlayer->pev->renderamt = 70;
         pPlayer->EnableControl(FALSE);
-        pPlayer->FTime2 = gpGlobals->time + 1.25; //1.75 sec to be unfreeze
+        pPlayer->FTime2 = gpGlobals->time + 2.05; //1.25 old. Changed in v1.26 to 2.05
+		}
     }
+
 	break;
 	/////////////2
 	case 2:
@@ -285,10 +299,11 @@ switch(RANDOM_LONG(1,2))
             WRITE_BYTE( 240 ); // brightness
             WRITE_BYTE( 12 ); // scroll speed
     MESSAGE_END();
-	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecOrig, vecAim, Vector( 0, 0, 0 ), 2048, 35, 1, RANDOM_LONG(16,21), m_pPlayer->pev, m_pPlayer->random_seed ); //shot
+	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecOrig, vecAim, Vector( 0, 0, 0 ), 2048, 35, 1, RANDOM_LONG(3,14), m_pPlayer->pev, m_pPlayer->random_seed ); //shot
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1; // -1 ammo
 	//Reload( );
 	m_flRechargeTime = gpGlobals->time + 0.5;
+	
 	break;
 	}
 	//////////////3

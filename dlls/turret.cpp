@@ -39,12 +39,12 @@
 extern Vector VecBModelOrigin( entvars_t* pevBModel );
 
 #define TURRET_SHOTS	4
-#define TURRET_RANGE	(100 * 14)
-#define TURRET_SPREAD	Vector( 0.01716, 0.03716, 0.01716 )
+#define TURRET_RANGE	(100 * 10)
+#define TURRET_SPREAD	Vector( 0.03268, 0.13716, 0.13134 )
 #define TURRET_TURNRATE	30		//angles per 0.1 second
 #define TURRET_MAXWAIT	15		// seconds turret will stay active w/o a target
 #define TURRET_MAXSPIN	5		// seconds turret barrel will spin w/o a target
-#define TURRET_MACHINE_VOLUME	0.5
+#define TURRET_MACHINE_VOLUME	0.4
 
 typedef enum
 {
@@ -1258,6 +1258,7 @@ public:
 	int TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType);
 	void EXPORT SentryTouch( CBaseEntity *pOther );
 	void EXPORT SentryDeath( void );
+	float m_flSize;
 
 EHANDLE m_hOwner;
 };
@@ -1284,7 +1285,7 @@ void CSentry::Spawn()
 	m_flMaxWait = 1E6;
 	m_flMaxSpin	= 1E6;
 
-		pev->solid			= SOLID_SLIDEBOX;
+	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	
 	CBaseTurret::Spawn();
@@ -1303,14 +1304,14 @@ void CSentry::Spawn()
 	pev->friction		= 1;
 
 	pev->flags		|= FL_MONSTER;
-	
+	m_flSize = gpGlobals->time + 1; //set normal bounding size while time out
 
 }
 
 void CSentry::Shoot(Vector &vecSrc, Vector &vecDirToEnemy, CBaseEntity *pOther, entvars_t *pevAttacker)
 {
 
-	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, BULLET_MONSTER_MP5, 1, RANDOM_LONG(1,12), pevAttacker );
+	FireBullets( 1, vecSrc, vecDirToEnemy, Vector( 0.01716, 0.03716, 0.06864 ), TURRET_RANGE, BULLET_MONSTER_MP5, 1, RANDOM_LONG(1,12), pevAttacker );
 
 	//////////////fix fire rate for internet///////////////
 	//switch(RANDOM_LONG(0,2))
@@ -1375,11 +1376,28 @@ int CSentry::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float f
 
 void CSentry::SentryTouch( CBaseEntity *pOther )
 {
-
-
+	//if spawn outside
+	if (!IsInWorld()) //test
+	{
+		SetTouch( NULL );
+		UTIL_Remove( this );
+		UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
+		return;
+	}
+	
+	//if on ground
+	if (pev->flags & FL_ONGROUND || (gpGlobals->time >= m_flSize))
+		UTIL_SetSize(pev, Vector(-16, -16, -m_iRetractHeight+10), Vector(16, 16, m_iRetractHeight-10));
+	else
+	{
+		UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
+		m_flSize = 0;
+	}
+		
+	//take dmg
 	if ( pOther && (pOther->IsPlayer() || (pOther->pev->flags & FL_MONSTER)) )
 	{
-		TakeDamage(pOther->pev, pOther->pev, 0, 0 );
+		TakeDamage(pOther->pev, pOther->pev, 1, 1 );
 	}
 }
 

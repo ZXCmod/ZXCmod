@@ -198,7 +198,7 @@ void CCrossbowBolt::BubbleThink( void )
 	UTIL_BubbleTrail( pev->origin - pev->velocity * 0.1, pev->origin, 1 );
 }
 
-void CCrossbowBolt::ExplodeThink( void )
+void CCrossbowBolt::ExplodeThink( void ) //touch explode. Clear, if explode been replaced on other.
 {
 	int iContents = UTIL_PointContents ( pev->origin );
 	int iScale;

@@ -326,6 +326,7 @@ public:
 	// called by CBasePlayerWeapons ItemPostFrame()
 	virtual void PrimaryAttack( void ) { return; }				// do "+ATTACK"
 	virtual void SecondaryAttack( void ) { return; }			// do "+ATTACK2"
+	virtual void ThirdAttack( void ) { return; }				// do "+ATTACK3"
 	virtual void Reload( void ) { return; }						// do "+RELOAD"
 	virtual void WeaponIdle( void ) { return; }					// called when no buttons pressed
 	virtual int UpdateClientData( CBasePlayer *pPlayer );		// sends hud info to client dll, if things have changed
@@ -345,6 +346,7 @@ public:
 	int		m_fInSpecialReload;									// Are we in the middle of a reload for the shotguns
 	float	m_flNextPrimaryAttack;								// soonest time ItemPostFrame will call PrimaryAttack
 	float	m_flNextSecondaryAttack;							// soonest time ItemPostFrame will call SecondaryAttack
+	float	m_flNextThirdAttack;							// 
 	float	m_flTimeWeaponIdle;									// soonest time ItemPostFrame will call WeaponIdle
 	int		m_iPrimaryAmmoType;									// "primary" ammo index into players m_rgAmmo[]
 	int		m_iSecondaryAmmoType;								// "secondary" ammo index into players m_rgAmmo[]
@@ -515,6 +517,8 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void Reload( void );
+	void WeaponIdle( void );
+	float m_flNextChatTime11; //delay
 	int Swing( int fFirst );
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
@@ -649,12 +653,15 @@ public:
 
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
 	BOOL Deploy( );
 	void Reload( void );
 	void WeaponIdle( void );
 	int m_fInReload;
 	float m_flNextReload;
 	int m_iShell;
+	short BSpr;
+	
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -983,6 +990,7 @@ public:
 	int AddToPlayer( CBasePlayer *pPlayer );
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void ThirdAttack( void );
 	int AddDuplicate( CBasePlayerItem *pOriginal );
 	BOOL CanDeploy( void );
 	BOOL Deploy( void );

@@ -89,8 +89,8 @@ class CBasePlayer : public CBaseMonster
 {
 public:
 
-	float				FTime1; //frrrreeeeezzzzzz
-	float				FTime2; //frrrreeeeezzzzzz2
+	//float				FTime1; //frrrreeeeezzzzzz
+	//float				FTime2; //frrrreeeeezzzzzz2
 
 	int					random_seed;    // See that is shared between client & server for shared weapons code
 
@@ -324,8 +324,8 @@ public:
 	float m_flNextChatTime8; //hornetgun reload delay
 	float m_flNextChatTime9; //heavy turets reload delay
 	float m_flNextChatTime10; //egon reload delay
-	float m_flNextChatTime11;
-	float m_flNextChatTime12;
+	float m_flNextChatTime11; //crowbar reload delay
+	float m_flNextChatTime12; //shotgun flare delay
 	float m_flNextChatTime13;
 	float m_flNextChatTime14;
 	float m_flNextChatTime15;

@@ -519,7 +519,7 @@ void CHalfLifeMultiplay :: ClientDisconnected( edict_t *pClient )
 			
 			
 			pPlayer->RemoveAllItems( TRUE );// destroy all of the players weapons and items
-			pPlayer->m_afPhysicsFlags |= PFLAG_OBSERVER;
+			//pPlayer->m_afPhysicsFlags |= PFLAG_OBSERVER;
 			pPlayer->pev->movetype = MOVETYPE_NOCLIP;
 			pPlayer->pev->deadflag = DEAD_RESPAWNABLE;
 			

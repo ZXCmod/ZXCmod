@@ -236,7 +236,7 @@ void CHalfLifeRules::PlayerGotItem( CBasePlayer *pPlayer, CItem *pItem )
 //=========================================================
 int CHalfLifeRules::ItemShouldRespawn( CItem *pItem )
 {
-	return GR_ITEM_RESPAWN_NO;
+	return GR_ITEM_RESPAWN_YES;
 }
 
 
@@ -245,7 +245,7 @@ int CHalfLifeRules::ItemShouldRespawn( CItem *pItem )
 //=========================================================
 float CHalfLifeRules::FlItemRespawnTime( CItem *pItem )
 {
-	return -1;
+	return 60;
 }
 
 //=========================================================

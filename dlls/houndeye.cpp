@@ -337,11 +337,11 @@ void CHoundeye :: Spawn()
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_YELLOW;
 	pev->effects		= 0;
-	pev->health			= RANDOM_LONG(3,355);
+	pev->health			= RANDOM_LONG(9,155);
 	pev->yaw_speed		= 5;//!!! should we put this in the monster's changeanim function since turn rates may vary with state/anim?
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
-	m_fAsleep			= FALSE; // everyone spawns awake
+	m_fAsleep			= RANDOM_LONG(0,1); // everyone spawns awake
 	m_fDontBlink		= FALSE;
 	m_afCapability		|= bits_CAP_SQUAD;
 

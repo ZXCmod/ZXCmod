@@ -293,6 +293,8 @@ Activity CBaseMonster :: GetDeathActivity ( void )
 //=========================================================
 Activity CBaseMonster :: GetSmallFlinchActivity ( void )
 {
+
+
 	Activity	flinchActivity;
 	BOOL		fTriedDirection;
 	float		flDot;
@@ -412,7 +414,11 @@ Killed
 */
 void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 {
-
+		//reset glow
+		pev->rendermode = kRenderNormal;
+		pev->renderfx = kRenderFxNone;
+		pev->renderamt = 0;
+		FTime2 = 0;
 
 
 
@@ -427,14 +433,14 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 	}
 
 	Remember( bits_MEMORY_KILLED );
-
-	CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
+//feature removed from 1.26
+/* 	CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
 	if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
 		{
 		CBasePlayer *PK = (CBasePlayer*)pPlayer;
 		pPlayer->AddPoints(1, false);
 
-		}
+		} */
 	
 	
 	// clear the deceased's sound channels.(may have been firing or reloading when killed)
@@ -470,6 +476,7 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 	//pev->enemy = ENT( pevAttacker );//why? (sjb)
 	
 	m_IdealMonsterState = MONSTERSTATE_DEAD;
+	pev->takedamage = DAMAGE_NO;
 }
 
 //
@@ -845,6 +852,8 @@ int CBaseMonster :: DeadTakeDamage( entvars_t *pevInflictor, entvars_t *pevAttac
 
 float CBaseMonster :: DamageForce( float damage )
 { 
+
+
 	float force = damage * ((32 * 32 * 72.0) / (pev->size.x * pev->size.y * pev->size.z)) * 5;
 	
 	if ( force > 1000.0) 
@@ -958,6 +967,7 @@ void CBaseMonster :: RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entva
 //=========================================================
 CBaseEntity* CBaseMonster :: CheckTraceHullAttack( float flDist, int iDamage, int iDmgType )
 {
+
 	TraceResult tr;
 
 	if (IsPlayer())
@@ -1003,7 +1013,36 @@ BOOL CBaseMonster :: FInViewCone ( CBaseEntity *pEntity )
 	vec2LOS = vec2LOS.Normalize();
 
 	flDot = DotProduct (vec2LOS , gpGlobals->v_forward.Make2D() );
-
+//CBaseEntity *pEntity;
+//FIND_ENTITY_BY_CLASSNAME( NULL, "player"
+//pEntity = CBaseEntity::Instance(FIND_ENTITY_BY_CLASSNAME( NULL, "player"));
+	
+	
+if (FTime2 > 0)
+    {
+      if (FTime2 <= gpGlobals->time)
+      {
+         //EnableControl(TRUE);
+         pev->rendermode = kRenderNormal;
+         pev->renderfx = kRenderFxNone;
+         pev->renderamt = 0;
+         FTime2 = 0;
+      }
+	  }
+      if (FTime2 >= gpGlobals->time)
+      {
+	  if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
+			{
+			pev->nextthink = gpGlobals->time + 0.1;
+			}
+		pev->nextthink = gpGlobals->time + 3.5; //freeze
+	  }
+	
+	
+	
+	
+	
+	
 	if ( flDot > m_flFieldOfView )
 	{
 		return TRUE;
@@ -1012,6 +1051,8 @@ BOOL CBaseMonster :: FInViewCone ( CBaseEntity *pEntity )
 	{
 		return FALSE;
 	}
+	
+
 }
 
 //=========================================================

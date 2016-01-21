@@ -188,7 +188,7 @@ void CSqueakGrenade :: Spawn( void )
 	
 	
 	
-	// +BubbleMod
+	// +BubbleMod (thanks)
 
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 

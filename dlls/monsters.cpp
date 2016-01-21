@@ -3291,6 +3291,8 @@ void CBaseMonster :: MonsterInitDead( void )
 	BecomeDead();
 	SetThink( CorpseFallThink );
 	pev->nextthink = gpGlobals->time + 0.5;
+	
+
 }
 
 //=========================================================

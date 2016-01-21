@@ -111,12 +111,10 @@ public:
 	float	m_painTime;
 	float	m_checkAttackTime;
 	BOOL	m_lastAttackCheck;
-	BOOL	CanHeal2( void );
-	void Bheal( void );
+
 	CUSTOM_SCHEDULES;
 private:	
-	float m_healTime;
-	// UNDONE: What is this for?  It isn't used?
+
 	float	m_flPlayerDamage;// how much pain has the player inflicted on me?
 };
 
@@ -723,27 +721,6 @@ void CBarney::Killed( entvars_t *pevAttacker, int iGib)
 
 
 
-BOOL CBarney::CanHeal2( void )
-{ 
-	if ( (m_healTime > gpGlobals->time) || (m_hTargetEnt == NULL) || (m_hTargetEnt->pev->health > (m_hTargetEnt->pev->max_health * 0.5)) )
-		return FALSE;
-
-	return TRUE;
-}
-void CBarney::Bheal( void )
-{
-	if ( !CanHeal2() )
-		return;
-
-	Vector target = m_hTargetEnt->pev->origin - pev->origin;
-	if ( target.Length() > 50 )
-		return;
-
-	m_hTargetEnt->TakeHealth( 15, DMG_GENERIC );
-	// Don't heal again for 1 minute
-	m_healTime = gpGlobals->time + 1;
-}
-
 
 
 
@@ -776,14 +753,7 @@ Schedule_t* CBarney :: GetScheduleOfType ( int Type )
 		
 		
 
-				// If I'm already close enough to my target
-				if ( TargetDistance() <= 128 )
-				{
-					if ( CanHeal2() )	// Heal opportunistically
-						return slHeal2;
-					if ( HasConditions( bits_COND_CLIENT_PUSH ) )	// Player wants me to move
-						return GetScheduleOfType( SCHED_MOVE_AWAY_FOLLOW );
-				}
+
 				
 				
 

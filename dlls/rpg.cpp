@@ -529,7 +529,24 @@ void CRpg::PrimaryAttack()
 
 void CRpg::SecondaryAttack()
 {
-	if ( m_iClip )
+//do not create the sentry in wall (< 1.26)
+
+if ( m_iClip ) //if has 1 ammo after reloading, shot it
+	{
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	TraceResult tr;
+	Vector trace_origin;
+	trace_origin = m_pPlayer->pev->origin;
+	if ( m_pPlayer->pev->flags & FL_DUCKING )
+	{
+		trace_origin = trace_origin - ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
+	}
+	 
+	//UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
+
+	//experiment with trace hull 
+	UTIL_TraceHull( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, ignore_monsters, head_hull, edict(), &tr );
+	if ( !tr.fStartSolid ) //if ( tr.fStartSolid ) - sentry be created only in walls, use negative '!'
 	{
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
@@ -539,34 +556,30 @@ void CRpg::SecondaryAttack()
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 	Vector vecThrow = gpGlobals->v_forward;
-
 	CBaseEntity *pHornet = CBaseEntity::Create( "monster_sentry", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, vecThrow, m_pPlayer->edict() );
-
-	#endif
-
-
-		int flags;
+	UTIL_SetSize( pHornet->pev, Vector(0,0,0), Vector(0,0,0) ); // set size for created sentry, unused
+#endif
+	int flags;
 #if defined( CLIENT_WEAPONS )
 	flags = FEV_NOTHOST;
 #else
 	flags = 0;
 #endif
 
-		PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
-
-		m_iClip--; 
-				
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+	PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
+	m_iClip--; 
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
 	}
-	else
+else
 	{
 		PlayEmptySound( );
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
 		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
 	}
 	UpdateSpot( );
+	}
 }
 
 
@@ -578,10 +591,11 @@ UpdateSpot( );
 if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
 
+//big gun part
 if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
 if (m_iClip >= 1)
-{
-//do not create in wall
+	{
+	//do not create in wall
 	{
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		TraceResult tr;
@@ -599,45 +613,31 @@ if (m_iClip >= 1)
 		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
 
 	int flags;
-#ifdef CLIENT_WEAPONS
-	flags = FEV_NOTHOST;
-#else
-	flags = 0;
-#endif
+	#ifdef CLIENT_WEAPONS
+		flags = FEV_NOTHOST;
+	#else
+		flags = 0;
+	#endif
 
 
-		if ( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
-		{
+	if ( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
+	{
 
-
-
-
-
-
-
-
-//
-{
+	{
 	if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
 		{
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-		//Reload();
 		m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
-		
-		
-		
-//reload
-	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-	m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-
+		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 	#ifndef CLIENT_DLL
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-	Vector vecThrow = gpGlobals->v_forward;
-	CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
+		// player "shoot" animation
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+		Vector vecThrow = gpGlobals->v_forward;
+		CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
 	#endif
-	int flags;
+int flags;
 #if defined( CLIENT_WEAPONS )
 	flags = FEV_NOTHOST;
 #else
@@ -645,7 +645,6 @@ if (m_iClip >= 1)
 #endif
 
 		PLAYBACK_EVENT( flags, m_pPlayer->edict(), m_usRpg );
-		
 		m_iClip--; 
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
@@ -663,8 +662,8 @@ if (m_iClip >= 1)
 	return;
 	}
 	}
-}
-}
+	}
+	}
 //reload completed
 
 

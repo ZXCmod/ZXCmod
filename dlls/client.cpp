@@ -685,7 +685,7 @@ void ClientPrecache( void )
 {
 	// setup precaches always needed
 	PRECACHE_SOUND("player/sprayer.wav");			// spray paint sound for PreAlpha
-	
+	PRECACHE_SOUND("debris/beamstart8b.wav");			
 	// PRECACHE_SOUND("player/pl_jumpland2.wav");		// UNDONE: play 2x step sound
 	
 	PRECACHE_SOUND("player/pl_fallpain2.wav");		
@@ -809,7 +809,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.25";
+		return "Half-Life zxc mod 1.26";
 }
 
 /*
@@ -1495,9 +1495,10 @@ int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 						item->m_iId						= II.iId;
 						item->m_iClip					= gun->m_iClip;
 
-						item->m_flTimeWeaponIdle		= max( gun->m_flTimeWeaponIdle, -0.001 );
+						//item->m_flTimeWeaponIdle		= max( gun->m_flTimeWeaponIdle, -0.001 ); // remov
 						item->m_flNextPrimaryAttack		= max( gun->m_flNextPrimaryAttack, -0.001 );
 						item->m_flNextSecondaryAttack	= max( gun->m_flNextSecondaryAttack, -0.001 );
+						//item->m_flNextThirdAttack		= max( gun->m_flNextThirdAttack, -0.001 );
 						item->m_fInReload				= gun->m_fInReload;
 						item->m_fInSpecialReload		= gun->m_fInSpecialReload;
 						item->fuser1					= max( gun->pev->fuser1, -0.001 );
@@ -1560,10 +1561,7 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 
 	cd->pushmsec		= ent->v.pushmsec;
 
-	// BMOD Begin - Spectator Mode
-	cd->iuser1			= ent->v.iuser1;
-	cd->iuser2			= ent->v.iuser2;
-	// BMOD End - Spectator Mode
+
 
 #if defined( CLIENT_WEAPONS )
 	if ( sendweapons )
@@ -1608,8 +1606,9 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 						cd->vuser2.y = ( ( CRpg * )pl->m_pActiveItem)->m_fSpotActive;
 						cd->vuser2.z = ( ( CRpg * )pl->m_pActiveItem)->m_cActiveRockets;
 					}
+
 				}
-			}
+			} //////
 		}
 	}
 #endif

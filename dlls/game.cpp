@@ -39,7 +39,7 @@ cvar_t	teamoverride = {"mp_teamoverride","1" };
 cvar_t	defaultteam = {"mp_defaultteam","0" };
 cvar_t	allowmonsters={"mp_allowmonsters","1", FCVAR_SERVER };
 
-cvar_t  mp_chattime = {"mp_chattime","30", FCVAR_SERVER };
+cvar_t  mp_chattime = {"mp_chattime","9", FCVAR_SERVER };
 
 // Engine Cvars
 cvar_t 	*g_psv_gravity = NULL;

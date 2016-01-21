@@ -394,13 +394,11 @@ Vector CBasePlayer :: GetGunPosition( )
 //=========================================================
 void CBasePlayer :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType)
 {
-//strcpy( sbuf1, "1 %p1\n2 Health: %i2%%\n3 Armor: %i3%%" );
-CBaseEntity *pAttacker = CBaseEntity::Instance(pevAttacker);
 
 
 	if ( pev->takedamage )
 	{
-
+CBaseEntity *pAttacker = CBaseEntity::Instance(pevAttacker);
 	
 		m_LastHitGroup = ptr->iHitgroup;
 
@@ -420,25 +418,12 @@ CBaseEntity *pAttacker = CBaseEntity::Instance(pevAttacker);
 			WRITE_STRING( "Headshot!" );
 		MESSAGE_END();
 		}
-			
 			break;
 		case HITGROUP_CHEST:
 			flDamage *= 1;
-		// if (pevAttacker->flags & (FL_CLIENT))
-		// {
-		// MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pevAttacker) );
-			// WRITE_STRING( "chest shot" );
-		// MESSAGE_END();
-		// }
 			break;
 		case HITGROUP_STOMACH:
 			flDamage *= 1;
-		// if (pevAttacker->flags & (FL_CLIENT))
-		// {
-		// MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(pevAttacker) );
-			// WRITE_STRING( "stomach shot" );
-		// MESSAGE_END();
-		// }
 			break;
 		case HITGROUP_LEFTARM:
 		case HITGROUP_RIGHTARM:
@@ -1361,6 +1346,11 @@ void CBasePlayer::PlayerDeathThink(void)
 
 	pev->effects |= EF_NOINTERP;
 	pev->framerate = 0.0;
+	
+	//reset invisible (<1.26)
+	pev->rendermode = kRenderNormal;
+	pev->renderfx = kRenderFxNone;
+	pev->renderamt = 0;
 
 	BOOL fAnyButtonDown = (pev->button & ~IN_SCORE );
 	
@@ -1392,6 +1382,7 @@ void CBasePlayer::PlayerDeathThink(void)
 		//freeze fix 1
 	if (FTime2 == 0)
 	{
+	//pev->nextthink = gpGlobals->time + 0.1; //freeze
 		//EnableControl(TRUE);
 		//pev->rendermode = kRenderNormal;
 		//pev->renderfx = kRenderFxNone;
@@ -1866,6 +1857,22 @@ void CBasePlayer::UpdateStatusBar()
 
 void CBasePlayer::PreThink(void)
 {
+
+
+
+
+
+				
+
+
+
+
+
+
+
+
+
+
 ///freeze always updater
 if (FTime2 > 0)
     {
@@ -1875,11 +1882,23 @@ if (FTime2 > 0)
          pev->rendermode = kRenderNormal;
          pev->renderfx = kRenderFxNone;
          pev->renderamt = 0;
-         FTime2 = 0;
+         FTime2 = 0; 
       }
 	  }
 
+///invisible always updater
 
+//pev->button & IN_ATTACK|IN_ATTACK2|IN_RELOAD
+//if ( pl->m_pActiveItem->m_iId == WEAPON_CROWBAR
+
+if (pev->rendermode == kRenderTransTexture)
+	pev->renderamt = pev->health*2;
+
+
+	
+	
+
+	  
 	int buttonsChanged = (m_afButtonLast ^ pev->button);	// These buttons have changed this frame
 	
 	// Debounced button codes for pressed/released
@@ -2911,8 +2930,12 @@ void CBasePlayer::Spawn( void )
 	m_afPhysicsFlags	= 0;
 	m_fLongJump			= FALSE;// no longjump module. 
 	FTime2 = 0; //freeze
+	pev->rendermode = kRenderNormal;
+    pev->renderfx = kRenderFxNone;
+    pev->renderamt = 0;
 	//EnableControl(FALSE);
-	
+	EMIT_SOUND(ENT(pev), CHAN_BODY, "debris/beamstart8b.wav", 1.0, ATTN_NORM);
+	//EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/sprayer.wav", 1, ATTN_NORM);
 	//client cmd
 	CLIENT_COMMAND(edict(), "rate 15000\n");
 	CLIENT_COMMAND(edict(), "cl_resend 3\n");
@@ -2939,7 +2962,7 @@ void CBasePlayer::Spawn( void )
 	StartSneaking();
 	m_iFlashBattery = 99;
 	m_flFlashLightTime = 1; // force first message
-// dont let uninitialized value here hurt the player
+	// dont let uninitialized value here hurt the player
 	m_flFallVelocity = 0;
 	g_pGameRules->SetDefaultPlayerTeam( this );
 	g_pGameRules->GetPlayerSpawnSpot( this );
@@ -2953,18 +2976,19 @@ void CBasePlayer::Spawn( void )
     pev->view_ofs = VEC_VIEW;
 	Precache();
 	m_HackedGunPos		= Vector( 0, 32, 0 );
-	if ( m_iPlayerSound == SOUNDLIST_EMPTY )
-	{
-		ALERT ( at_console, "Couldn't alloc player sound slot!\n" );
-	}
+	// if ( m_iPlayerSound == SOUNDLIST_EMPTY )
+	// {
+		// ALERT ( at_console, "Couldn't alloc player sound slot!\n" );
+	// }
 
 	m_fNoPlayerSound = FALSE;// normal sound behavior.
 	m_pLastItem = NULL;
 	m_fInitHUD = TRUE;
 	m_iClientHideHUD = -1;  // force this to be recalculated
-	m_fWeapon = FALSE;
+	m_fWeapon = TRUE;
 	m_pClientActiveItem = NULL;
 	m_iClientBattery = -1;
+		
 	// reset all ammo values to 0
 	for ( int i = 0; i < MAX_AMMO_SLOTS; i++ )
 	{
@@ -2977,6 +3001,7 @@ void CBasePlayer::Spawn( void )
 	m_flNextChatTime = gpGlobals->time;
 
 	g_pGameRules->PlayerSpawn( this );
+	
 	
 	
 
