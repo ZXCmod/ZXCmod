@@ -1,4 +1,4 @@
-# ZXCmod 1.30 free source 2008-2009.
+# ZXCmod 1.30a free source 2008-2009.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -6,6 +6,15 @@ Get current HL SDK [here](https://github.com/ValveSoftware/halflife).
 Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other information. 
 
 #Changelog
+ 
+###1.30a
+
+- third attack on tripmine: Ice-Friction, only heal crystal can return inital friction - (tripmine.cpp, satchel.cpp)
+- new console command: `mp_python`. Value `0` is disabled black rocket - (game.cpp, python.cpp, game.h)
+- new console command: `mp_gauss`. Value `0` is disabled gauss velocity - (game.cpp, gauss.cpp, game.h)
+- included maps `2houses.bsp` and `2play.bsp` for teamplay
+- hot bugs destroyed.
+
  
 ###1.30
 
