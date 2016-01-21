@@ -1,4 +1,4 @@
-# ZXCmod 1.29 free source 2008-2009.
+# ZXCmod 1.30 free source 2008-2009.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -6,6 +6,18 @@ Get current HL SDK [here](https://github.com/ValveSoftware/halflife).
 Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other information. 
 
 #Changelog
+ 
+###1.30
+
+- third attack on egon: Tesla - (egon.cpp)
+- egon cannon now bounce - (egon.cpp) 
+- added new function: `TeslaExplode()`, is spread shock streams - (combat.cpp, cbase.h)
+- Added switcher - (turrets.cpp)
+- teamplay improved
+- improved weapon balance
+- when `sv_cheats 1`, disabled : hornets and grav_grenades; turrets limit is `3` 
+- some bugs from previous versions has been fixed.
+
 
 ###1.29
 
