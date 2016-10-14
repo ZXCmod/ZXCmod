@@ -1,6 +1,7 @@
 # ZXCmod Sources
 
-The latest official version 1.36 is out! You can grab it [here](http://www.moddb.com/mods/zxc-mod-133/downloads/zxc-mod-136-final).
+The latest official version 1.36 is out! You can grab it [here](https://github.com/ZXCmod/ZXCmod/releases/tag/1.36) or [here](http://www.moddb.com/mods/zxc-mod-133/downloads/zxc-mod-136-final).
+
 All other versions at this repository - unofficial.
 
 All versions of public sources are separated in branches. 
