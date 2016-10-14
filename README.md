@@ -1,4 +1,4 @@
-# ZXCmod 1.35 free source 2008-2012.
+# ZXCmod 1.36 free source 2008-2016.
 
 For compile dll, need C++ 5 or 6 and Half-Life SDK 2.3  
 Get current HL SDK [here](https://github.com/ValveSoftware/halflife). 
@@ -6,6 +6,9 @@ Get current HL SDK [here](https://github.com/ValveSoftware/halflife).
 Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other information. 
 
 #Changelog
+
+###1.36
+- ZXC Mod 1.36 Final version (unreleased, from zxc albanian mod main server) including needed sprites, models sounds, etc. and the source code (now fixed for latest steam hlds version).
  
 ###1.35
   

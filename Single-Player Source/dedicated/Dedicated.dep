@@ -1,0 +1,34 @@
+# Microsoft Developer Studio Generated Dependency File, included by Dedicated.mak
+
+.\conproc.cpp : \
+	"..\..\..\program_files\vc98\include\basetsd.h"\
+	".\conproc.h"\
+	".\dedicated.h"\
+	".\sys_ded.h"\
+	
+
+.\dedicated.rc : \
+	".\NetGame.ico"\
+	".\resource.h"\
+	
+
+.\engine.cpp : \
+	"..\..\..\program_files\vc98\include\basetsd.h"\
+	"..\common\dll_state.h"\
+	"..\common\engine_launcher_api.h"\
+	".\dedicated.h"\
+	".\enginecallback.h"\
+	".\sys_ded.h"\
+	
+
+.\sys_ded.cpp : \
+	"..\..\..\program_files\vc98\include\basetsd.h"\
+	"..\common\dll_state.h"\
+	"..\common\engine_launcher_api.h"\
+	"..\common\exefuncs.h"\
+	"..\utils\procinfo\procinfo.h"\
+	".\conproc.h"\
+	".\dedicated.h"\
+	".\enginecallback.h"\
+	".\sys_ded.h"\
+	

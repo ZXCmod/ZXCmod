@@ -1,0 +1,395 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: cl_dll - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\her\LOCALS~1\Temp\RSP172.tmp" with contents
+[
+/nologo /G5 /MTd /W3 /Gm /GR /GX /ZI /Od /I "..\dlls" /I "..\common" /I "..\pm_shared" /I "..\engine" /I "..\utils\vgui\include" /I "..\game_shared" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "CLIENT_DLL" /D "CLIENT_WEAPONS" /FR".\Debug/" /Fp".\Debug/cl_dll.pch" /YX /Fo".\Debug/" /Fd".\Debug/" /FD /c 
+"D:\mod\Single-Player Source\dlls\crossbow.cpp"
+"D:\mod\Single-Player Source\dlls\crowbar.cpp"
+"D:\mod\Single-Player Source\dlls\egon.cpp"
+"D:\mod\Single-Player Source\cl_dll\ev_hldm.cpp"
+"D:\mod\Single-Player Source\dlls\gauss.cpp"
+"D:\mod\Single-Player Source\dlls\handgrenade.cpp"
+"D:\mod\Single-Player Source\cl_dll\hl\hl_baseentity.cpp"
+"D:\mod\Single-Player Source\cl_dll\hl\hl_events.cpp"
+"D:\mod\Single-Player Source\cl_dll\hl\hl_objects.cpp"
+"D:\mod\Single-Player Source\cl_dll\hl\hl_weapons.cpp"
+"D:\mod\Single-Player Source\dlls\wpn_shared\hl_wpn_glock.cpp"
+"D:\mod\Single-Player Source\dlls\hornetgun.cpp"
+"D:\mod\Single-Player Source\common\interface.cpp"
+"D:\mod\Single-Player Source\dlls\mp5.cpp"
+"D:\mod\Single-Player Source\dlls\python.cpp"
+"D:\mod\Single-Player Source\dlls\rpg.cpp"
+"D:\mod\Single-Player Source\dlls\satchel.cpp"
+"D:\mod\Single-Player Source\dlls\shotgun.cpp"
+"D:\mod\Single-Player Source\dlls\squeakgrenade.cpp"
+"D:\mod\Single-Player Source\dlls\tripmine.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_scrollbar2.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_slider2.cpp"
+"D:\mod\Single-Player Source\game_shared\voice_banmgr.cpp"
+"D:\mod\Single-Player Source\game_shared\voice_status.cpp"
+"D:\mod\Single-Player Source\cl_dll\ammo.cpp"
+"D:\mod\Single-Player Source\cl_dll\ammo_secondary.cpp"
+"D:\mod\Single-Player Source\cl_dll\ammohistory.cpp"
+"D:\mod\Single-Player Source\cl_dll\battery.cpp"
+"D:\mod\Single-Player Source\cl_dll\cdll_int.cpp"
+"D:\mod\Single-Player Source\cl_dll\com_weapons.cpp"
+"D:\mod\Single-Player Source\cl_dll\death.cpp"
+"D:\mod\Single-Player Source\cl_dll\demo.cpp"
+"D:\mod\Single-Player Source\cl_dll\entity.cpp"
+"D:\mod\Single-Player Source\cl_dll\ev_common.cpp"
+"D:\mod\Single-Player Source\cl_dll\events.cpp"
+"D:\mod\Single-Player Source\cl_dll\flashlight.cpp"
+"D:\mod\Single-Player Source\cl_dll\GameStudioModelRenderer.cpp"
+"D:\mod\Single-Player Source\cl_dll\geiger.cpp"
+"D:\mod\Single-Player Source\cl_dll\health.cpp"
+"D:\mod\Single-Player Source\cl_dll\hud.cpp"
+"D:\mod\Single-Player Source\cl_dll\hud_msg.cpp"
+"D:\mod\Single-Player Source\cl_dll\hud_redraw.cpp"
+"D:\mod\Single-Player Source\cl_dll\hud_servers.cpp"
+"D:\mod\Single-Player Source\cl_dll\hud_spectator.cpp"
+"D:\mod\Single-Player Source\cl_dll\hud_update.cpp"
+"D:\mod\Single-Player Source\cl_dll\in_camera.cpp"
+"D:\mod\Single-Player Source\cl_dll\input.cpp"
+"D:\mod\Single-Player Source\cl_dll\inputw32.cpp"
+"D:\mod\Single-Player Source\cl_dll\menu.cpp"
+"D:\mod\Single-Player Source\cl_dll\message.cpp"
+"D:\mod\Single-Player Source\cl_dll\parsemsg.cpp"
+"D:\mod\Single-Player Source\pm_shared\pm_debug.c"
+"D:\mod\Single-Player Source\pm_shared\pm_math.c"
+"D:\mod\Single-Player Source\pm_shared\pm_shared.c"
+"D:\mod\Single-Player Source\cl_dll\saytext.cpp"
+"D:\mod\Single-Player Source\cl_dll\status_icons.cpp"
+"D:\mod\Single-Player Source\cl_dll\statusbar.cpp"
+"D:\mod\Single-Player Source\cl_dll\studio_util.cpp"
+"D:\mod\Single-Player Source\cl_dll\StudioModelRenderer.cpp"
+"D:\mod\Single-Player Source\cl_dll\text_message.cpp"
+"D:\mod\Single-Player Source\cl_dll\train.cpp"
+"D:\mod\Single-Player Source\cl_dll\tri.cpp"
+"D:\mod\Single-Player Source\cl_dll\util.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_checkbutton2.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_ClassMenu.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_ConsolePanel.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_ControlConfigPanel.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_CustomObjects.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_grid.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_helpers.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_int.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_listbox.cpp"
+"D:\mod\Single-Player Source\game_shared\vgui_loadtga.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_MOTDWindow.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_SchemeManager.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_ScorePanel.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_ServerBrowser.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_SpectatorPanel.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_TeamFortressViewport.cpp"
+"D:\mod\Single-Player Source\cl_dll\vgui_teammenu.cpp"
+"D:\mod\Single-Player Source\cl_dll\view.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\her\LOCALS~1\Temp\RSP172.tmp" 
+Creating temporary file "C:\DOCUME~1\her\LOCALS~1\Temp\RSP173.tmp" with contents
+[
+oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib winmm.lib ../utils/vgui/lib/win32_vc6/vgui.lib wsock32.lib /nologo /subsystem:windows /dll /incremental:yes /pdb:".\Debug/client.pdb" /debug /machine:I386 /out:".\Debug\client.dll" /implib:".\Debug/client.lib" 
+".\Debug\crossbow.obj"
+".\Debug\crowbar.obj"
+".\Debug\egon.obj"
+".\Debug\ev_hldm.obj"
+".\Debug\gauss.obj"
+".\Debug\handgrenade.obj"
+".\Debug\hl_baseentity.obj"
+".\Debug\hl_events.obj"
+".\Debug\hl_objects.obj"
+".\Debug\hl_weapons.obj"
+".\Debug\hl_wpn_glock.obj"
+".\Debug\hornetgun.obj"
+".\Debug\interface.obj"
+".\Debug\mp5.obj"
+".\Debug\python.obj"
+".\Debug\rpg.obj"
+".\Debug\satchel.obj"
+".\Debug\shotgun.obj"
+".\Debug\squeakgrenade.obj"
+".\Debug\tripmine.obj"
+".\Debug\vgui_scrollbar2.obj"
+".\Debug\vgui_slider2.obj"
+".\Debug\voice_banmgr.obj"
+".\Debug\voice_status.obj"
+".\Debug\ammo.obj"
+".\Debug\ammo_secondary.obj"
+".\Debug\ammohistory.obj"
+".\Debug\battery.obj"
+".\Debug\cdll_int.obj"
+".\Debug\com_weapons.obj"
+".\Debug\death.obj"
+".\Debug\demo.obj"
+".\Debug\entity.obj"
+".\Debug\ev_common.obj"
+".\Debug\events.obj"
+".\Debug\flashlight.obj"
+".\Debug\GameStudioModelRenderer.obj"
+".\Debug\geiger.obj"
+".\Debug\health.obj"
+".\Debug\hud.obj"
+".\Debug\hud_msg.obj"
+".\Debug\hud_redraw.obj"
+".\Debug\hud_servers.obj"
+".\Debug\hud_spectator.obj"
+".\Debug\hud_update.obj"
+".\Debug\in_camera.obj"
+".\Debug\input.obj"
+".\Debug\inputw32.obj"
+".\Debug\menu.obj"
+".\Debug\message.obj"
+".\Debug\parsemsg.obj"
+".\Debug\pm_debug.obj"
+".\Debug\pm_math.obj"
+".\Debug\pm_shared.obj"
+".\Debug\saytext.obj"
+".\Debug\status_icons.obj"
+".\Debug\statusbar.obj"
+".\Debug\studio_util.obj"
+".\Debug\StudioModelRenderer.obj"
+".\Debug\text_message.obj"
+".\Debug\train.obj"
+".\Debug\tri.obj"
+".\Debug\util.obj"
+".\Debug\vgui_checkbutton2.obj"
+".\Debug\vgui_ClassMenu.obj"
+".\Debug\vgui_ConsolePanel.obj"
+".\Debug\vgui_ControlConfigPanel.obj"
+".\Debug\vgui_CustomObjects.obj"
+".\Debug\vgui_grid.obj"
+".\Debug\vgui_helpers.obj"
+".\Debug\vgui_int.obj"
+".\Debug\vgui_listbox.obj"
+".\Debug\vgui_loadtga.obj"
+".\Debug\vgui_MOTDWindow.obj"
+".\Debug\vgui_SchemeManager.obj"
+".\Debug\vgui_ScorePanel.obj"
+".\Debug\vgui_ServerBrowser.obj"
+".\Debug\vgui_SpectatorPanel.obj"
+".\Debug\vgui_TeamFortressViewport.obj"
+".\Debug\vgui_teammenu.obj"
+".\Debug\view.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\her\LOCALS~1\Temp\RSP173.tmp"
+<h3>Output Window</h3>
+Compiling...
+crossbow.cpp
+crowbar.cpp
+egon.cpp
+ev_hldm.cpp
+gauss.cpp
+d:\mod\single-player source\dlls\gauss.cpp(406) : error C2143: syntax error : missing ';' before 'else'
+d:\mod\single-player source\dlls\gauss.cpp(407) : error C2143: syntax error : missing ';' before '{'
+d:\mod\single-player source\dlls\gauss.cpp(407) : error C2447: missing function header (old-style formal list?)
+d:\mod\single-player source\dlls\gauss.cpp(418) : error C2143: syntax error : missing ';' before '}'
+d:\mod\single-player source\dlls\gauss.cpp(418) : error C2143: syntax error : missing ';' before '}'
+d:\mod\single-player source\dlls\gauss.cpp(418) : error C2143: syntax error : missing ';' before '}'
+d:\mod\single-player source\dlls\gauss.cpp(422) : error C2143: syntax error : missing ';' before '{'
+d:\mod\single-player source\dlls\gauss.cpp(422) : error C2447: missing function header (old-style formal list?)
+handgrenade.cpp
+d:\mod\single-player source\dlls\handgrenade.cpp(169) : warning C4101: 'iAnim' : unreferenced local variable
+hl_baseentity.cpp
+hl_events.cpp
+hl_objects.cpp
+hl_weapons.cpp
+hl_wpn_glock.cpp
+hornetgun.cpp
+d:\mod\single-player source\dlls\hornetgun.cpp(519) : warning C4101: 'iAnim' : unreferenced local variable
+d:\mod\single-player source\dlls\hornetgun.cpp(585) : warning C4101: 'iAnim' : unreferenced local variable
+d:\mod\single-player source\dlls\hornetgun.cpp(733) : warning C4101: 'iAnim' : unreferenced local variable
+interface.cpp
+mp5.cpp
+python.cpp
+rpg.cpp
+d:\mod\single-player source\dlls\rpg.cpp(546) : error C2065: 'pHornet' : undeclared identifier
+d:\mod\single-player source\dlls\rpg.cpp(546) : error C2227: left of '->pev' must point to class/struct/union
+d:\mod\single-player source\dlls\rpg.cpp(546) : error C2227: left of '->health' must point to class/struct/union
+d:\mod\single-player source\dlls\rpg.cpp(546) : error C2227: left of '->pev' must point to class/struct/union
+d:\mod\single-player source\dlls\rpg.cpp(546) : error C2227: left of '->health' must point to class/struct/union
+d:\mod\single-player source\dlls\rpg.cpp(560) : error C2227: left of '->pev' must point to class/struct/union
+satchel.cpp
+shotgun.cpp
+squeakgrenade.cpp
+d:\mod\single-player source\dlls\squeakgrenade.cpp(871) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(873) : error C2065: 'CSqueakGrenade2' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(873) : error C2059: syntax error : ')'
+d:\mod\single-player source\dlls\squeakgrenade.cpp(877) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(879) : error C2065: 'm_iMyClass' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(882) : error C2065: 'm_hEnemy' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(885) : error C2227: left of '->Classify' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(899) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(901) : error C2065: 'Precache' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(903) : error C2065: 'pev' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(903) : error C2227: left of '->classname' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(904) : error C2227: left of '->movetype' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(905) : error C2227: left of '->solid' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(909) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(911) : error C2065: 'TouchSet' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(911) : error C2065: 'SuperBounceTouch' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(911) : error C2440: 'static_cast' : cannot convert from 'int' to 'void (__thiscall CBaseEntity::*)(class CBaseEntity *)'
+        There are no conversions from integral values to pointer-to-member values
+d:\mod\single-player source\dlls\squeakgrenade.cpp(912) : error C2065: 'ThinkSet' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(912) : error C2065: 'HuntThink' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(912) : error C2440: 'static_cast' : cannot convert from 'int' to 'void (__thiscall CBaseEntity::*)(void)'
+        There are no conversions from integral values to pointer-to-member values
+d:\mod\single-player source\dlls\squeakgrenade.cpp(913) : error C2227: left of '->nextthink' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(914) : error C2065: 'm_flNextHunt' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(918) : error C2065: 'm_flDie' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(920) : error C2065: 'm_flFieldOfView' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(922) : error C2227: left of '->owner' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(923) : error C2065: 'm_hOwner' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(923) : error C2065: 'Instance' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(923) : error C2227: left of '->owner' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(927) : error C2227: left of '->sequence' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(928) : error C2065: 'ResetSequenceInfo' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(931) : error C2227: left of '->takedamage' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(932) : error C2227: left of '->health' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(933) : error C2227: left of '->gravity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(934) : error C2227: left of '->friction' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(937) : error C2227: left of '->dmg' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(946) : error C2065: 'entindex' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(978) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(979) : error C2373: 'Precache' : redefinition; different type modifiers
+d:\mod\single-player source\dlls\squeakgrenade.cpp(984) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(988) : error C2227: left of '->model' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(989) : error C2065: 'SUB_Remove' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(989) : error C2440: 'static_cast' : cannot convert from 'int' to 'void (__thiscall CBaseEntity::*)(void)'
+        There are no conversions from integral values to pointer-to-member values
+d:\mod\single-player source\dlls\squeakgrenade.cpp(991) : error C2227: left of '->nextthink' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(997) : error C2227: left of '->takedamage' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1002) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1004) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1004) : error C2065: 'BloodColor' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1006) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1006) : error C2227: left of '->owner' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1010) : error C2227: left of '->owner' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1010) : error C2227: left of '->edict' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1015) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1022) : error C2653: 'CSqueakGrenade2' : is not a class or namespace name
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1023) : error C2373: 'HuntThink' : redefinition; different type modifiers
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1024) : error C2065: 'IsInWorld' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1027) : error C2673: 'HuntThink' : global functions do not have 'this' pointers
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1031) : error C2065: 'StudioFrameAdvance' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1032) : error C2227: left of '->nextthink' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1037) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1037) : error C2228: left of '.Normalize' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1038) : error C2227: left of '->health' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1043) : error C2227: left of '->waterlevel' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1045) : error C2227: left of '->movetype' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1047) : error C2227: left of '->movetype' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1049) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1049) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1050) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1050) : error C2228: left of '.z' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1052) : error C2227: left of '->health' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1056) : error C2227: left of '->movetype' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1059) : error C2227: left of '->movetype' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1072) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1076) : error C2227: left of '->angles' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1078) : error C2227: left of '->IsAlive' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1080) : error C2065: 'Look' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1081) : error C2065: 'BestVisibleEnemy' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1086) : error C2065: 'FVisible' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1088) : error C2227: left of '->EyePosition' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1088) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1089) : error C2065: 'm_vecTarget' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1089) : error C2679: binary '=' : no operator defined which takes a right-hand operand of type 'class Vector' (or there is no acceptable conversion)
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1092) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1092) : error C2228: left of '.Length' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1098) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1098) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1102) : error C2227: left of '->flags' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1104) : error C2227: left of '->avelocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1108) : error C2227: left of '->avelocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1110) : error C2227: left of '->avelocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1110) : error C2228: left of '.x' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1111) : error C2227: left of '->avelocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1111) : error C2228: left of '.y' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1115) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1115) : error C2065: 'm_posPrev' : undeclared identifier
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1115) : error C2228: left of '.Length' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1117) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1117) : error C2228: left of '.x' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1118) : error C2227: left of '->velocity' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1118) : error C2228: left of '.y' must have class/struct/union type
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1120) : error C2227: left of '->origin' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1122) : error C2227: left of '->angles' must point to class/struct/union
+d:\mod\single-player source\dlls\squeakgrenade.cpp(1122) : fatal error C1003: error count exceeds 100; stopping compilation
+tripmine.cpp
+vgui_scrollbar2.cpp
+vgui_slider2.cpp
+voice_banmgr.cpp
+voice_status.cpp
+ammo.cpp
+ammo_secondary.cpp
+ammohistory.cpp
+battery.cpp
+cdll_int.cpp
+com_weapons.cpp
+death.cpp
+demo.cpp
+entity.cpp
+ev_common.cpp
+events.cpp
+flashlight.cpp
+GameStudioModelRenderer.cpp
+geiger.cpp
+health.cpp
+hud.cpp
+hud_msg.cpp
+hud_redraw.cpp
+hud_servers.cpp
+hud_spectator.cpp
+hud_update.cpp
+in_camera.cpp
+input.cpp
+inputw32.cpp
+menu.cpp
+message.cpp
+parsemsg.cpp
+pm_debug.c
+pm_math.c
+pm_shared.c
+saytext.cpp
+status_icons.cpp
+statusbar.cpp
+studio_util.cpp
+StudioModelRenderer.cpp
+text_message.cpp
+train.cpp
+tri.cpp
+util.cpp
+vgui_checkbutton2.cpp
+vgui_ClassMenu.cpp
+vgui_ConsolePanel.cpp
+vgui_ControlConfigPanel.cpp
+vgui_CustomObjects.cpp
+vgui_grid.cpp
+vgui_helpers.cpp
+vgui_int.cpp
+vgui_listbox.cpp
+vgui_loadtga.cpp
+vgui_MOTDWindow.cpp
+vgui_SchemeManager.cpp
+vgui_ScorePanel.cpp
+vgui_ServerBrowser.cpp
+vgui_SpectatorPanel.cpp
+vgui_TeamFortressViewport.cpp
+vgui_teammenu.cpp
+view.cpp
+Error executing cl.exe.
+
+
+
+<h3>Results</h3>
+client.dll - 116 error(s), 4 warning(s)
+</pre>
+</body>
+</html>
