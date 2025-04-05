@@ -147,9 +147,6 @@ void CFuncTank :: Spawn( void )
 {
 	Precache();
 	
-	//remove
-	if ( allowmonsters7.value != 1 )
-		UTIL_Remove( this );
 
 	pev->movetype	= MOVETYPE_PUSH;  // so it doesn't get pushed by anything
 	pev->solid		= SOLID_BSP;

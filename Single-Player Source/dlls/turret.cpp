@@ -44,7 +44,7 @@ extern Vector VecBModelOrigin( entvars_t* pevBModel );
 #define TURRET_TURNRATE	30		//angles per 0.1 second
 #define TURRET_MAXWAIT	15		// seconds turret will stay active w/o a target
 #define TURRET_MAXSPIN	5		// seconds turret barrel will spin w/o a target
-#define TURRET_MACHINE_VOLUME	0.4
+#define TURRET_MACHINE_VOLUME	0.2
 
 typedef enum
 {
@@ -452,7 +452,7 @@ void CBaseTurret::Ping( void )
 		s=1;
 		
 		if (s==1)
-			EMIT_SOUND(ENT(pev), CHAN_BODY, "ambience/ffdeepamb.wav", 1.0, ATTN_NORM);
+			EMIT_SOUND(ENT(pev), CHAN_BODY, "ambience/ffdeepamb.wav", 0.5, ATTN_NORM);
 		else
 			STOP_SOUND( ENT(pev), CHAN_ITEM, "plats/train_use1.wav" );
 		}
@@ -509,7 +509,7 @@ void CBaseTurret::Ping( void )
 				//if (  m_hEnemy->edict() == pev->owner )
 					UTIL_HudMessage(m_hEnemy, hText, szText);
 					
-				EMIT_SOUND( ENT(pev), CHAN_ITEM, "plats/train_use1.wav", 1.0, ATTN_NORM);
+				EMIT_SOUND( ENT(pev), CHAN_ITEM, "plats/train_use1.wav", 0.5, ATTN_NORM);
 				//visual set
 				pev->renderfx = kRenderFxGlowShell;
 				pev->rendercolor.x = 16*pev->ltime;  // red
@@ -532,7 +532,7 @@ void CBaseTurret::Ping( void )
 	else if (m_flPingTime <= gpGlobals->time)
 	{
 		m_flPingTime = gpGlobals->time + 2;
-		EMIT_SOUND(ENT(pev), CHAN_ITEM, "turret/tu_ping.wav", 0.25, ATTN_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_ITEM, "turret/tu_ping.wav", 0.1, ATTN_NORM);
 		EyeOn( );
 		//visual unset
 		pev->renderfx = kRenderFxNone;
@@ -934,7 +934,7 @@ void CBaseTurret::Deploy(void)
 	{
 		m_iOn = 1;
 		SetTurretAnim(TURRET_ANIM_DEPLOY);
-		EMIT_SOUND(ENT(pev), CHAN_BODY, "turret/tu_deploy.wav", TURRET_MACHINE_VOLUME, ATTN_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_BODY, "turret/tu_deploy.wav", 0.5, ATTN_NORM);
 		SUB_UseTargets( this, USE_ON, 0 );
 	}
 
@@ -1302,7 +1302,7 @@ void CBaseTurret ::	TurretDeath( void )
 
 
 	if (pl != NULL && (pl->edict() == pev->owner))
-		pl->m_flNextChatTime13 -= 1;
+		pl->m_flNextTurretsLimit -= 1;
 		
 	UTIL_Remove( this );
 	//SetThink( SUB_Remove );
@@ -1706,7 +1706,7 @@ void CSentry ::	SentryDeath( void )
 	}
 	
 	if (pl != NULL && (pl->edict() == pev->owner))
-		pl->m_flNextChatTime13 -= 1;
+		pl->m_flNextTurretsLimit -= 1;
 	
 }
 

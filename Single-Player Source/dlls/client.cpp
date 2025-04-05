@@ -181,7 +181,7 @@ GLOBALS ASSUMED SET:  g_ulModelIndexPlayer
 */
 void ClientKill( edict_t *pEntity )
 {
-	if (g_flWeaponCheat.value == 3)
+	if (g_zxc_cheats.value == 3)
 		return; 
 		
 	entvars_t *pev = &pEntity->v;
@@ -218,25 +218,12 @@ void ClientPutInServer( edict_t *pEntity )
 	pPlayer = GetClassPtr((CBasePlayer *)pev);
 	pPlayer->SetCustomDecalFrames(-1); // Assume none;
 
-	// Allocate a CBasePlayer for pev, and call spawn
-	// pPlayer->Spawn() ;
-	{
-		
-		pPlayer->Spawn() ;
-		pPlayer->StartObserver(pev->origin,pev->angles);
-		
-		
-/* 		
-		pPlayer->Precache();
-		pPlayer->pev->solid			= SOLID_NOT;
-		pPlayer->pev->movetype		= MOVETYPE_NOCLIP;
-		pPlayer->pev->flags		   &= FL_PROXY;	// keep proxy flag sey by engine
-		pPlayer->pev->flags		   |= FL_CLIENT;
-		pPlayer->m_afPhysicsFlags	= 0;
-		pPlayer->StartObserver(pev->origin,pev->origin); */
-		
-		//SpectatorConnect( pEntity );
-	}
+	pPlayer->Spawn() ;
+	pPlayer->StartObserver(pev->origin,pev->angles);
+	
+	pPlayer->m_flNextNukeTime = gpGlobals->time + 240;
+	pPlayer->m_flNextEgonStormTime = gpGlobals->time + 180;
+	pPlayer->m_flNextShotgunFlareTime = gpGlobals->time + 120;
 
 	// Reset interpolation during first frame
 	pPlayer->pev->effects |= EF_NOINTERP;
@@ -412,7 +399,7 @@ void ClientCommand( edict_t *pEntity )
 	// disabled in 1.34 as bug.
 	// else if ( FStrEq(pcmd, "give" ) )
 	// {
-		// if ( g_flWeaponCheat != 0.0)
+		// if ( g_zxc_cheats != 0.0)
 		// {
 			// int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
 			// GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
@@ -426,7 +413,7 @@ void ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq(pcmd, "fov" ) )
 	{
-		if ( g_flWeaponCheat.value && CMD_ARGC() > 1)
+		if ( g_zxc_cheats.value && CMD_ARGC() > 1)
 		{
 			GetClassPtr((CBasePlayer *)pev)->m_iFOV = atoi( CMD_ARGV(1) );
 		}
@@ -805,7 +792,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.36";
+		return "Half-Life zxc mod 1.37";
 }
 
 /*

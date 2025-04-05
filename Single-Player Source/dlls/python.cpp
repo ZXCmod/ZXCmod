@@ -172,6 +172,11 @@ void CPython::Precache( void )
 	PRECACHE_SOUND ("buttons/spark5.wav");
 	PRECACHE_SOUND ("buttons/spark6.wav");
 	
+	
+	m_Sprite    = PRECACHE_MODEL( "sprites/explode1.spr" );
+	m_SpriteExp = PRECACHE_MODEL( "sprites/mushroom.spr" );
+	PRECACHE_SOUND ("zxc/explode3.wav");
+	
 	PRECACHE_MODEL("sprites/mommaspit.spr"); // client side spittle.
 	PRECACHE_MODEL("sprites/bluejet1.spr"); // reaction
 	PRECACHE_MODEL("sprites/fexplo1.spr");  //expld
@@ -185,7 +190,7 @@ void CPython::Precache( void )
 
 BOOL CPython::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 
 	pev->body = 1;
 
@@ -209,106 +214,123 @@ void CPython::Holster( int skiplocal /* = 0 */ )
 void CPython::PrimaryAttack()
 {
 
-	if (allowmonsters10.value == 0) // normaly
-		{
-			if (m_iClip <= 0)
-			{
-				if (!m_fFireOnEmpty)
-					Reload( );
-				else
-				{
-					EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_cock1.wav", 0.8, ATTN_NORM);
-					m_flNextPrimaryAttack = 0.15;
-				}
 
-				return;
-			}
-
-			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-
-			m_iClip--;
-
-			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-
-			Vector vecSrc	 = m_pPlayer->GetGunPosition( );
-			Vector vecAiming = gpGlobals->v_forward;
-
-			Vector vecDir;
-			vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_1DEGREES, 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
-
-			PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usFirePython, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
-
-			m_flNextPrimaryAttack = 0.75;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
-		}
-
-	else // charged core
+	if (m_iClip <= 0)
 	{
-		if (m_iClip >= 1)
+		if (!m_fFireOnEmpty)
+			Reload( );
+		else
 		{
-			Vector vecThrow = gpGlobals->v_forward * 1650;
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
-			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-			m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-		
-			UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
-			Vector GunPosition = m_pPlayer->GetGunPosition( );
-			GunPosition = GunPosition + gpGlobals->v_forward * 0;
-			GunPosition = GunPosition + gpGlobals->v_right   * 7;
-			GunPosition = GunPosition + gpGlobals->v_up      * 0;
-			CU* Beam = CU :: Create( GunPosition, m_pPlayer->pev->v_angle, m_pPlayer ); //create think
-			Beam->pev->velocity = vecThrow;
-			Beam->pev->dmg = 79;
-			m_iClip-=1;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.70; 
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.70;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.70;
-			m_pPlayer->pev->punchangle.x -= 4;
-			SendWeaponAnim( 2 ); 
-
-			float flZVel = m_pPlayer->pev->velocity.z; 
-			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * 350; 
-
-		}
-	else
-		{
-			if ( m_pPlayer->pev->fov != 0 )
-			{
-				m_fInZoom = FALSE;
-				m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 0;  // 0 means reset to default fov
-				m_flNextSecondaryAttack = 0.3;
-			}
-			else if ( m_pPlayer->pev->fov != 40 )
-			{
-				m_fInZoom = TRUE;
-				m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 40;
-				m_flNextSecondaryAttack = 0.3;
-			}
-			PlayEmptySound( );
-			m_flNextSecondaryAttack = 0.3;
-			return;
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_cock1.wav", 0.8, ATTN_NORM);
+			m_flNextPrimaryAttack = 0.15;
 		}
 
-		m_flNextSecondaryAttack = 0.5;
-	
+		return;
 	}
+
+	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+	m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+	m_iClip--;
+
+	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+
+	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+
+	Vector vecSrc	 = m_pPlayer->GetGunPosition( );
+	Vector vecAiming = gpGlobals->v_forward;
+	
+	Vector vecDir = gpGlobals->v_forward;
+	
+	BOOL	is_body_hit = false;
+	TraceResult	tr;	
+	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 8000, dont_ignore_monsters, m_pPlayer->edict(), &tr);
+	CBaseEntity *pOther = NULL;
+	
+	while ((pOther = UTIL_FindEntityInSphere( pOther, tr.vecEndPos, 64 )) != NULL)
+	{
+		if ( pOther->pev->solid != SOLID_BSP )
+		{
+			if ( pOther->pev->flags & (FL_MONSTER|FL_CLIENT) )  // body hit
+			{
+				is_body_hit = true;
+				vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_2DEGREES, 8192, 7, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed ); // just 7 dmg
+				
+				// animated sprite
+				MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, tr.vecEndPos );
+					WRITE_BYTE( TE_SPRITE );
+					WRITE_COORD( tr.vecEndPos.x );
+					WRITE_COORD( tr.vecEndPos.y );
+					WRITE_COORD( tr.vecEndPos.z );
+					WRITE_SHORT( m_Sprite );
+					WRITE_BYTE( 60 ); // scale
+					WRITE_BYTE( 172 ); // brightness
+				MESSAGE_END();
+				
+				//not worked?
+				if ( (pev->flags & FL_ONGROUND) )
+				{
+					// animated sprite
+					MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, tr.vecEndPos );
+						WRITE_BYTE( TE_SPRITE );
+						WRITE_COORD( tr.vecEndPos.x );
+						WRITE_COORD( tr.vecEndPos.y );
+						WRITE_COORD( tr.vecEndPos.z );
+						WRITE_SHORT( m_SpriteExp );
+						WRITE_BYTE( 60 ); // scale
+						WRITE_BYTE( 172 ); // brightness
+					MESSAGE_END();
+				}
+				
+				
+				//lights
+				MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, tr.vecEndPos );
+					WRITE_BYTE(TE_DLIGHT);
+					WRITE_COORD(tr.vecEndPos.x);	// X
+					WRITE_COORD(tr.vecEndPos.y);	// Y
+					WRITE_COORD(tr.vecEndPos.z);	// Z
+					WRITE_BYTE( 24 );		// radius * 0.1
+					WRITE_BYTE( 250 );		// r
+					WRITE_BYTE( 250 );		// g
+					WRITE_BYTE( 150 );		// b
+					WRITE_BYTE( 128 );		// time * 10
+					WRITE_BYTE( 16 );		// decay * 0.1
+				MESSAGE_END( );
+				
+
+				EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/explode3.wav", 1.0, ATTN_NORM); 
+
+					
+				::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 63, 175, CLASS_NONE, DMG_BULLET  ); 
+				m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - (gpGlobals->v_forward * 750);
+			}
+		}
+	}
+	if ( is_body_hit == false )
+	{
+		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_2DEGREES, 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+		UTIL_Sparks( tr.vecEndPos );
+	}
+	
+	
+	
+	
+	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usFirePython, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
+
+	m_flNextPrimaryAttack = 0.75;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
+		
+
+
 }
 
 
 
 void CPython::SecondaryAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
-
-	if (m_iClip == 6 && allowmonsters5.value != 0)
+	if (m_iClip == 6)
 	{
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); 
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/357_shot2.wav", 0.8, ATTN_NORM); //play sound
@@ -354,13 +376,11 @@ else //here old code
 // v 1.33 new attack
 void CPython::ThirdAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
 		
 	Vector vecSrc = m_pPlayer->pev->origin;
 	Vector vecThrow = gpGlobals->v_forward * 768;
 	
-	if (m_iClip == 6 && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 12 && allowmonsters5.value != 0)
+	if (m_iClip == 6 && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 12)
 		{
 
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 ); // player "shoot" animation
@@ -371,7 +391,7 @@ void CPython::ThirdAttack( void )
 		pSatchel->pev->avelocity.y = 80;
 		pSatchel->pev->avelocity.x = 50;
 
-		if ( g_flWeaponCheat.value != 0)
+		if ( g_zxc_cheats.value != 0)
 		{
 			// - all bullets per shot
 			m_iClip = 0;
@@ -394,13 +414,11 @@ void CPython::ThirdAttack( void )
 // v 1.33 attack
 void CPython::FourthAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
 		
 	Vector vecSrc = m_pPlayer->pev->origin;
 	Vector vecThrow = gpGlobals->v_forward * 300;
 	
-	if (m_iClip == 6 && allowmonsters5.value != 0)
+	if (m_iClip == 6)
 	{
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "zxc/bemlsr2.wav", 0.8, ATTN_NORM);

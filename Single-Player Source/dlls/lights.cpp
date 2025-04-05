@@ -155,7 +155,7 @@ void CEnvLight::KeyValue( KeyValueData* pkvd )
 		}
 
 		// simulate qrad direct, ambient,and gamma adjustments, as well as engine scaling
-		r = pow( r / RANDOM_FLOAT(1.0,70.0), 0.6 ) * 264;
+		r = pow( r / 124.0, 0.6 ) * 264;
 		g = pow( g / 124.0, 0.6 ) * 264;
 		b = pow( b / 124.0, 0.6 ) * 264;
 

@@ -149,45 +149,30 @@ void CGlock::Reload( void )
 
 BOOL CGlock::Deploy( )
 {
-	if (allowmonsters10.value == 1)
-		{
-			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 346 ); //304
-		}
-	else
-		{
-			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 ); //304
-		}
+
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 ); //280
 	return DefaultDeploy( "models/v_9mmhandgun.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded", /*UseDecrement() ? 1 : 0*/ 0 );
+	
 }
 
-void CGlock::SecondaryAttack( void )
-{
-
-	GlockFire( 0.07, 0.2 );
-
-}
 
 void CGlock::PrimaryAttack( void )
 {
 
-	GlockFire( 0.035, 0.3 ); //0.25
+	GlockFire( 1.0, 0.3 ); //0.25
+
+}
+void CGlock::SecondaryAttack( void )
+{
+
+	GlockFire( 3.64, 0.2 );
 
 }
 
 // updated in v1.33 with both types
 void CGlock::ThirdAttack( void )
 {
-	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
-	{
-		PlayEmptySound( );
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.15;
-		return;
-	}
-	
-	if (allowmonsters9.value == 0)
-		return;
-	
+
 	int iResult;
 
 	if (m_iClip <= 4)
@@ -281,9 +266,12 @@ void CGlock::GlockFire( float flSpread , float flCycleTime )
 
 	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
 	pEntity = CBaseEntity::Instance(tr.pHit); //trace hit to entity
-	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), g_vecZero ? m_usFireGlock1 : m_usFireGlock2, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecAiming.x, vecAiming.y, 0, 0, 0, 0 );
 	
-	m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, Vector( 0, 0, 0 ), 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	
+	Vector vecDir;
+	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_2DEGREES*flSpread, 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), g_vecZero ? m_usFireGlock1 : m_usFireGlock2, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
+	
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
 	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 	m_iClip--;
@@ -296,10 +284,10 @@ void CGlock::GlockFire( float flSpread , float flCycleTime )
 		WRITE_COORD(tr.vecEndPos.x);	// X
 		WRITE_COORD(tr.vecEndPos.y);	// Y
 		WRITE_COORD(tr.vecEndPos.z);	// Z
-		WRITE_BYTE( 12 );		// radius * 0.1
-		WRITE_BYTE( 100 );		// r
+		WRITE_BYTE( 4 );		// radius * 0.1
+		WRITE_BYTE( 80 );		// r
 		WRITE_BYTE( 200 );		// g
-		WRITE_BYTE( 100 );		// b
+		WRITE_BYTE( 80 );		// b
 		WRITE_BYTE( 1 );		// time * 10
 		WRITE_BYTE( 0 );		// decay * 0.1
 	MESSAGE_END( );
@@ -309,10 +297,10 @@ void CGlock::GlockFire( float flSpread , float flCycleTime )
 		WRITE_COORD(vecSrc.x);	// X
 		WRITE_COORD(vecSrc.y);	// Y
 		WRITE_COORD(vecSrc.z);	// Z
-		WRITE_BYTE( 10 );		// radius * 0.1
-		WRITE_BYTE( 100 );		// r
-		WRITE_BYTE( 200 );		// g
-		WRITE_BYTE( 100 );		// b
+		WRITE_BYTE( 3 );		// radius * 0.1
+		WRITE_BYTE( 50 );		// r
+		WRITE_BYTE( 250 );		// g
+		WRITE_BYTE( 50 );		// b
 		WRITE_BYTE( 128 );		// time * 10
 		WRITE_BYTE( 16 );		// decay * 0.1
 	MESSAGE_END( );
@@ -328,11 +316,11 @@ void CGlock::GlockFire( float flSpread , float flCycleTime )
 	if (pEntity != NULL && pEntity->IsPlayer()) // is player
 	{
 		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-		UTIL_ScreenFade( pPlayer, Vector(0,200,0), 3.0, 1.0, 60, FFADE_IN );
-		pEntity->PTime += 72; // timer of player
+		//UTIL_ScreenFade( pPlayer, Vector(0,200,0), 3.0, 1.0, 60, FFADE_IN );
+		pEntity->PTime += 72; // timer of slow
 	}
 	
-	pEntity->TakeDamage(pev, VARS( pev->owner ), 3, DMG_PARALYZE);
+	pEntity->TakeDamage(pev, VARS( pev->owner ), 13, DMG_PARALYZE);
 }
 
 

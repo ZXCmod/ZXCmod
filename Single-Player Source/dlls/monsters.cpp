@@ -1973,7 +1973,6 @@ void CBaseMonster :: MonsterInit ( void )
 	pev->max_health		= pev->health;
 	pev->armorvalue		= 0;
 	//pev->fuser1			= 30;
-	//pev->fuser2			= 30;
 	
 	// Charge = 0; // 0 or 1 bool
 	// TripleShot = 0; // 0 or 1 bool change it for multiple dmg (new in 1.35 for Red Crystal)

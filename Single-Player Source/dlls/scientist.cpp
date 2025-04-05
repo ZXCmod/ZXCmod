@@ -1089,10 +1089,9 @@ void CScientist::Heal( void )
 		return;
 
 	m_hTargetEnt->TakeHealth( 200, DMG_GENERIC );
-	m_hTargetEnt->pev->max_health = 150;
-	m_hTargetEnt->pev->armorvalue += 50;
-	m_hTargetEnt->pev->fuser1 += 50;
-	m_hTargetEnt->pev->fuser2 += 50;
+	m_hTargetEnt->pev->max_health = 25;
+	m_hTargetEnt->pev->armorvalue += 10;
+	m_hTargetEnt->pev->fuser1 += 10;
 	// Don't heal again for 1 minute
 	m_healTime = gpGlobals->time + 4;
 }

@@ -14,7 +14,7 @@
 
 
 
-extern int g_flWeaponCheat3; //teamplay mode
+extern int g_zxc_cheats3; //teamplay mode
 
 
 class   CRC : public CGrenade

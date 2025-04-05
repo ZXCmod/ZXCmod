@@ -138,7 +138,7 @@ int CMP5::AddToPlayer( CBasePlayer *pPlayer )
 
 BOOL CMP5::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	return DefaultDeploy( "models/v_9mmAR.mdl", "models/p_9mmAR.mdl", MP5_DEPLOY, "mp5" );
 }
 
@@ -148,13 +148,7 @@ void CMP5::PrimaryAttack()
 
 	Vector i;
 	
-	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
-	{
-		PlayEmptySound( );
-		m_flNextPrimaryAttack = 0.15;
-		return;
-	}
+	
 
 	if (m_iClip <= 0)
 	{
@@ -181,16 +175,15 @@ void CMP5::PrimaryAttack()
 		i = VECTOR_CONE_6DEGREES;
 
 
-	// player spread
 	vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, i, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 
 	
 	PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usMP5, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
 
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.06;
 
 	if ( m_flNextPrimaryAttack < UTIL_WeaponTimeBase() )
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.05;
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 }
@@ -238,19 +231,7 @@ void CMP5::FourthAttack( void )
 void CMP5::ThirdAttack( void )
 {
 
-	if (allowmonsters9.value == 0)
-		return;
 
-	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel >= 2)
-	{
-		PlayEmptySound( );
-		m_flNextPrimaryAttack = 0.15;
-		return;
-	}
-
-if (allowmonsters10.value == 1)
-	return;
 
 	TraceResult	tr;	
 	Vector vecSrc;
@@ -332,21 +313,14 @@ if (allowmonsters10.value == 1)
 
 void CMP5::SecondaryAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
 
-	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel >= 2)
-	{
-		PlayEmptySound( );
-		m_flNextSecondaryAttack = 0.15;
-		return;
-	}
 
-if (allowmonsters10.value == 0)
-{
+	
 	if (m_iClip >= 1)
 	{
+		if (m_pPlayer->pev->fuser1 < 50)
+		{
+			
 			Vector vecThrow = gpGlobals->v_forward * 2048; 
 			Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 			UTIL_MakeVectors( anglesAim );
@@ -363,61 +337,60 @@ if (allowmonsters10.value == 0)
 			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.08;
 			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.08;
 
-			// play sounds
 			switch(RANDOM_LONG(0,2))
-				{
+			{
 				case 0: 
-					EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); //play sound
+					EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM);
 				break;
 				case 1: 
-					EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM); //play sound
+					EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM);
 				break;
 				case 2: 
-					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM); //play sound
+					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM);
 				break;
-				}
-	}
-}
-else
-	if (m_iClip >= 1)
-	{
-		Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
-		Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-		UTIL_MakeVectors( anglesAim );
-		
-
-		m_pPlayer->pev->punchangle.x += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
-		m_pPlayer->pev->punchangle.y += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
-		m_spread += 0.150;
-		m_iClip--;
-		
-		CBaseEntity *pPlasma = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-		CBaseEntity *pPlasma2 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle-45, m_pPlayer->edict() );
-		CBaseEntity *pPlasma3 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle+45, m_pPlayer->edict() );
-		pPlasma->pev->velocity = vecThrow;
-		pPlasma2->pev->dmg = RANDOM_LONG(21,30);
-		pPlasma2->pev->velocity = vecThrow-Vector(105,0,RANDOM_LONG(-45,45));
-		pPlasma2->pev->dmg = RANDOM_LONG(7,11);
-		pPlasma3->pev->velocity = vecThrow+Vector(105,0,RANDOM_LONG(-45,45));
-		pPlasma3->pev->dmg = RANDOM_LONG(7,11);
-		SendWeaponAnim( 5 );
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.16; //0.08
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.16;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.16;
-
-		switch(RANDOM_LONG(0,2))
-			{
-			case 0: 
-				EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); //play sound
-			break;
-			case 1: 
-				EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM); //play sound
-			break;
-			case 2: 
-				EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM); //play sound
-			break;
 			}
+			
+		}
+		else
+		{
+			Vector vecThrow = gpGlobals->v_forward * 2048; //init and start speed of core, 540
+			Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+			UTIL_MakeVectors( anglesAim );
+			
+
+			m_pPlayer->pev->punchangle.x += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
+			m_pPlayer->pev->punchangle.y += (RANDOM_FLOAT(-1.2,1.2)*m_spread);
+			m_spread += 0.150;
+			m_iClip--;
+			
+			CBaseEntity *pPlasma1 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+			CBaseEntity *pPlasma2 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle-45, m_pPlayer->edict() );
+			CBaseEntity *pPlasma3 = Create( "weapon_laser_rifle", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle+45, m_pPlayer->edict() );
+			pPlasma1->pev->velocity = vecThrow;
+			pPlasma2->pev->dmg = 35;
+			pPlasma2->pev->velocity = vecThrow-Vector(105,0,-45);
+			pPlasma2->pev->dmg = 15;
+			pPlasma3->pev->velocity = vecThrow+Vector(105,0,45);
+			pPlasma3->pev->dmg = 15;
+			SendWeaponAnim( 5 );
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1;
+
+			switch(RANDOM_LONG(0,2))
+			{
+				case 0: 
+					EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/2plasma_fire1.wav", 1.0, ATTN_NORM); 
+				break;
+				case 1: 
+					EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/2plasma_fire3.wav", 1.0, ATTN_NORM); 
+				break;
+				case 2: 
+					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/2plasma_fire6.wav", 1.0, ATTN_NORM);
+				break;
+			}
+		}
 	}
 
 }
@@ -542,7 +515,7 @@ void CZap::Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmAR" );
 	CBaseEntity *pEntity = NULL;
-	pev->dmg = RANDOM_LONG(6,10);
+	pev->dmg = 8;
 
 	if ((UTIL_PointContents(pev->origin) == CONTENTS_WATER))
 	{	pev->ltime = 512; pev->dmg *= 0.5;}// water electro splash & half damage
@@ -612,7 +585,7 @@ void    CPlasma :: Spawn( )
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_9mmAR" );
 	m_flDie = gpGlobals->time + 3;
-	pev->dmg = RANDOM_LONG(30,38); // dynamyc value
+	pev->dmg = 35; 
 	pev->nextthink = gpGlobals->time + 0.1;
 	
 	pev->gravity = 0.0;

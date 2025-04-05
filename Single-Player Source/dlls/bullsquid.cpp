@@ -26,6 +26,7 @@
 #include	"decals.h"
 #include	"soundent.h"
 #include	"game.h"
+#include "weapons.h"
 
 #define		SQUID_SPRINT_DIST	256 // how close the squid has to get before starting to sprint and refusing to swerve
 int			   iSquidSpitSprite;
@@ -83,11 +84,18 @@ void CSquidSpit:: Spawn( void )
 
 	SET_MODEL(ENT(pev), "sprites/bigspit.spr");
 	pev->frame = 0;
-	pev->scale = 1.5;
+	pev->scale = 1.25;
 
-	UTIL_SetSize( pev, Vector( 0, 0, 0), Vector(0, 0, 0) );
+	UTIL_SetSize(pev, Vector(-4, -4, -4), Vector(4, 4, 4));
 
 	m_maxFrame = (float) MODEL_FRAMES( pev->modelindex ) - 1;
+
+
+	///CSquidSpit *pSpit = GetClassPtr( (CSquidSpit *)NULL );
+	
+
+	SetThink ( Animate );
+	pev->nextthink = gpGlobals->time + 0.03;
 }
 
 void CSquidSpit::Animate( void )
@@ -124,15 +132,15 @@ void CSquidSpit :: Touch ( CBaseEntity *pOther )
 	// splat sound
 	iPitch = RANDOM_FLOAT( 40, 110 );
 
-	EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "bullchicken/bc_acid1.wav", 1, ATTN_NORM, 0, iPitch );	
+	EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "bullchicken/bc_acid1.wav", 0.5, ATTN_NORM, 0, iPitch );	
 
 	switch ( RANDOM_LONG( 0, 1 ) )
 	{
 	case 0:
-		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "bullchicken/bc_spithit1.wav", 1, ATTN_NORM, 0, iPitch );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "bullchicken/bc_spithit1.wav", 0.5, ATTN_NORM, 0, iPitch );	
 		break;
 	case 1:
-		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "bullchicken/bc_spithit2.wav", 1, ATTN_NORM, 0, iPitch );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "bullchicken/bc_spithit2.wav", 0.5, ATTN_NORM, 0, iPitch );	
 		break;
 	}
 
@@ -160,9 +168,11 @@ void CSquidSpit :: Touch ( CBaseEntity *pOther )
 	}
 	else
 	{
-		pOther->TakeDamage ( pev, pev, 37, DMG_GENERIC );
+		pOther->TakeDamage ( pev, VARS( pev->owner ), 18.5, DMG_RADIATION );
+		pOther->pev->friction=0.0;
 	}
 
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 18.5, 96, CLASS_NONE, DMG_RADIATION  );
 	SetThink ( SUB_Remove );
 	pev->nextthink = gpGlobals->time;
 }

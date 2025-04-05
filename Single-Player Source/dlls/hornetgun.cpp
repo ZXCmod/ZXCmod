@@ -54,13 +54,13 @@ void CHgun::Spawn( )
 	m_iId = WEAPON_HORNETGUN;
 	SET_MODEL(ENT(pev), "models/w_hgun.mdl");
 	
-	m_flNextChatTime14; //limit
+	m_flNextHornetgunFreezebagLimit; //limit
 
 	m_iDefaultAmmo = HIVEHAND_DEFAULT_GIVE;
 	m_iFirePhase = 0;
 
 	FallInit();// get ready to fall down.
-	float m_flNextChatTime8 = gpGlobals->time; //delay
+	float m_flNextHornetgunGrensTime = gpGlobals->time; //delay
 }
 
 
@@ -126,12 +126,12 @@ int CHgun::GetItemInfo(ItemInfo *p)
 
 BOOL CHgun::Deploy( )
 {
-	if (m_pPlayer->m_flNextChatTime14 < 0)
-		m_pPlayer->m_flNextChatTime14 = 0;
+	if (m_pPlayer->m_flNextHornetgunFreezebagLimit < 0)
+		m_pPlayer->m_flNextHornetgunFreezebagLimit = 0;
 	m_pPlayer->m_flPlayAftershock = 0.0;
 
 	// m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 1; //ammo set to 1. 
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	return DefaultDeploy( "models/v_hgun.mdl", "models/p_hgun.mdl", HGUN_UP, "hive" );
 }
 
@@ -161,7 +161,7 @@ void CHgun::PrimaryAttack()
 
 	CBaseEntity::Create( "hornet", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
 
-	m_flRechargeTime = gpGlobals->time + 0.5;
+	m_flRechargeTime = gpGlobals->time + 0.3;
 	
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=1;
 	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
@@ -173,9 +173,9 @@ void CHgun::PrimaryAttack()
 	// player "shoot" animation
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.3;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.3;
+	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.3;
 	
 	Reload( );
 
@@ -196,8 +196,6 @@ float CHgun::GetFullChargeTime( void )
 
 void CHgun::SecondaryAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
 
 	if ( m_fInAttack == 0 )
 	{
@@ -279,7 +277,7 @@ void CHgun::SecondaryAttack( void )
 			m_pPlayer->pev->rendercolor.z = 255; // blue
 			m_pPlayer->pev->renderamt = 70;
 			m_pPlayer->EnableControl(FALSE);
-			m_pPlayer->FTime2 = gpGlobals->time + 3.6; 
+			m_pPlayer->FreezeTime = gpGlobals->time + 3.6; 
 			
 			// Player may have been killed and this weapon dropped, don't execute any more code after this!
 			return;
@@ -363,7 +361,7 @@ void CHgun::Fire( Vector vecOrigSrc, Vector vecDir, float flDamage, TraceResult 
 	// don't hit transparent objects
     if (pEntity != NULL && (pEntity->IsBSPModel()))
     {
-		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.15; //delay
+		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1; //delay
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		PLAYBACK_EVENT_FULL( FEV_GLOBAL, m_pPlayer->edict(), m_usHornetFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, FIREMODE_FAST, 0, 0, 0 );
 		return;
@@ -379,7 +377,7 @@ void CHgun::Fire( Vector vecOrigSrc, Vector vecDir, float flDamage, TraceResult 
         pEntity->pev->rendercolor.z = 255; // blue
         pEntity->pev->renderamt = 70;
 		// pEntity->pev->effects |= EF_NODRAW;
-        pEntity->FTime2 = gpGlobals->time + flDamage; //freeze timer of monters
+        pEntity->FreezeTime = gpGlobals->time + flDamage; //freeze timer of monters
 		m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.25; //delay
     }
 	
@@ -394,7 +392,7 @@ void CHgun::Fire( Vector vecOrigSrc, Vector vecDir, float flDamage, TraceResult 
         pPlayer->pev->rendercolor.z = 255; // blue
         pPlayer->pev->renderamt = 70;
         pPlayer->EnableControl(FALSE);
-		pPlayer->FTime2 = gpGlobals->time + flDamage; 
+		pPlayer->FreezeTime = gpGlobals->time + flDamage; 
 		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + flDamage;
 	}
 	
@@ -407,19 +405,11 @@ void CHgun::Fire( Vector vecOrigSrc, Vector vecDir, float flDamage, TraceResult 
 
 void CHgun::ThirdAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
 
-	if (allowmonsters10.value == 1)
-		{
-		if (m_pPlayer->m_flNextChatTime14 > 12)
-			return;
-		}
-	else
-		{
-		if (m_pPlayer->m_flNextChatTime14 > 2)
-			return;
-		}
+
+	if (m_pPlayer->m_flNextHornetgunFreezebagLimit > 2)
+		return;
+		
 	
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10)
 	{
@@ -436,7 +426,7 @@ void CHgun::ThirdAttack( void )
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10;
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 		m_flRechargeTime = gpGlobals->time + 0.5;
-		m_pPlayer->m_flNextChatTime14 ++;
+		m_pPlayer->m_flNextHornetgunFreezebagLimit ++;
 
 		// play sounds
 		switch(RANDOM_LONG(0,1))
@@ -599,10 +589,8 @@ void CHgun::WeaponIdle( void )
 	// this block is reload key
 	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 4) 
 		{
-		if (  m_pPlayer->m_flNextChatTime8 < gpGlobals->time ) //need delay
+		if (  m_pPlayer->m_flNextHornetgunGrensTime < gpGlobals->time ) //need delay
 			{
-			if (allowmonsters9.value == 0)
-				return;
 			if (m_pPlayer->pev->effects == EF_NODRAW)
 				return;
 
@@ -616,7 +604,7 @@ void CHgun::WeaponIdle( void )
 			pSatchel->pev->velocity = vecThrow;
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 4;
-			m_pPlayer->m_flNextChatTime8 = gpGlobals->time + 1.0;
+			m_pPlayer->m_flNextHornetgunGrensTime = gpGlobals->time + 1.0;
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 			m_flRechargeTime = gpGlobals->time + 0.5;
 			
@@ -983,7 +971,7 @@ void    CFreezeBomb :: MoveThink( )
 			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "debris/beamstart9.wav", 1.0, ATTN_NORM);
 		
 			CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );	
-			pl->m_flNextChatTime14 --;
+			pl->m_flNextHornetgunFreezebagLimit --;
 
 			pev->nextthink = gpGlobals->time + 0.1;
 			pev->takedamage = DAMAGE_NO;
@@ -1070,7 +1058,7 @@ void  CFreezeBomb::Exp( )
 					pEntity->pev->rendercolor.y = 200;  // green
 					pEntity->pev->rendercolor.z = 255; // blue
 					pEntity->pev->renderamt = 70;
-					pEntity->FTime2 = gpGlobals->time + 10; //big freeze
+					pEntity->FreezeTime = gpGlobals->time + 10; //big freeze
 					
 					if (pEntity->pev->takedamage && pEntity->IsPlayer()) //check only player
 						{
@@ -1083,7 +1071,7 @@ void  CFreezeBomb::Exp( )
 							pPlayer->pev->rendercolor.z = 255; // blue
 							pPlayer->pev->renderamt = 70;
 							pPlayer->EnableControl(FALSE);
-							pPlayer->FTime2 = gpGlobals->time + 3.25;
+							pPlayer->FreezeTime = gpGlobals->time + 3.25;
 							::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 8, 512, CLASS_NONE, DMG_FREEZE  );
 						}
 				}
@@ -1115,7 +1103,7 @@ void  CFreezeBomb::Exp( )
 		
 		//1.29 limit reset
 		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );	
-		pl->m_flNextChatTime14 --;
+		pl->m_flNextHornetgunFreezebagLimit --;
 
 		//delete
 		SetThink( SUB_Remove );
@@ -1181,7 +1169,7 @@ void  CFreezeBomb::Exp( )
 		
 		// 1.29 limit reset
 		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( pev->owner );	
-		pl->m_flNextChatTime14 --;
+		pl->m_flNextHornetgunFreezebagLimit --;
 		
 		pev->nextthink = gpGlobals->time + 0.1;
 		pev->takedamage = DAMAGE_NO;

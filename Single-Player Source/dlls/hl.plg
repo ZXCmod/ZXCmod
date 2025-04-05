@@ -3,326 +3,126 @@
 <pre>
 <h1>Build Log</h1>
 <h3>
---------------------Configuration: hl - Win32 Profile--------------------
+--------------------Configuration: hl - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Windows\TEMP\RSP5CA6.tmp" with contents
+Creating temporary file "C:\Users\Heropro\AppData\Local\Temp\RSP5E33.tmp" with contents
 [
-/nologo /G5 /MT /W3 /Zi /O2 /I "..\dlls" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\game_shared" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /D "CLIENT_WEAPONS" /Fp".\Profilehl/hl.pch" /YX /Fo".\Profilehl/" /Fd".\Profilehl/" /FD /c 
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\aflock.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\agrunt.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\airtank.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\animating.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\animation.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\apache.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\barnacle.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\barney.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\bigmomma.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\bloater.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\bmodels.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\bullsquid.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\buttons.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\cbase.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\client.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\combat.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\controller.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\crossbow.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\crowbar.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\defaultai.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\doors.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\effects.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\egon.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\explode.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\flyingmonster.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\func_break.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\func_tank.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\game.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\gamerules.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\gargantua.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\gauss.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\genericmonster.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\ggrenade.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\globals.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\gman.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\h_ai.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\h_battery.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\h_cine.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\h_cycler.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\h_export.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\handgrenade.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\hassassin.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\headcrab.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\healthkit.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\hgrunt.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\wpn_shared\hl_wpn_glock.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\hornet.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\hornetgun.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\houndeye.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\ichthyosaur.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\islave.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\items.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\leech.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\lights.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\maprules.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\monstermaker.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\monsters.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\monsterstate.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\mortar.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\mp5.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\multiplay_gamerules.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\nihilanth.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\nodes.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\osprey.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\pathcorner.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\plane.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\plats.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\player.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\pm_shared\pm_debug.c"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\pm_shared\pm_math.c"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\pm_shared\pm_shared.c"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\python.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\rat.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\roach.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\rpg.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\satchel.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\schedule.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\scientist.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\scripted.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\shotgun.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\singleplay_gamerules.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\skill.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\sound.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\soundent.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\spectator.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\squadmonster.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\squeakgrenade.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\subs.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\talkmonster.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\teamplay_gamerules.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\tempmonster.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\tentacle.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\triggers.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\tripmine.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\turret.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\util.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\game_shared\voice_gamemgr.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\weapons.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\world.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\xen.cpp"
-"E:\COMP\Download\Single-Player Source\Single-Player Source\dlls\zombie.cpp"
+/nologo /G5 /MT /W3 /Zi /O1 /I "..\dlls" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\game_shared" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /D "CLIENT_WEAPONS" /Fr".\Releasehl/" /Fp".\Releasehl/hl.pch" /YX /Fo".\Releasehl/" /Fd".\Releasehl/" /FD /c 
+"C:\Games\Single-Player Source\dlls\hornetgun.cpp"
 ]
-Creating command line "cl.exe @C:\Windows\TEMP\RSP5CA6.tmp" 
-Creating temporary file "C:\Windows\TEMP\RSP5CA7.tmp" with contents
+Creating command line "cl.exe @C:\Users\Heropro\AppData\Local\Temp\RSP5E33.tmp" 
+Creating temporary file "C:\Users\Heropro\AppData\Local\Temp\RSP5E34.tmp" with contents
 [
-kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /profile /debug /machine:I386 /def:".\hl.def" /out:"C:\Games\Cs_1.6\valve\dlls/hl.dll" /implib:".\Profilehl/hl.lib" 
-".\Profilehl\aflock.obj"
-".\Profilehl\agrunt.obj"
-".\Profilehl\airtank.obj"
-".\Profilehl\animating.obj"
-".\Profilehl\animation.obj"
-".\Profilehl\apache.obj"
-".\Profilehl\barnacle.obj"
-".\Profilehl\barney.obj"
-".\Profilehl\bigmomma.obj"
-".\Profilehl\bloater.obj"
-".\Profilehl\bmodels.obj"
-".\Profilehl\bullsquid.obj"
-".\Profilehl\buttons.obj"
-".\Profilehl\cbase.obj"
-".\Profilehl\client.obj"
-".\Profilehl\combat.obj"
-".\Profilehl\controller.obj"
-".\Profilehl\crossbow.obj"
-".\Profilehl\crowbar.obj"
-".\Profilehl\defaultai.obj"
-".\Profilehl\doors.obj"
-".\Profilehl\effects.obj"
-".\Profilehl\egon.obj"
-".\Profilehl\explode.obj"
-".\Profilehl\flyingmonster.obj"
-".\Profilehl\func_break.obj"
-".\Profilehl\func_tank.obj"
-".\Profilehl\game.obj"
-".\Profilehl\gamerules.obj"
-".\Profilehl\gargantua.obj"
-".\Profilehl\gauss.obj"
-".\Profilehl\genericmonster.obj"
-".\Profilehl\ggrenade.obj"
-".\Profilehl\globals.obj"
-".\Profilehl\gman.obj"
-".\Profilehl\h_ai.obj"
-".\Profilehl\h_battery.obj"
-".\Profilehl\h_cine.obj"
-".\Profilehl\h_cycler.obj"
-".\Profilehl\h_export.obj"
-".\Profilehl\handgrenade.obj"
-".\Profilehl\hassassin.obj"
-".\Profilehl\headcrab.obj"
-".\Profilehl\healthkit.obj"
-".\Profilehl\hgrunt.obj"
-".\Profilehl\hl_wpn_glock.obj"
-".\Profilehl\hornet.obj"
-".\Profilehl\hornetgun.obj"
-".\Profilehl\houndeye.obj"
-".\Profilehl\ichthyosaur.obj"
-".\Profilehl\islave.obj"
-".\Profilehl\items.obj"
-".\Profilehl\leech.obj"
-".\Profilehl\lights.obj"
-".\Profilehl\maprules.obj"
-".\Profilehl\monstermaker.obj"
-".\Profilehl\monsters.obj"
-".\Profilehl\monsterstate.obj"
-".\Profilehl\mortar.obj"
-".\Profilehl\mp5.obj"
-".\Profilehl\multiplay_gamerules.obj"
-".\Profilehl\nihilanth.obj"
-".\Profilehl\nodes.obj"
-".\Profilehl\osprey.obj"
-".\Profilehl\pathcorner.obj"
-".\Profilehl\plane.obj"
-".\Profilehl\plats.obj"
-".\Profilehl\player.obj"
-".\Profilehl\pm_debug.obj"
-".\Profilehl\pm_math.obj"
-".\Profilehl\pm_shared.obj"
-".\Profilehl\python.obj"
-".\Profilehl\rat.obj"
-".\Profilehl\roach.obj"
-".\Profilehl\rpg.obj"
-".\Profilehl\satchel.obj"
-".\Profilehl\schedule.obj"
-".\Profilehl\scientist.obj"
-".\Profilehl\scripted.obj"
-".\Profilehl\shotgun.obj"
-".\Profilehl\singleplay_gamerules.obj"
-".\Profilehl\skill.obj"
-".\Profilehl\sound.obj"
-".\Profilehl\soundent.obj"
-".\Profilehl\spectator.obj"
-".\Profilehl\squadmonster.obj"
-".\Profilehl\squeakgrenade.obj"
-".\Profilehl\subs.obj"
-".\Profilehl\talkmonster.obj"
-".\Profilehl\teamplay_gamerules.obj"
-".\Profilehl\tempmonster.obj"
-".\Profilehl\tentacle.obj"
-".\Profilehl\triggers.obj"
-".\Profilehl\tripmine.obj"
-".\Profilehl\turret.obj"
-".\Profilehl\util.obj"
-".\Profilehl\voice_gamemgr.obj"
-".\Profilehl\weapons.obj"
-".\Profilehl\world.obj"
-".\Profilehl\xen.obj"
-".\Profilehl\zombie.obj"
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /incremental:no /pdb:".\Releasehl/hl.pdb" /machine:I386 /def:".\hl.def" /out:"C:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\dlls/hl.dll" /implib:".\Releasehl/hl.lib" 
+".\Releasehl\aflock.obj"
+".\Releasehl\agrunt.obj"
+".\Releasehl\airtank.obj"
+".\Releasehl\animating.obj"
+".\Releasehl\animation.obj"
+".\Releasehl\apache.obj"
+".\Releasehl\barnacle.obj"
+".\Releasehl\barney.obj"
+".\Releasehl\bigmomma.obj"
+".\Releasehl\bloater.obj"
+".\Releasehl\bmodels.obj"
+".\Releasehl\bullsquid.obj"
+".\Releasehl\buttons.obj"
+".\Releasehl\cbase.obj"
+".\Releasehl\client.obj"
+".\Releasehl\combat.obj"
+".\Releasehl\controller.obj"
+".\Releasehl\crossbow.obj"
+".\Releasehl\crowbar.obj"
+".\Releasehl\defaultai.obj"
+".\Releasehl\doors.obj"
+".\Releasehl\effects.obj"
+".\Releasehl\egon.obj"
+".\Releasehl\explode.obj"
+".\Releasehl\flyingmonster.obj"
+".\Releasehl\func_break.obj"
+".\Releasehl\func_tank.obj"
+".\Releasehl\game.obj"
+".\Releasehl\gamerules.obj"
+".\Releasehl\gargantua.obj"
+".\Releasehl\gauss.obj"
+".\Releasehl\genericmonster.obj"
+".\Releasehl\ggrenade.obj"
+".\Releasehl\globals.obj"
+".\Releasehl\gman.obj"
+".\Releasehl\h_ai.obj"
+".\Releasehl\h_battery.obj"
+".\Releasehl\h_cine.obj"
+".\Releasehl\h_cycler.obj"
+".\Releasehl\h_export.obj"
+".\Releasehl\handgrenade.obj"
+".\Releasehl\hassassin.obj"
+".\Releasehl\headcrab.obj"
+".\Releasehl\healthkit.obj"
+".\Releasehl\hgrunt.obj"
+".\Releasehl\hl_wpn_glock.obj"
+".\Releasehl\hornet.obj"
+".\Releasehl\hornetgun.obj"
+".\Releasehl\houndeye.obj"
+".\Releasehl\ichthyosaur.obj"
+".\Releasehl\islave.obj"
+".\Releasehl\items.obj"
+".\Releasehl\leech.obj"
+".\Releasehl\lights.obj"
+".\Releasehl\maprules.obj"
+".\Releasehl\monstermaker.obj"
+".\Releasehl\monsters.obj"
+".\Releasehl\monsterstate.obj"
+".\Releasehl\mortar.obj"
+".\Releasehl\mp5.obj"
+".\Releasehl\multiplay_gamerules.obj"
+".\Releasehl\nihilanth.obj"
+".\Releasehl\nodes.obj"
+".\Releasehl\osprey.obj"
+".\Releasehl\pathcorner.obj"
+".\Releasehl\plane.obj"
+".\Releasehl\plats.obj"
+".\Releasehl\player.obj"
+".\Releasehl\pm_debug.obj"
+".\Releasehl\pm_math.obj"
+".\Releasehl\pm_shared.obj"
+".\Releasehl\python.obj"
+".\Releasehl\rat.obj"
+".\Releasehl\roach.obj"
+".\Releasehl\rpg.obj"
+".\Releasehl\satchel.obj"
+".\Releasehl\schedule.obj"
+".\Releasehl\scientist.obj"
+".\Releasehl\scripted.obj"
+".\Releasehl\shotgun.obj"
+".\Releasehl\singleplay_gamerules.obj"
+".\Releasehl\skill.obj"
+".\Releasehl\sound.obj"
+".\Releasehl\soundent.obj"
+".\Releasehl\spectator.obj"
+".\Releasehl\squadmonster.obj"
+".\Releasehl\squeakgrenade.obj"
+".\Releasehl\subs.obj"
+".\Releasehl\talkmonster.obj"
+".\Releasehl\teamplay_gamerules.obj"
+".\Releasehl\tempmonster.obj"
+".\Releasehl\tentacle.obj"
+".\Releasehl\triggers.obj"
+".\Releasehl\tripmine.obj"
+".\Releasehl\turret.obj"
+".\Releasehl\util.obj"
+".\Releasehl\voice_gamemgr.obj"
+".\Releasehl\weapons.obj"
+".\Releasehl\world.obj"
+".\Releasehl\xen.obj"
+".\Releasehl\zombie.obj"
 ]
-Creating command line "link.exe @C:\Windows\TEMP\RSP5CA7.tmp"
+Creating command line "link.exe @C:\Users\Heropro\AppData\Local\Temp\RSP5E34.tmp"
 <h3>Output Window</h3>
 Compiling...
-aflock.cpp
-agrunt.cpp
-airtank.cpp
-animating.cpp
-animation.cpp
-apache.cpp
-barnacle.cpp
-barney.cpp
-bigmomma.cpp
-bloater.cpp
-bmodels.cpp
-bullsquid.cpp
-buttons.cpp
-cbase.cpp
-client.cpp
-combat.cpp
-controller.cpp
-crossbow.cpp
-crowbar.cpp
-defaultai.cpp
-doors.cpp
-effects.cpp
-egon.cpp
-explode.cpp
-flyingmonster.cpp
-func_break.cpp
-func_tank.cpp
-game.cpp
-gamerules.cpp
-gargantua.cpp
-gauss.cpp
-genericmonster.cpp
-ggrenade.cpp
-globals.cpp
-gman.cpp
-h_ai.cpp
-h_battery.cpp
-h_cine.cpp
-h_cycler.cpp
-h_export.cpp
-handgrenade.cpp
-hassassin.cpp
-headcrab.cpp
-healthkit.cpp
-hgrunt.cpp
-hl_wpn_glock.cpp
-hornet.cpp
 hornetgun.cpp
-houndeye.cpp
-ichthyosaur.cpp
-islave.cpp
-items.cpp
-leech.cpp
-lights.cpp
-maprules.cpp
-monstermaker.cpp
-monsters.cpp
-monsterstate.cpp
-mortar.cpp
-mp5.cpp
-multiplay_gamerules.cpp
-nihilanth.cpp
-nodes.cpp
-osprey.cpp
-pathcorner.cpp
-plane.cpp
-plats.cpp
-player.cpp
-pm_debug.c
-pm_math.c
-pm_shared.c
-python.cpp
-rat.cpp
-roach.cpp
-rpg.cpp
-satchel.cpp
-schedule.cpp
-scientist.cpp
-scripted.cpp
-shotgun.cpp
-singleplay_gamerules.cpp
-skill.cpp
-sound.cpp
-soundent.cpp
-spectator.cpp
-squadmonster.cpp
-squeakgrenade.cpp
-subs.cpp
-talkmonster.cpp
-teamplay_gamerules.cpp
-tempmonster.cpp
-tentacle.cpp
-triggers.cpp
-tripmine.cpp
-turret.cpp
-util.cpp
-voice_gamemgr.cpp
-weapons.cpp
-world.cpp
-xen.cpp
-zombie.cpp
 Linking...
-   Creating library .\Profilehl/hl.lib and object .\Profilehl/hl.exp
+   Creating library .\Releasehl/hl.lib and object .\Releasehl/hl.exp
 
 
 

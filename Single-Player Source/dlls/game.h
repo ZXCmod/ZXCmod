@@ -36,27 +36,11 @@ extern cvar_t	teamlist;
 extern cvar_t	teamoverride;
 extern cvar_t	defaultteam;
 extern cvar_t	allowmonsters;
-extern cvar_t	allowmonsters2; //1.27
-extern cvar_t	allowmonsters3; //1.27
-extern cvar_t	allowmonsters4;
-extern cvar_t	allowmonsters5;
-extern cvar_t	allowmonsters6;
-extern cvar_t	allowmonsters7;
-extern cvar_t	allowmonsters8;
-extern cvar_t	allowmonsters9;
-extern cvar_t	allowmonsters10;
-extern cvar_t	allowmonsters11; // SF radius
-extern cvar_t	allowmonsters12; // 
-extern cvar_t	allowmonsters13; //
-extern cvar_t	allowmonsters14; //
-extern cvar_t	allowmonsters15; // Triple rocket mod
-extern cvar_t	allowmonsters16; // 
-extern cvar_t	allowmonsters17; // 
-extern cvar_t	allowmonsters18; // 
-extern cvar_t	allowmonsters19; // Prevent another models for player
-extern cvar_t	allowmonsters20; //
-extern cvar_t	g_flWeaponCheat; //
-extern cvar_t	g_bestfrags; //
+extern cvar_t	g_zxc_mp_fragmonsters; //1.27
+extern cvar_t	g_zxc_mp_dmode;
+extern cvar_t	g_zxc_shotgun_flare_radius; // SF radius
+extern cvar_t	g_zxc_shotgun_flare_reload; //
+extern cvar_t	g_zxc_cheats; //
 
 // Engine Cvars
 extern cvar_t	*g_psv_gravity;

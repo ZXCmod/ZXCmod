@@ -417,8 +417,8 @@ LINK_ENTITY_TO_CLASS( worldspawn, CWorld );
 #define SF_WORLD_FORCETEAM	0x0004		// Force teams
 
 extern DLL_GLOBAL BOOL		g_fGameOver;
-// int g_flWeaponCheat; 
-float g_flWeaponCheat2; 
+// int g_zxc_cheats; 
+float g_zxc_cheats2; 
 int g_TeamTimer; 
 
 
@@ -426,9 +426,9 @@ void CWorld :: Spawn( void )
 {
 	g_fGameOver = FALSE;
 	Precache( );
-	// g_flWeaponCheat = INT(CVAR_GET_FLOAT( "sv_cheats" ));  // Is the impulse 101 command allowed?
-	g_flWeaponCheat2 = CVAR_GET_FLOAT( "mp_dmode" );  // regen mode
-	g_TeamTimer = allowmonsters17.value;  // round timer in teamplay
+	// g_zxc_cheats = INT(CVAR_GET_FLOAT( "sv_cheats" ));  // Is the impulse 101 command allowed?
+	g_zxc_cheats2 = CVAR_GET_FLOAT( "mp_dmode" );  // regen mode
+	g_TeamTimer = 10;  // round timer in teamplay
 }
 
 void CWorld :: Precache( void )

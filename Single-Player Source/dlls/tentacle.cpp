@@ -229,7 +229,7 @@ void CTentacle :: Spawn( )
 	pev->solid			= SOLID_BBOX;
 	pev->movetype		= MOVETYPE_FLY;
 	pev->effects		= 0;
-	pev->health			= 2750;
+	pev->health			= 475;
 	pev->sequence		= 0;
 
 	SET_MODEL(ENT(pev), "models/tentacle2.mdl");
@@ -256,7 +256,7 @@ void CTentacle :: Spawn( )
 	g_fFlySound = FALSE;
 	g_fSquirmSound = FALSE;
 
-	m_iHitDmg = 20;
+	m_iHitDmg = 100;
 
 	if (m_flMaxYaw <= 0)
 		m_flMaxYaw = 65;
@@ -842,7 +842,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 
 			vecSrc.z += MyHeight( );
 
-			float flVol = RANDOM_FLOAT( 0.3, 0.5 );
+			float flVol = 0.1;
 
 			switch( m_iTapSound )
 			{
@@ -869,7 +869,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case 1: sound = "tentacle/te_roar2.wav"; break;
 		}
 
-		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 1.0, ATTN_NORM, 0, 100);
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 0.4, ATTN_NORM, 0, 100);
 		break;
 
 	case 8: // search
@@ -879,7 +879,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case 1: sound = "tentacle/te_search2.wav"; break;
 		}
 
-		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 1.0, ATTN_NORM, 0, 100);
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 0.4, ATTN_NORM, 0, 100);
 		break;
 
 	case 9: // swing
@@ -889,7 +889,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case 1: sound = "tentacle/te_move2.wav"; break;
 		}
 
-		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 1.0, ATTN_NORM, 0, 100);
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 0.4, ATTN_NORM, 0, 100);
 		break;
 
 	default:
@@ -934,17 +934,17 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 	if (m_flHitTime > gpGlobals->time)
 		return;
 
-/* 	::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 128, 256, CLASS_NONE, DMG_BLAST );
-	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-		WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
-		WRITE_COORD( tr.vecEndPos.x);
-		WRITE_COORD( tr.vecEndPos.y);
-		WRITE_COORD( tr.vecEndPos.z);
-		WRITE_SHORT( g_sModelIndexFireball );
-		WRITE_BYTE( 128  ); // scale * 10
-		WRITE_BYTE( 8  ); // framerate
-		WRITE_BYTE( TE_EXPLFLAG_NONE );
-	MESSAGE_END(); */
+ 	// ::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 90, 500, CLASS_NONE, DMG_BULLET );
+	// MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		// WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+		// WRITE_COORD( tr.vecEndPos.x);
+		// WRITE_COORD( tr.vecEndPos.y);
+		// WRITE_COORD( tr.vecEndPos.z);
+		// WRITE_SHORT( g_sModelIndexFireball );
+		// WRITE_BYTE( 128  ); // scale * 10
+		// WRITE_BYTE( 8  ); // framerate
+		// WRITE_BYTE( TE_EXPLFLAG_NONE );
+	// MESSAGE_END(); 
 		
 	// only look at the ones where the player hit me
 	if (tr.pHit == NULL || tr.pHit->v.modelindex != pev->modelindex)
@@ -968,7 +968,7 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 		return; // Huh?
 	}
 
-	m_flHitTime = gpGlobals->time + 0.5;
+	m_flHitTime = gpGlobals->time + 1.1;
 
 	// ALERT( at_console, "%s : ", STRING( tr.pHit->v.classname ) );
 

@@ -28,7 +28,7 @@
 #include "gamerules.h"
 #include "game.h"
 
-#define Charge 50
+#define Charge  30
 
 class CRecharge : public CBaseToggle
 {
@@ -86,10 +86,7 @@ void CRecharge::Spawn()
 	UTIL_SetOrigin(pev, pev->origin);		// set size and link into world
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	SET_MODEL(ENT(pev), STRING(pev->model) );
-	//if (allowmonsters10.value == 0)
-		m_iJuice = Charge;
-	// else
-		// m_iJuice = Charge*10;
+	m_iJuice = Charge;
 	m_iJuice = Charge;
 	m_iJuice2 = Charge;
 	m_iJuice3 = Charge;
@@ -151,15 +148,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		}
 		return;
 	}
-	if ((m_iJuice3 <= 0) && (m_hActivator->pev->fuser2>=100) )
-	{
-		if (m_flSoundTime <= gpGlobals->time)
-		{
-			m_flSoundTime = gpGlobals->time + 0.62;
-			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/suitchargeno1.wav", 0.85, ATTN_NORM );
-		}
-		return;
-	}
+
 	// if no juice left
 	if ((m_iJuice <= 0) || (m_iJuice2 <= 0) || (m_iJuice3 <= 0) )
 	{
@@ -195,11 +184,10 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	}
 
 
-	// charge the player ||(m_hActivator->pev->fuser1<100)||(m_hActivator->pev->fuser2<100)
 	if ((m_hActivator->pev->armorvalue<100)) // 1
 	{
 		m_iJuice--;
-		m_hActivator->pev->armorvalue += 1;
+		m_hActivator->pev->armorvalue += 2;
 		
 		if (multiple <= 0.5)
 			multiple += 0.0045;
@@ -222,19 +210,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 			m_hActivator->pev->fuser1 = 100;
 		}
 	}
-	if ((m_hActivator->pev->fuser2<100)) // 3
-	{
-		m_iJuice3--;
-		m_hActivator->pev->fuser2 += 1;
-		
-		if (multiple <= 0.5)
-			multiple += 0.0045;
 
-		if (m_hActivator->pev->fuser2>100)
-		{
-			m_hActivator->pev->fuser2 = 100;
-		}
-	}
 
 	// govern the rate of charge
 	m_flNextCharge = (gpGlobals->time + 0.2) - multiple;

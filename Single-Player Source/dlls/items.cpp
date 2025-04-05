@@ -92,7 +92,7 @@ void CItem::Spawn( void )
 {
 
 
-	pev->movetype = MOVETYPE_BOUNCE;
+	pev->movetype = MOVETYPE_TOSS;
 	pev->gravity = 1.0;
 	pev->friction = 1.0;
 	pev->health = 100;
@@ -117,10 +117,9 @@ void CItem::Spawn( void )
 
 void CItem::ItemTouch( CBaseEntity *pOther )
 {
-	if (pev->velocity != g_vecZero)
+	if (pev->origin.z < -8000)
 	{
-		pev->velocity.x = 0; 
-		pev->velocity.y = 0; 
+		UTIL_SetOrigin( pev, tmp ); 
 	}
 		
 	// if it's not a player, ignore
@@ -185,7 +184,13 @@ int CItem::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flD
 		return 0;
 
 	pev->health -= flDamage;
-	pev->angles = UTIL_VecToAngles (pev->velocity);
+	if (pev->velocity.z > 1)
+		pev->angles = UTIL_VecToAngles (pev->velocity);
+	else
+	{
+		pev->angles.x = 0;
+		pev->angles.z = 0;
+	}
 	
 	if (pev->health <= 0)
 	{
@@ -196,9 +201,38 @@ int CItem::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flD
 			WRITE_COORD( pev->origin.y );
 			WRITE_COORD( pev->origin.z );
 		MESSAGE_END();
+		
+		//lights
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(pev->origin.x);
+			WRITE_COORD(pev->origin.y);
+			WRITE_COORD(pev->origin.z);
+			WRITE_BYTE( 24 );		// radius * 0.1
+			WRITE_BYTE( 250 );		// r
+			WRITE_BYTE( 250 );		// g
+			WRITE_BYTE( 150 );		// b
+			WRITE_BYTE( 128 );		// time * 10
+			WRITE_BYTE( 16 );		// decay * 0.1
+		MESSAGE_END( );
+		
+		//smoke
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SMOKE );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_SHORT( g_sModelIndexSmoke );
+			WRITE_BYTE( pev->dmg ); // smoke scale * 10
+			WRITE_BYTE( 24  ); // framerate
+		MESSAGE_END();
+					
+		
+		pev->movetype = MOVETYPE_NONE;
+		pev->takedamage = 0;
+		pev->effects |= EF_NODRAW;
 		SetThink ( Materialize );
 		SetTouch( NULL );
-		pev->effects |= EF_NODRAW;
 		return 0;
 	}
 
@@ -213,16 +247,16 @@ void CItem::Materialize( void )
 		
 	if ( pev->effects & EF_NODRAW )
 	{
-		if (g_flWeaponCheat.value != 0) // no spawn it
-			return;
 			
 		pev->health = 100;
-		pev->velocity = g_vecZero;
 		pev->angles.x = 0;
 		pev->angles.z = 0;
 		pev->takedamage = 1;
+		pev->solid = SOLID_TRIGGER;
+		DROP_TO_FLOOR ( ENT(pev) );
 			
 		UTIL_SetOrigin( pev, tmp ); // return to spawn point >1.36
+		
 			
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 			WRITE_BYTE( TE_TELEPORT );
@@ -234,6 +268,7 @@ void CItem::Materialize( void )
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, 150);
 		pev->effects &= ~EF_NODRAW;
 		pev->effects |= EF_MUZZLEFLASH;
+		pev->nextthink = gpGlobals->time + 0.2;
 	}
 
 	SetTouch( ItemTouch );
@@ -276,7 +311,7 @@ class CItemBattery : public CItem
 {
 	void Spawn( void )
 	{ 
-		if (allowmonsters4.value != 0)
+		if (g_zxc_mp_dmode.value != 0)
 			return; //item dont spawn
 			
 		switch(RANDOM_LONG(0,3)) // spawn battery separate
@@ -305,7 +340,7 @@ class CItemBattery : public CItem
 		if ((pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY) )
 		{
 
-			pPlayer->pev->armorvalue += 20;
+			pPlayer->pev->armorvalue += 15;
 			pPlayer->pev->armorvalue = min(pPlayer->pev->armorvalue, MAX_NORMAL_BATTERY);
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
@@ -327,17 +362,17 @@ class CItemBattery2 : public CItem
 {
 	void Spawn( void )
 	{ 
-		if (allowmonsters4.value != 0)
+		if (g_zxc_mp_dmode.value != 0)
 			return; //item dont spawn
 		
 		Precache( );
-		SET_MODEL(ENT(pev), "models/w_battery2.mdl");
+		SET_MODEL(ENT(pev), "models/w_battery3.mdl");
 		CItem::Spawn( );
 	}
 	void Precache( void )
 	{
-		PRECACHE_MODEL ("models/w_battery2.mdl");
-		PRECACHE_MODEL ("models/w_battery2t.mdl");
+		PRECACHE_MODEL ("models/w_battery3.mdl");
+		PRECACHE_MODEL ("models/w_battery3t.mdl");
 		PRECACHE_SOUND( "items/gunpickup2.wav" );
 	}
 	BOOL MyTouch( CBasePlayer *pPlayer )
@@ -350,7 +385,7 @@ class CItemBattery2 : public CItem
 		if ((pPlayer->pev->fuser1 < MAX_NORMAL_BATTERY2))
 		{
 
-			pPlayer->pev->fuser1 += 20;
+			pPlayer->pev->fuser1 += 15;
 			pPlayer->pev->fuser1 = min(pPlayer->pev->fuser1, MAX_NORMAL_BATTERY2);
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
@@ -372,17 +407,17 @@ class CItemBattery3 : public CItem
 {
 	void Spawn( void )
 	{ 
-		if (allowmonsters4.value != 0)
+		if (g_zxc_mp_dmode.value != 0)
 			return; //item dont spawn
 		
 		Precache( );
-		SET_MODEL(ENT(pev), "models/w_battery3.mdl");
+		SET_MODEL(ENT(pev), "models/w_battery2.mdl");
 		CItem::Spawn( );
 	}
 	void Precache( void )
 	{
-		PRECACHE_MODEL ("models/w_battery3.mdl");
-		PRECACHE_MODEL ("models/w_battery3t.mdl");
+		PRECACHE_MODEL ("models/w_battery2.mdl");
+		PRECACHE_MODEL ("models/w_battery2t.mdl");
 		PRECACHE_SOUND( "items/gunpickup2.wav" );
 	}
 	BOOL MyTouch( CBasePlayer *pPlayer )
@@ -392,11 +427,14 @@ class CItemBattery3 : public CItem
 			return FALSE;
 		}
 
-		if ((pPlayer->pev->fuser2 < MAX_NORMAL_BATTERY3))
+		if ((pPlayer->pev->fuser1 < MAX_NORMAL_BATTERY3))
 		{
 
-			pPlayer->pev->fuser2 += 20; // += RANDOM_LONG(10,20);
-			pPlayer->pev->fuser2 = min(pPlayer->pev->fuser2, MAX_NORMAL_BATTERY3);
+			pPlayer->pev->armorvalue += 10;
+			pPlayer->pev->armorvalue = min(pPlayer->pev->armorvalue, MAX_NORMAL_BATTERY);
+			pPlayer->pev->fuser1 += 10; // += RANDOM_LONG(10,20);
+			pPlayer->pev->fuser1 = min(pPlayer->pev->fuser1, MAX_NORMAL_BATTERY3);
+			
 
 			EMIT_SOUND( pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM );
 
@@ -470,7 +508,7 @@ class CItemLongJump : public CItem
 {
 	void Spawn( void )
 	{ 
-		if (g_flWeaponCheat.value == 3) // no spawn it
+		if (g_zxc_cheats.value == 3) // no spawn it
 			return;
 			// UTIL_Remove( this );
 			

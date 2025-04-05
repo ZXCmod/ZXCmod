@@ -49,7 +49,7 @@ void CHandGrenade::Spawn( )
 	Precache( );
 	m_iId = WEAPON_HANDGRENADE;
 	SET_MODEL(ENT(pev), "models/w_grenade.mdl");
-	m_flNextChatTime6 = gpGlobals->time;
+	m_flNextGravGrenadesTime = gpGlobals->time;
 	pev->dmg = 105;
 	m_iDefaultAmmo = HANDGRENADE_DEFAULT_GIVE;
 	FallInit();// get ready to fall down.
@@ -102,7 +102,7 @@ int CHandGrenade::GetItemInfo(ItemInfo *p)
 
 BOOL CHandGrenade::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 280 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	m_flReleaseThrow = -1;
 	return DefaultDeploy( "models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar" );
 }
@@ -163,14 +163,11 @@ void CHandGrenade::SecondaryAttack()
 
 void CHandGrenade::ThirdAttack()
 {
-	if (allowmonsters9.value == 0)
-		return;
-
 	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
 		{
 		int iAnim;
 		Vector vecSrc = m_pPlayer->pev->origin;
-		Vector vecThrow = gpGlobals->v_forward * 512 + m_pPlayer->pev->velocity*2;
+		Vector vecThrow = gpGlobals->v_forward * 1000 + m_pPlayer->pev->velocity;
 
 
 		CBaseEntity *hGren = Create( "weapon_canister", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
@@ -181,15 +178,13 @@ void CHandGrenade::ThirdAttack()
 
 		m_fInAttack = 0;
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10;
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.00;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 		}
 }
 
 void CHandGrenade::FourthAttack()
 {
-	if (allowmonsters9.value == 0)
-		return;
 
 	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 5 )
 	{
@@ -209,14 +204,12 @@ void CHandGrenade::WeaponIdle( void )
 
 	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 5) 
 	{
-		if (  m_pPlayer->m_flNextChatTime6 < gpGlobals->time ) // delay
+		if (  m_pPlayer->m_flNextGravGrenadesTime < gpGlobals->time ) // delay
 			{
-				if (allowmonsters9.value == 0)
-					return;
 
 				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.7;
 				Reload();
-				m_pPlayer->m_flNextChatTime6 = gpGlobals->time + 0.7;
+				m_pPlayer->m_flNextGravGrenadesTime = gpGlobals->time + 0.7;
 				return;
 			}
 	}
@@ -232,13 +225,13 @@ void CHandGrenade::WeaponIdle( void )
 		Vector angThrow = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 
 		if ( angThrow.x < 0 )
-			angThrow.x = -20 + angThrow.x * ( ( 90 - 10 ) / 90.0 );
+			angThrow.x = -10 + angThrow.x * ( ( 90 - 5 ) / 90.0 );
 		else
-			angThrow.x = -20 + angThrow.x * ( ( 90 + 10 ) / 90.0 );
+			angThrow.x = -10 + angThrow.x * ( ( 90 + 5 ) / 90.0 );
 
-		float flVel = ( 270 - angThrow.x ) * 2;
-		if ( flVel > 1500 )
-			flVel = 1500;
+		float flVel = ( 100 - angThrow.x ) * 6;
+		if ( flVel > 2000 )
+			flVel = 2000;
 
 		UTIL_MakeVectors( angThrow );
 
@@ -403,7 +396,7 @@ void CHandGrenade::WeaponIdle( void )
 // spawn Grav with reload delay 3 sec
 void CHandGrenade :: Reload( void )
 {
-/* 	if ( g_flWeaponCheat != 0) //no gravers anymore
+/* 	if ( g_zxc_cheats != 0) //no gravers anymore
 	{
 		MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(m_pPlayer->pev) );
 			WRITE_STRING( "Attack disabled, while sv_cheats is on." );
@@ -785,19 +778,19 @@ void    CSmoke :: Spawn( void )
 	Precache( );
 	SET_MODEL( ENT(pev), "models/w_grenade.mdl" );
 	
-	pev->movetype = MOVETYPE_TOSS;
+	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -4, -4, -1), Vector(4, 4, 8) );
+	UTIL_SetSize( pev, Vector( -4, -4, -8), Vector(4, 4, 8) );
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_grenade" );
-	m_flDie = gpGlobals->time + 60;
+	m_flDie = gpGlobals->time + 0; // deprecated
 	pev->dmg = 2;
 	pev->takedamage = DAMAGE_YES;
 	pev->health = 200;
-	pev->gravity 		= 0.5;
-	pev->friction 		= 0.5;
+	pev->gravity 		= 1.0;
+	pev->friction 		= 1.0;
 	
-	pev->nextthink = gpGlobals->time + 1.5;
+	pev->nextthink = gpGlobals->time + 0.25;
 	SetThink( MoveThink );
 
 }
@@ -812,20 +805,17 @@ void    CSmoke :: MoveThink( void )
 {
 	CBaseEntity *pEntity = NULL;
 	
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 200 )))
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 100+pev->dmg )))
 	{
-		if ((pEntity->IsAlive() ) && pEntity->pev->takedamage && (pEntity->edict() != edict()))
+		if ((pEntity->IsAlive() ) && pEntity->pev->takedamage && (pEntity->edict() != edict()) )
 		{
 			if (FVisible( pEntity )) 
 			{
-				pEntity->pev->velocity = pEntity->pev->velocity * 0.42; 
-				pEntity->TakeDamage( pev, VARS( pev->owner ), pev->dmg, DMG_RADIATION );
-				if (pEntity->pev->armorvalue > 5)
-					pEntity->pev->armorvalue -= 3;
-				// if (pEntity->pev->fuser1 > 5)
-					// pEntity->pev->fuser1 -= 2;
-				if (pEntity->pev->fuser2 > 5)
-					pEntity->pev->fuser2 -= 2;
+				pEntity->pev->velocity.x = pEntity->pev->velocity.x * 0.1; 
+				pEntity->pev->velocity.y = pEntity->pev->velocity.y * 0.1; 
+				pEntity->TakeDamage( pev, VARS( pev->owner ), pev->dmg/2, DMG_BULLET );
+				
+
 			}
 		}
 	}
@@ -835,12 +825,16 @@ void    CSmoke :: MoveThink( void )
 		WRITE_COORD( pev->origin.x + RANDOM_LONG(-128,128));
 		WRITE_COORD( pev->origin.y + RANDOM_LONG(-128,128));
 		WRITE_COORD( pev->origin.z);
-		WRITE_SHORT( 128 );
+		WRITE_SHORT( 128+(pev->dmg) );
 		WRITE_BYTE( 1 );
 		WRITE_BYTE( 9 );
 	MESSAGE_END();
+	
+	pev->dmg += 2;
+	pev->health-=3;
+	pev->angles = UTIL_VecToAngles (pev->velocity);
 		
-	if (gpGlobals->time >= m_flDie) // full explode and self destroy
+	if (pev->health < 0) // full explode and self destroy
 	{
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_EXPLOSION);
@@ -848,7 +842,7 @@ void    CSmoke :: MoveThink( void )
 			WRITE_COORD( pev->origin.y);
 			WRITE_COORD( pev->origin.z);
 			WRITE_SHORT( g_sModelIndexFireball );
-			WRITE_BYTE( 8  ); // scale * 10
+			WRITE_BYTE( 16  ); // scale * 10
 			WRITE_BYTE( 16  ); // framerate
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();

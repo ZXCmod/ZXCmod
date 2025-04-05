@@ -31,7 +31,7 @@
 
 
 /// class crystal
-class   CBlasterBeam4 : public CGrenade
+class   Heal_Crystal : public CGrenade
 {
         public:
 
@@ -40,7 +40,7 @@ class   CBlasterBeam4 : public CGrenade
         void    MoveThink       ( );
         void    EXPORT Hit         ( CBaseEntity* );
         void    Explode         (int);
-        static  CBlasterBeam4* Create( Vector, Vector, CBaseEntity* );
+        static  Heal_Crystal* Create( Vector, Vector, CBaseEntity* );
 		
 		private:
         int     BeamSprite;
@@ -50,8 +50,7 @@ class   CBlasterBeam4 : public CGrenade
 
 };
 
-/// class Tcrystal
-class   Tcrystal : public CBaseEntity
+class   TriipleDamage_Crystal : public CBaseEntity
 {
         public:
 
@@ -63,7 +62,7 @@ class   Tcrystal : public CBaseEntity
 		int 	m_iSpriteTexture;
 		int 	m_flDie;
 };
-LINK_ENTITY_TO_CLASS( weapon_bola, Tcrystal );
+LINK_ENTITY_TO_CLASS( weapon_bola, TriipleDamage_Crystal );
 
 /// class Tripmine Rocket
 class   TRocket : public CBaseEntity
@@ -113,7 +112,7 @@ public:
 LINK_ENTITY_TO_CLASS( monster_satchel, CSatchelCharge );
 
 // 1.31 new wp
-class CSatchelCharge2 : public CGrenade
+class Jumping_Satchel : public CGrenade
 {
 	void Spawn( void );
 	void EXPORT SatchelSlide( CBaseEntity *pOther );
@@ -122,7 +121,7 @@ class CSatchelCharge2 : public CGrenade
 public:
 	void Deactivate( void );
 };
-LINK_ENTITY_TO_CLASS( monster_pipebomb, CSatchelCharge2 );
+LINK_ENTITY_TO_CLASS( monster_pipebomb, Jumping_Satchel );
 
 //=========================================================
 // Deactivate - do whatever it is we do to an orphaned 
@@ -136,7 +135,7 @@ void CSatchelCharge::Deactivate( void )
 	UTIL_Remove( this );
 }
 
-void CSatchelCharge2::Deactivate( void )
+void Jumping_Satchel::Deactivate( void )
 {
 	// Use( m_pPlayer, m_pPlayer, USE_ON, 0 );
 	pev->takedamage = DAMAGE_NO;
@@ -306,8 +305,8 @@ void CSatchel::Spawn( )
 	SET_MODEL(ENT(pev), "models/w_satchel.mdl");
 
 	m_iDefaultAmmo = SATCHEL_DEFAULT_GIVE;
-	m_flNextChatTime2 = gpGlobals->time; //start timer
-	m_flNextChatTime4 = 0;
+	m_flNextCrystalTime = gpGlobals->time; //start timer
+	m_flNextSatchelsLimit = 0;
 	FallInit();// get ready to fall down.
 }
 
@@ -373,7 +372,7 @@ BOOL CSatchel::CanDeploy( void )
 
 BOOL CSatchel::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 285 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 360 );
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 
@@ -435,7 +434,7 @@ void CSatchel::PrimaryAttack()
 				{
 					if (pSatchel->pev->owner == pPlayer)
 					{
-						m_pPlayer->m_flNextChatTime4 = 0;
+						m_pPlayer->m_flNextSatchelsLimit = 0;
 						pSatchel->Use( m_pPlayer, m_pPlayer, USE_ON, 0 );
 						m_chargeReady = 2;
 					}
@@ -460,7 +459,7 @@ void CSatchel::PrimaryAttack()
 
 void CSatchel::SecondaryAttack( void )
 {
-	if (  m_pPlayer->m_flNextChatTime4 < 10 ) //now player can throw only 10 satchel's
+	if (  m_pPlayer->m_flNextSatchelsLimit < 10 ) //now player can throw only 10 satchel's
 	{
 
 		if ( m_chargeReady != 2 )
@@ -478,7 +477,7 @@ void CSatchel::ThirdAttack( void )
 	// Invisible 
 	// new code for 1.26
 
-	if ( (allowmonsters9.value == 0) || (g_flWeaponCheat.value == 3) )
+	if ( (g_zxc_cheats.value == 3) )
 		return;
 
 	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 4)
@@ -511,9 +510,6 @@ void CSatchel::ThirdAttack( void )
 
 void CSatchel::FourthAttack()
 {
-	if (allowmonsters9.value == 0)
-		return;
-
 
 	if ( (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 2) && m_chargeReady != 2)
 	{
@@ -553,7 +549,7 @@ void CSatchel::Throw( void )
 
 		Vector vecThrow = gpGlobals->v_forward * 274 + m_pPlayer->pev->velocity;
 
-		m_pPlayer->m_flNextChatTime4 ++;
+		m_pPlayer->m_flNextSatchelsLimit ++;
 		
 #ifndef CLIENT_DLL
 		CBaseEntity *pSatchel = Create( "monster_satchel", vecSrc, Vector( 0, 0, 0), m_pPlayer->edict() );
@@ -586,16 +582,13 @@ void CSatchel::WeaponIdle( void )
 
 if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6) // && creload==0
 	
-	if (  m_pPlayer->m_flNextChatTime2 < gpGlobals->time )
+	if (  m_pPlayer->m_flNextCrystalTime < gpGlobals->time )
 	{
 
 		{
-			if (allowmonsters9.value == 0)
-				return;
-
 			// reload when reload is pressed, or if no buttons are down and weapon is empty.
 			Reload();
-			m_pPlayer->m_flNextChatTime2 = gpGlobals->time + 90;
+			m_pPlayer->m_flNextCrystalTime = gpGlobals->time + 90;
 			return;
 		}
 	}
@@ -650,7 +643,7 @@ void CSatchel :: Reload( void )
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 	Vector vecThrow = gpGlobals->v_forward;
 	Vector GunPosition = m_pPlayer->GetGunPosition( );
-	CBlasterBeam4 :: Create( GunPosition, vecThrow, m_pPlayer );
+	Heal_Crystal :: Create( GunPosition, vecThrow, m_pPlayer );
 	m_fInAttack = 0;
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 6;
 
@@ -680,7 +673,7 @@ void DeactivateSatchels( CBasePlayer *pOwner )
 			if ( pSatchel->pev->owner == pOwner->edict() )
 			{
 				pSatchel->Use( pOwner, pOwner, USE_ON, 0 );
-				pOwner->m_flNextChatTime4 = 0;
+				pOwner->m_flNextSatchelsLimit = 0;
 				// pSatchel->Deactivate();
 			}
 		}
@@ -701,7 +694,7 @@ void DeactivateSatchels( CBasePlayer *pOwner )
 			if ( pSatchel->pev->owner == pOwner->edict() )
 			{
 				pSatchel->Use( pOwner, pOwner, USE_ON, 0 );
-				pOwner->m_flNextChatTime4 = 0;
+				pOwner->m_flNextSatchelsLimit = 0;
 				// pSatchel->Deactivate();
 			}
 		}
@@ -716,7 +709,7 @@ void DeactivateSatchels( CBasePlayer *pOwner )
 
 #define SQUEEK_DETONATE_DELAY	90.0
 
-void    CBlasterBeam4 :: Spawn( )
+void    Heal_Crystal :: Spawn( )
 {
 
         Precache( );
@@ -747,7 +740,7 @@ void    CBlasterBeam4 :: Spawn( )
 		EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/sg_24.wav", 1.0, ATTN_NORM);
 }
 
-void    CBlasterBeam4 :: Precache( )
+void    Heal_Crystal :: Precache( )
 {
         BeamSprite = PRECACHE_MODEL( BLASTER_BEAM_SPRITE );
         PRECACHE_MODEL( "models/crystal.mdl" );
@@ -755,48 +748,46 @@ void    CBlasterBeam4 :: Precache( )
 		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shrinkf.spr" );
 }
 
-void    CBlasterBeam4 :: Hit( CBaseEntity* Target )
+void    Heal_Crystal :: Hit( CBaseEntity* Target )
 {
 
 }
 
-void    CBlasterBeam4:: Explode(int DamageType)
+void    Heal_Crystal:: Explode(int DamageType)
 {
 	CBaseEntity *pEntity = NULL;
 
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 250 )) != NULL)
-       	{
-		if (pEntity->pev->friction != 1.0) //1.30a antifriction
-			pEntity->pev->friction = 1.0;
+    {
+		pEntity->pev->friction = 1.0;
 		
 		if ((pEntity->pev->takedamage==DAMAGE_AIM || pEntity->pev->movetype==MOVETYPE_WALK) && (FVisible( pEntity ))) ///check only players
-			{
-				pEntity->TakeHealth(7, DMG_GENERIC); //give health all around
-				pEntity->pev->armorvalue += 1; //give more armor all (v 1.21)
-				pEntity->pev->fuser1 += 1; //give more armor all (v 1.34)
-				pEntity->pev->fuser2 += 1; //give more armor all (v 1.34)
-			}
+		{
+			pEntity->TakeHealth(10, DMG_GENERIC); //give health all around
+			pEntity->pev->armorvalue += 1; //(v 1.21)
+			pEntity->pev->fuser1 += 1; //(v 1.34)
 		}
+	}
 	
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.8, ATTN_NORM); //play sound
+	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.15, ATTN_NORM); //play sound
 	pev->nextthink = gpGlobals->time + 1.0;
 	SetThink(MoveThink);
 }
 
-CBlasterBeam4* CBlasterBeam4 :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
+Heal_Crystal* Heal_Crystal :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
 {
-        CBlasterBeam4* Beam = GetClassPtr( (CBlasterBeam4*)NULL );
+        Heal_Crystal* Beam = GetClassPtr( (Heal_Crystal*)NULL );
 
         UTIL_SetOrigin( Beam->pev, Pos );
         Beam->pev->angles = Aim;
         Beam->Spawn( );
-        Beam->SetTouch( CBlasterBeam4 :: Hit );
+        Beam->SetTouch( Heal_Crystal :: Hit );
         Beam->pev->owner = Owner->edict( );
         return Beam;
 
 }
 
-void    CBlasterBeam4 :: MoveThink( )
+void    Heal_Crystal :: MoveThink( )
 {
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_BEAMCYLINDER );
@@ -842,7 +833,7 @@ void    CBlasterBeam4 :: MoveThink( )
 
 ////////////////////////
 ////////////////////////
-void CSatchelCharge2 :: Spawn( void )
+void Jumping_Satchel :: Spawn( void )
 {
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
@@ -870,7 +861,7 @@ void CSatchelCharge2 :: Spawn( void )
 }
 
 
-void CSatchelCharge2::SatchelSlide( CBaseEntity *pOther )
+void Jumping_Satchel::SatchelSlide( CBaseEntity *pOther )
 {
 	entvars_t	*pevOther = pOther->pev;
 
@@ -896,7 +887,7 @@ void CSatchelCharge2::SatchelSlide( CBaseEntity *pOther )
 }
 
 
-void CSatchelCharge2 :: SatchelThink( void )
+void Jumping_Satchel :: SatchelThink( void )
 {
 
 
@@ -942,7 +933,7 @@ void CSatchelCharge2 :: SatchelThink( void )
 ////////////////////////////
 ////////////////////////////
 
-void Tcrystal::Spawn( void )
+void TriipleDamage_Crystal::Spawn( void )
 {
 	SET_MODEL( ENT(pev), "models/crystal3.mdl" );
 	pev->movetype = MOVETYPE_FLY;
@@ -969,7 +960,7 @@ void Tcrystal::Spawn( void )
 	pev->nextthink = gpGlobals->time + 2.0; 
 }
 
-void Tcrystal::MoveThink( void )
+void TriipleDamage_Crystal::MoveThink( void )
 {
 	if ( pev->rendermode != kRenderNormal )
 	{
@@ -1079,7 +1070,7 @@ void TRocket::Spawn( void )
 	pev->gravity = 0.0;
 	m_flDie = 36;
 	
-	pev->dmg = 84;
+	pev->dmg = 172;
 	
 	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
 	pev->renderamt = 200;

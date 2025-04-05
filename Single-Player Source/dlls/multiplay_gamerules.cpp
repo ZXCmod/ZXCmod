@@ -76,7 +76,8 @@ CHalfLifeMultiplay :: CHalfLifeMultiplay()
 	PRECACHE_SOUND ("zxc/round_end2.wav");
 	PRECACHE_MODEL("models/hgrunt.mdl");
 	PRECACHE_MODEL("models/barney.mdl");
-	
+	UTIL_PrecacheOther("monster_barney");
+	UTIL_PrecacheOther("monster_bullsquid");
 	
 	g_VoiceGameMgr.Init(&g_GameMgrHelper, gpGlobals->maxClients);
 
@@ -166,11 +167,11 @@ void CHalfLifeMultiplay :: Think ( void )
 		// bounds check
 		int time = (int)CVAR_GET_FLOAT( "mp_chattime" );
 		if ( time < 1 )
-			CVAR_SET_STRING( "mp_chattime", "10" );
+			CVAR_SET_STRING( "mp_chattime", "7" );
 		else if ( time > MAX_INTERMISSION_TIME )
 			CVAR_SET_STRING( "mp_chattime", UTIL_dtos1( MAX_INTERMISSION_TIME ) );
 
-		m_flIntermissionEndTime = g_flIntermissionStartTime + mp_chattime.value;
+		m_flIntermissionEndTime = g_flIntermissionStartTime + 7;
 
 		// check to see if we should change levels now
 		if ( m_flIntermissionEndTime < gpGlobals->time )
@@ -199,8 +200,8 @@ void CHalfLifeMultiplay :: Think ( void )
 		int bestfrags = 999999;
 		int remain;
 
-		if (g_flWeaponCheat.value == 3) // >1.36
-			flFragLimit = g_bestfrags.value; // zxc_bestfrags value
+		if (g_zxc_cheats.value == 3) // >1.36
+			flFragLimit = 10000; // zxc_bestfrags value
 			
 		// check if any player is over the frag limit
 		for ( int i = 1; i <= gpGlobals->maxClients; i++ )
@@ -605,8 +606,8 @@ void CHalfLifeMultiplay :: PlayerThink( CBasePlayer *pPlayer )
 	int clientIndex = pPlayer->entindex();
 	char *mdls = g_engfuncs.pfnInfoKeyValue( g_engfuncs.pfnGetInfoKeyBuffer( pPlayer->edict() ), "model" );
 	
-	if (mdls != "helmet" && allowmonsters19.value == 1 && !g_teamplay)
-		g_engfuncs.pfnSetClientKeyValue( clientIndex, g_engfuncs.pfnGetInfoKeyBuffer( pPlayer->edict() ), "model", "helmet" );
+	//if (mdls != "helmet" && !g_teamplay)
+	//	g_engfuncs.pfnSetClientKeyValue( clientIndex, g_engfuncs.pfnGetInfoKeyBuffer( pPlayer->edict() ), "model", "helmet" );
 
 	if ( g_fGameOver )
 	{
@@ -620,89 +621,7 @@ void CHalfLifeMultiplay :: PlayerThink( CBasePlayer *pPlayer )
 		pPlayer->m_afButtonReleased = 0;
 		return;
 	}
-	if (allowmonsters18.value == 0 ) // dont load engine  ||  !g_teamplay
-		return;
-		
-	// Update Status Bar
-	if ( m_flNextSBarUpdateTime2 < gpGlobals->time )
-	{
-		m_flNextSBarUpdateTime2 = gpGlobals->time + 1.0; // 1 frame per sec
-		static char  szText[11];
-		hudtextparms_t hText;
-		sprintf(szText,  "RoundTimer: %i ", m_Timer ); 
-		memset(&hText, 0, sizeof(hText));
-		hText.channel = 20;
-		hText.x = 0.45;
-		hText.y = 0.05;
-		hText.effect = 0; // Fade in/out
-		hText.r1 = hText.g1 = 255;
-		hText.a1 = 255;
-		hText.fadeinTime = 0.0;
-		hText.fadeoutTime = 0.0;
-		if (m_Timer<=5)
-			{ hText.holdTime = 0.5; hText.b1 = 0;  }
-		else
-			{ hText.holdTime = 10.0; hText.b1 = 255;   }
-		
-		hText.fxTime = 0.0;
-		
-		int		i;
-		for ( i = 1; i <= gpGlobals->maxClients; i++ )
-		{
-			pPlayerX = UTIL_PlayerByIndex( i );
-			if ( pPlayerX )
-				UTIL_HudMessage(pPlayerX, hText, szText);
-		}
 
-		m_Timer-=1; // decr per sec
-		
-		if (m_Timer==0)
-			{
-				GetClassPtr( (CBasePlayer *)pPlayer->pev)->PlaySound( ); // full respawn
-			}
-		if (m_Timer == -2)
-			{
-				//if (gpGlobals->deathmatch)
-				{
-					int		i;
-					for ( i = 1; i <= gpGlobals->maxClients; i++ )
-					{
-						pPlayer2 = UTIL_PlayerByIndex( i );
-						//edict_t *pPlayerEdict = INDEXENT( i );
-						if ( pPlayer2!=NULL && (pPlayer2->pev->deadflag != DEAD_DYING) )
-							{
-								
-								if (!pPlayer2->IsAlive())
-									GetClassPtr( (CBasePlayer *)pPlayer2->pev)->Spawn( ); // full respawn
-								else
-									GetClassPtr( (CBasePlayer *)pPlayer2->pev)->Reset( ); // position
-									//CBaseEntity *pEntityz;
-									// pEntityz = CBaseEntity::Instance(pPlayer2->edict());
-									// if (pEntityz != NULL)
-										// GetClassPtr( (CBaseEntity *)pEntityz->pev)->Killed( NULL, 16 );
-/* 									
-				edict_t *xx = pPlayer->pev->owner;
-				CBaseEntity *pEntityz = CBaseEntity::Instance(pPlayer->edict());
-				if ( FNullEnt( xx ) )
-					return;
-				
-				if (pEntityz!=NULL)
-					//xx->TakeDamage(xx->pev, xx->pev, 1000, 1 );
-					UTIL_Remove( pEntityz );
-								 */
-							}
-					}
-				}
-				m_Timer = allowmonsters17.value;
-				
-				
-
-			
-			}
-		if (m_Timer > 1)
-			RoundThink( pPlayer );
-	}
-	
 
 	
 
@@ -829,9 +748,9 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		addDefault = FALSE;
 	}
 
-	if (g_flWeaponCheat.value != 0)
+	if (g_zxc_cheats.value != 0)
 	{
-		pPlayer->GiveNamedItem( "weapon_crowbar" );
+		
 		pPlayer->GiveNamedItem( "weapon_9mmhandgun" );
 		pPlayer->GiveNamedItem( "item_longjump" );
 		pPlayer->GiveNamedItem( "weapon_gauss" );
@@ -847,41 +766,40 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_handgrenade" );
+		pPlayer->GiveNamedItem( "weapon_crowbar" );
 		
-		if (g_flWeaponCheat.value != 3)
-			pPlayer->m_flNextChatTime3 = gpGlobals->time + 180; // prevent connect/disconnect flood nuke 3min
-		else
-			pPlayer->m_flNextChatTime3 = gpGlobals->time + 3;
 		
-		pPlayer->m_flNextChatTime15 = gpGlobals->time + 180; // prevent connect/disconnect flood storm 2min
 
 		pPlayer->GiveAmmo( 60, "9mm", _9MM_MAX_CARRY );// 4 full reloads
 		
-		if (allowmonsters16.value != 0)
-		{
-			// ammo
-			pPlayer->GiveAmmo( 700, "9mm", _9MM_MAX_CARRY );
-			pPlayer->GiveAmmo( 60, "357", _357_MAX_CARRY );
-			pPlayer->GiveAmmo( 30, "buckshot", BUCKSHOT_MAX_CARRY );
-			pPlayer->GiveAmmo( 20, "bolts", BOLT_MAX_CARRY );
-			pPlayer->GiveAmmo( 9, "rockets", ROCKET_MAX_CARRY );
-			pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );
-			pPlayer->GiveAmmo( 12, "Snarks", SNARK_MAX_CARRY );
-			pPlayer->GiveAmmo( 20, "ARgrenades", M203_GRENADE_MAX_CARRY );
-			pPlayer->GiveAmmo( 150, "uranium", URANIUM_MAX_CARRY );
-			// pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
-		}
-	}
+		// ammo
+		pPlayer->GiveAmmo( 100, "9mm", _9MM_MAX_CARRY );
+		pPlayer->GiveAmmo( 60, "357", _357_MAX_CARRY );
+		pPlayer->GiveAmmo( 30, "buckshot", BUCKSHOT_MAX_CARRY );
+		pPlayer->GiveAmmo( 20, "bolts", BOLT_MAX_CARRY );
+		pPlayer->GiveAmmo( 9, "rockets", ROCKET_MAX_CARRY );
+		pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );
+		pPlayer->GiveAmmo( 12, "Snarks", SNARK_MAX_CARRY );
+		pPlayer->GiveAmmo( 20, "ARgrenades", M203_GRENADE_MAX_CARRY );
+		pPlayer->GiveAmmo( 150, "uranium", URANIUM_MAX_CARRY );
+		// pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
 	
+	}
 	else if ( addDefault )
 	{
-		pPlayer->GiveNamedItem( "weapon_crowbar" );
+		
 		pPlayer->GiveNamedItem( "weapon_9mmhandgun" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
 		pPlayer->GiveNamedItem( "weapon_tripmine" );
+		pPlayer->GiveNamedItem( "weapon_crowbar" );
 		pPlayer->GiveAmmo( 60, "9mm", _9MM_MAX_CARRY );// 4 full reloads
 	}
+	
+	
+	// pPlayer->m_flNextNukeTime = gpGlobals->time + 180;
+	// pPlayer->m_flNextEgonStormTime = gpGlobals->time + 180;
+	// pPlayer->m_flNextShotgunFlareTime = gpGlobals->time + 120;
 	
 	UTIL_ScreenFade( pPlayer, Vector(RANDOM_LONG(0,255),RANDOM_LONG(0,255),RANDOM_LONG(0,255)), 1.95, 0.9, 128, FFADE_IN );
 
@@ -941,7 +859,7 @@ void CHalfLifeMultiplay :: PlayerKilled( CBasePlayer *pVictim, entvars_t *pKille
 		// if a player dies in a deathmatch game and the killer is a client, award the killer some points
 		pKiller->frags += IPointsForKill( peKiller, pVictim );
 		
-		if (g_flWeaponCheat.value == 1) // only for sv_cheats 1
+		if (g_zxc_cheats.value == 1) // only for sv_cheats 1
 		{
 			// ammo
 			peKiller->GiveAmmo( 50, "9mm", _9MM_MAX_CARRY );
@@ -958,7 +876,7 @@ void CHalfLifeMultiplay :: PlayerKilled( CBasePlayer *pVictim, entvars_t *pKille
 			// if (peKiller->pev->max_health <= 97)
 				// peKiller->pev->max_health += 3;
 		}
-		// if (g_flWeaponCheat == INT(2)) // only for sv_cheats 1
+		// if (g_zxc_cheats == INT(2)) // only for sv_cheats 1
 		// {
 			// peKiller->GiveAmmo( 50, "9mm", _9MM_MAX_CARRY );
 			// peKiller->GiveAmmo( 16, "buckshot", BUCKSHOT_MAX_CARRY );
@@ -966,8 +884,8 @@ void CHalfLifeMultiplay :: PlayerKilled( CBasePlayer *pVictim, entvars_t *pKille
 		
 		FireTargets( "game_playerkill", ktmp, ktmp, USE_TOGGLE, 0 );
 		
-		// if (g_flWeaponCheat == INT(0)) // without sv_cheats
-		// if (allowmonsters4.value == INT(0)) // without regeneration
+		// if (g_zxc_cheats == INT(0)) // without sv_cheats
+		// if (g_zxc_mp_dmode.value == INT(0)) // without regeneration
 		// {
 			// peKiller->pev->max_health += 7;
 			// peKiller->pev->health     += 7;
@@ -1395,7 +1313,7 @@ float CHalfLifeMultiplay::FlHealthChargerRechargeTime( void )
 
 float CHalfLifeMultiplay::FlHEVChargerRechargeTime( void )
 {
-	return 30;
+	return 180;
 }
 
 //=========================================================
@@ -1473,7 +1391,7 @@ void CHalfLifeMultiplay :: GoToIntermission( void )
 	// bounds check
 	int time = (int)CVAR_GET_FLOAT( "mp_chattime" );
 	if ( time < 1 )
-		CVAR_SET_STRING( "mp_chattime", "10" );
+		CVAR_SET_STRING( "mp_chattime", "7" );
 	else if ( time > MAX_INTERMISSION_TIME )
 		CVAR_SET_STRING( "mp_chattime", UTIL_dtos1( MAX_INTERMISSION_TIME ) );
 

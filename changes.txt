@@ -1,0 +1,198 @@
+1.35 - 1.37    [28.11.2023]
+
+
+
+- Fixed Crowbar for new versions of HL client, charge regenerated to 16. Damage from missiles is enhanced. Triple missile salvo on R if charges is full. 
+- New type of damage resistance. Instead of kinetic, chemical and electric armor now Armor and Shield. Armor is great against bullets and explosions. Shield from everything else.
+- Turret counter and timers for superweapons are shown.
+- Hand Grenade sparks a Barney guard, consuming 1 unit of turret limit.
+- The first attack on Gauss fires Bullsquid projectiles. A hit deals 37 damage and reduces the target's Friction to zero.
+- The first attack on Egon is now melee. The second attack allows you to fly forward.
+- The bullet on the Magnum's first attack explodes with 80 damage on impact, hitting everyone around it and creating a strong recoil.
+- If shield is greater than 50, MP5 fires 3 plasma instead of 1.
+- Removed unused cvars from previous versions.
+- Many other changes in balance, weapon behavior, bug fixes.
+
+
+
+
+
+
+
+1.34			[15.04.2011]
+
+
+
+- third attack on 357: inferno capsule (python.cpp, weapons.h)
+- added new cvars: zxc_megaweps[0], zxc_sfrad[800], zxc_sflife[0], zxc_sfshake[1], zxc_sfreload[180], zxc_triple[0]
+- GravBullet now weak (hl_wpn_glock.cpp)
+- All monsters have same armor calculation, as player! (combat.cpp)
+- hornetgun flashes half draw screen teammates.
+- and much anothers.
+
+
+
+
+
+
+
+1.33			[05.09.2010]
+
+
+
+- third attack on 357: inferno capsule (python.cpp, weapons.h)
+- fourth attack on 357: HE capsule (python.cpp, weapons.h)
+- bug fixed: stuck in weapons/ammo (weapons.cpp)
+- gauss cannon velocity depend by ammo charge, and has another fly effect (gauss.cpp)
+- snarks improved balance (squeakgrenade.cpp)
+- bug fixed: no more turrets reactions on the hornets (turret.cpp)
+- "Nuke Bomb" message replaced on "Nuclear Missile", rebalanced damage and bugs fixed (gauss.cpp)
+- improved Health/Armor chargers and limits (healthkit.cpp, h_battery.cpp)
+- all instances of owner deleted when disconnected 
+- player spawn more safe (player.cpp)
+- new console command: mp_allwep. Default 1.
+- added visual effects to a lot objects.
+- player ghost cant run on ground (player.cpp)
+- any gibs deleted after few sec's (combat.cpp)
+- in zoom mode for glock, launched fast grav-core with red trails. More damage and radius, needed 5 ammo.(hl_wpn_glock.cpp)
+- flashlight turn off after dead event (player.cpp)
+- turrets say [weapon type] messages while used. Added new attacks (total 9) (turret.cpp)
+- more resistance by all shots with type DMG_BULLET, if have armor (player.cpp).
+- rebalanced most weapons.
+
+
+
+
+1.32.
+
+
+
+- fourth attack on RPG (rpg.cpp, hornetgun.cpp, weapons.h)
+- fourth attack on hornetgun: heal ray (hornetgun.cpp, weapons.h)
+- gauss magnet ray updated (gauss.cpp)
+- crossbow 4th attack updated (crossbow.cpp)
+- "DamageForce" changed from 5 to 3 (combat.cpp)
+
+
+
+
+
+1.31 [3rd update].
+- third attack on crossbow
+- fourth attack on crossbow
+- fourth attack on gauss
+- improved weap. balance
+- other little changes.
+
+
+
+
+1.31.
+
+
+- new function: FourthAttack(). Any effect by pressed USE and ATTACK2 keys                          (weapons.cpp, weapons.h)
+- fourth attack on crowbar: power hit
+- fourth attack on glock: zoom
+- fourth attack on handgrenates
+- fourth attack on satchels
+- fourth attack on egon: storm
+- fourth attack on shotgun: cannon
+- fourth attack on mp5: plasma
+- new console command: mp_tank. Default 0.
+- new console command: mp_teleport. Default 1.
+- weapon balance improved
+- optimized: weapon code, source code, net game.
+- some bugs destroyed, but hlds can crash with sv_cheats 1 and mp_teamplay 1.
+- cleared bad code in player part. [2nd upd]														(client.cpp, player.cpp)
+- second satchels updated and crowbars (models replaced) [2nd upd]                                  (ggrenade.cpp, satchels.cpp, crowbar.cpp, weapons.cpp)
+
+
+
+
+1.30a.
+
+
+- third attack on tripmine: Ice-Friction, only heal crystal can return inital friction              (tripmine.cpp, satchel.cpp)
+- new console command: mp_python. Value 0 is disabled black rocket                                  (game.cpp, python.cpp, game.h)
+- new console command: mp_gauss. Value 0 is disabled gauss velocity                                 (game.cpp, gauss.cpp, game.h)
+- included maps 2houses.bsp and 2play.bsp for teamplay
+- hot bugs destroyed.
+
+
+
+
+1.30.
+
+
+
+- third attack on egon: Tesla                                                                       (egon.cpp, weapons.h)
+- egon cannon now bounce                                                                            (egon.cpp, weapons.h) 
+- added new function: TeslaExplode(), is spread shock streams                                       (combat.cpp, cbase.h)
+- Added switcher                                                                                    (turrets.cpp)
+- teamplay improved, info_player_coop - is second spawn point.
+- improved weapon balance
+- when sv_cheats 1, disabled : hornets and grav_grenades; turrets limit is 3 
+- some bugs from previous versions has been fixed.
+
+
+
+
+1.29.
+
+
+
+- third attack on snarks: stomp.                                                                    (squeakgrenade.cpp, weapons.h)
+- third attack on RPG: dual missiles.                                                               (rpg.cpp, weapons.h)
+- new console command: mp_dmode. Default 0                                                          (game.cpp, game.h, player.cpp, world.cpp)                                                                  
+- decrease damage x2 by yourself explosive                                                          (combat.cpp)
+- when sv_cheats 1, available all weapons on start 
+- bad code cleanup
+- include some maps
+- other bug fixes, little changes. 
+
+
+
+
+1.28.
+
+
+
+- third attack on mp5: lazers with little zap.                                                      (mp5.cpp, weapons.h)
+- third attack on hornetgun: freeze bomb.                                                           (hornetgun.cpp, weapons.h)
+- third attack on hand grenades: smoke                                                              (handgrenade.cpp, weapons.h)
+- new console command: mp_crowbar. Value 0 is disabled rockets, multiply dmg x2. Default 1          (game.cpp, crowbar.cpp, game.h)                                                                  
+- set 5 turrets limit                                                                               (turret.cpp, rpg.cpp)
+- other bug fixes and changes. 
+
+
+
+
+1.27.
+
+
+
+- third attack on glock: gravity-shock bullets                                                      (hl_wpn_glock.cpp, weapons.h)
+- third attack on crowbar: teleportation                                                            (crowbar.cpp, weapons.h)
+- third attack on gauss: magnet-ray                                                                 (gauss.cpp, weapons.h)
+- new console command: mp_fragmonsters. Allow any values. Default 1                                 (game.cpp, combat.cpp, game.h)
+- fixed: client-side animation disabled.                                                            (client.cpp & anothers with FEV_)
+- secondary and reload attacks on mortars                                                           (func_tank.cpp)
+- optimized shotgun clusters                                                                        (shotgun.cpp)
+- other little changes. 
+
+
+1.26.
+
+
+
+- Sentry cant stuck in floor and walls                                                              (rpg.cpp)
+- Nuke has more direct damage *10                                                                   (gauss.cpp)
+- added new weapon: analog rocket-crowbar from RC                                                   (crowbar.cpp)
+- increase freeze from 1.25 to 2.25                                                                 (hornetgun.cpp)
+- allow to freeze anybody monsters                                                                  (combat.cpp)
+- new function: ThirdAttack(). Any effect by pressed USE and ATTACK1 keys                           (weapons.cpp, weapons.h)
+- third attack on shotgun                                                                           (shotgun.cpp, weapons.h)
+- third attack on satchels (invisibility)                                                           (satchel.cpp, player.cpp, weapons.h)
+- fixed crowbar animation                                                                             
+- many other changes and release.
+

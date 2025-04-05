@@ -96,8 +96,8 @@ public:
 
 
 // weapon weight factors (for auto-switching)   (-1 = noswitch)
-#define CROWBAR_WEIGHT		250
-#define GLOCK_WEIGHT		10
+#define CROWBAR_WEIGHT		10
+#define GLOCK_WEIGHT		40
 #define PYTHON_WEIGHT		15
 #define MP5_WEIGHT			15
 #define SHOTGUN_WEIGHT		15
@@ -114,7 +114,7 @@ public:
 
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY		200
-#define	_9MM_MAX_CARRY			800
+#define	_9MM_MAX_CARRY			200
 #define _357_MAX_CARRY			64
 #define BUCKSHOT_MAX_CARRY		32
 #define BOLT_MAX_CARRY			20
@@ -520,6 +520,7 @@ class CCrowbar : public CBasePlayerWeapon
 public:
 	void Spawn( void );
 	void Precache( void );
+	int AddToPlayer( CBasePlayer *pPlayer );
 	int iItemSlot( void ) { return 1; }
 	void EXPORT SwingAgain( void );
 	void EXPORT Smack( void );
@@ -528,7 +529,7 @@ public:
 	void SecondaryAttack( void );
 	void Reload( void );
 	void WeaponIdle( void );
-	float m_flNextChatTime11; //delay
+	float m_flNextCrowbarReloadTime; //delay
 	void ThirdAttack( void ); // 1.27 wp
 	void FourthAttack( void ); // 1.31 wp
 	int Swing( int fFirst );
@@ -548,6 +549,7 @@ public:
 	}
 private:
 	unsigned short m_usCrowbar;
+	float m_flRechargeTime;
 	int index;
 	int m_touch;
 };
@@ -569,6 +571,8 @@ public:
 	void Reload( void );
 	void WeaponIdle( void );
 	float m_flSoundDelay;
+	unsigned short		m_Sprite;
+	unsigned short		m_SpriteExp;
 
 	BOOL m_fInZoom;// don't save this. 
 
@@ -742,7 +746,7 @@ public:
 	void ThirdAttack( void ); // 1.29 wp
 	void FourthAttack( void ); // 1.32 wp
 	void WeaponIdle( void );
-	float m_flNextChatTime9; //delay
+	float m_flNextHeavyTuretsTime; //delay
 	void UpdateSpot( void );
 	BOOL ShouldWeaponIdle( void ) { return TRUE; };
 
@@ -763,7 +767,7 @@ public:
 
 private:
 	unsigned short m_usRpg;
-	int m_flNextChatTime13;
+	int m_flNextTurretsLimit;
 	int m_limit;
 
 };
@@ -836,6 +840,7 @@ public:
 	void WeaponIdle( void );
 	
 	void StartFire( void );
+	void StartFireBull( void );
 	void Fire( Vector vecOrigSrc, Vector vecDirShooting, float flDamage );
 	float GetFullChargeTime( void );
 	int m_iSoundState; // don't save this
@@ -862,7 +867,6 @@ public:
 private:
 	unsigned short m_usGaussFire;
 	unsigned short m_usGaussSpin;
-	int m_flNextChatTime3;
 	int m_flNextChatTime;
 	unsigned short BSpr;
 	int m_iBalls;
@@ -903,8 +907,7 @@ public:
 	float m_flAmmoUseTime;// since we use < 1 point of ammo per update, we subtract ammo on a timer.
 	float GetPulseInterval( void );
 	float GetDischargeInterval( void );
-	float m_flNextChatTime10;
-	float m_flNextChatTime15;
+	float m_flNextEgonBombTime;
 	
 
 	void Fire( const Vector &vecOrigSrc, const Vector &vecDir );
@@ -983,11 +986,11 @@ public:
 private:
 	unsigned short m_usHornetFire;
 	float m_flRechargeTime;
-	float m_flNextChatTime8; //delay
+	float m_flNextHornetgunGrensTime; //delay
 	int m_iFirePhase;// don't save me.
 	unsigned short BSpr;
 	float FTime1;
-	float m_flNextChatTime14;
+	float m_flNextHornetgunFreezebagLimit;
 };
 
 
@@ -999,7 +1002,7 @@ public:
 	void Precache( void );
 	int iItemSlot( void ) { return 5; }
 	int GetItemInfo(ItemInfo *p);
-	float m_flNextChatTime6; //delay
+	float m_flNextGravGrenadesTime; //delay
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void ThirdAttack( void );
@@ -1059,8 +1062,8 @@ public:
 #endif
 	}
 private:
-	int m_flNextChatTime2; //delay c heal
-	int m_flNextChatTime4; //limit satchels
+	int m_flNextCrystalTime; //delay c heal
+	int m_flNextSatchelsLimit; //limit satchels
 };
 
 
@@ -1117,7 +1120,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 	int m_fJustThrown;
-	int m_flNextChatTime16;
+	int m_flNexTripleCrystalTime;
 	
 
 	virtual BOOL UseDecrement( void )

@@ -46,7 +46,7 @@ enum gauss_e {
 void CCrowbar::Spawn( )
 {
 	Precache( );
-	m_flNextChatTime11 = gpGlobals->time;
+	m_flNextCrowbarReloadTime = gpGlobals->time;
 	m_iId = WEAPON_CROWBAR;
 	SET_MODEL(ENT(pev), "models/w_crowbar.mdl");
 	FallInit();// get ready to fall down.
@@ -77,31 +77,42 @@ void CCrowbar::Precache( void )
 	m_usCrowbar = PRECACHE_EVENT ( 1, "events/crowbar.sc" );
 }
 
+int CCrowbar::AddToPlayer( CBasePlayer *pPlayer )
+{
+	if ( CBasePlayerWeapon::AddToPlayer( pPlayer ) )
+	{
+		m_flRechargeTime = gpGlobals->time + 0.5;
+		pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] = 1;
+
+		MESSAGE_BEGIN( MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev );
+			WRITE_BYTE( m_iId );
+		MESSAGE_END();
+		return TRUE;
+	}
+	return FALSE;
+}
+
 int CCrowbar::GetItemInfo(ItemInfo *p)
 {
 	p->pszName = STRING(pev->classname);
-	p->pszAmmo1 = "9mm";
-	p->iMaxAmmo1 = NULL;
+	p->pszAmmo1 = "Hornets";
+	p->iMaxAmmo1 = HORNET_MAX_CARRY;
 	p->pszAmmo2 = NULL;
 	p->iMaxAmmo2 = -1;
-	p->iMaxClip = WEAPON_NOCLIP; //GLOCK_MAX_CLIP
+	p->iMaxClip = WEAPON_NOCLIP;
 	p->iSlot = 0;
 	p->iPosition = 0;
-	p->iId = WEAPON_CROWBAR;
+	p->iId = m_iId = WEAPON_CROWBAR;
+	p->iFlags = ITEM_FLAG_NOAUTOSWITCHEMPTY | ITEM_FLAG_NOAUTORELOAD;
 	p->iWeight = CROWBAR_WEIGHT;
 	return 1;
 }
 
 BOOL CCrowbar::Deploy( )
 {
-	if (allowmonsters10.value == 1)
-		{
-			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 386 ); //304
-		}
-	else
-		{
-			g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 317 ); //304
-		}
+
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 340 );
+
 	return DefaultDeploy( "models/v_crowbar.mdl", "models/p_crowbar.mdl", CROWBAR_DRAW, "crowbar" );
 }
 
@@ -109,6 +120,11 @@ void CCrowbar::Holster( int skiplocal /* = 0 */ )
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 	SendWeaponAnim( CROWBAR_HOLSTER );
+	
+	if ( !m_pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] )
+	{
+		m_pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] = 1;
+	}
 }
 
 
@@ -158,6 +174,16 @@ void FindHullIntersection( const Vector &vecSrc, TraceResult &tr, float *mins, f
 
 void CCrowbar::Reload( void )
 {
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= HORNET_MAX_CARRY)
+		return;
+
+	while (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] < HORNET_MAX_CARRY && m_flRechargeTime < gpGlobals->time)
+	{
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]++;
+		m_flRechargeTime += 0.4;
+	}
+
+
 
 }
 
@@ -177,17 +203,11 @@ void CCrowbar::PrimaryAttack()
 
 void CCrowbar::SecondaryAttack()
 { 
-	if (allowmonsters3.value != 1)
-		return;
-	if (allowmonsters9.value == 0)
-		return;
-		
 	if (m_touch != 0)
 		m_touch = 0;
 		
-	if (allowmonsters10.value == 0)
-		{
-		if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+
+		if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 3)
 		{
 			if (! Swing( 1 ))
 			{
@@ -208,40 +228,16 @@ void CCrowbar::SecondaryAttack()
 				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0; 
 				m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
 				m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+				m_flRechargeTime = gpGlobals->time + 0.5;
 				SetThink( SwingAgain );
 			}
 		}
-	}
-	else
-	{
-
-		Vector GunPosition = m_pPlayer->GetGunPosition( );
-		GunPosition = GunPosition + gpGlobals->v_forward * 0;
-		GunPosition = GunPosition + gpGlobals->v_right   * 7;
-		GunPosition = GunPosition + gpGlobals->v_up      * 0;
-
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-		m_pPlayer->m_flNextChatTime11 = gpGlobals->time + 2;
-		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecThrow = gpGlobals->v_forward;
-		CBaseEntity::Create( "weapon_rocketlauncher", GunPosition, vecThrow, m_pPlayer->edict() );
-
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.75;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.75;
-		
-		switch( RANDOM_LONG(0,2) )
+		else
 		{
-		case 0:
-			SendWeaponAnim( CROWBAR_ATTACK1HIT ); break;
-		case 1:
-			SendWeaponAnim( CROWBAR_ATTACK2HIT ); break;
-		case 2:
-			SendWeaponAnim( CROWBAR_ATTACK3HIT ); break;
+			Reload( );
 		}
-	}
+	
+
 }
 
 
@@ -250,11 +246,14 @@ void CCrowbar::ThirdAttack()
 {
 	// new weapon: teleporter. Target is spawn points (info_deathmatch). Linked with subs.cpp 
 	// 1.27
-	if (allowmonsters8.value != 1)
-		return;
 
-	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]<=0)
-		return;
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]<=8)
+
+		{
+			Reload( );
+			return;
+		}
+		
 
 	entvars_t* pevToucher = m_pPlayer->pev; //player object
 	edict_t	*pentTarget = NULL; //teleport target
@@ -324,7 +323,8 @@ void CCrowbar::ThirdAttack()
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=10;
+	m_flRechargeTime = gpGlobals->time + 0.5;
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=8;
 	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_BODY, "debris/beamstart7.wav", 0.8, ATTN_NORM); //play sound 2nd
 	
 	if (m_pPlayer->pev->friction != 1.0) // 1.31 3rd antifriction feature
@@ -373,6 +373,8 @@ void CCrowbar::SwingAgain( void )
 
 int CCrowbar::Swing( int fFirst )
 {
+	
+	
 	int fDidHit = FALSE;
 
 	TraceResult tr;
@@ -439,7 +441,7 @@ int CCrowbar::Swing( int fFirst )
 		
 		pev->dmg = RANDOM_LONG(20,30)*m_pPlayer->TripleShotS;
 
-		if ( (m_flNextPrimaryAttack = m_flNextSecondaryAttack + 1 < UTIL_WeaponTimeBase() ) || g_pGameRules->IsMultiplayer() && allowmonsters3.value != 1 )
+		if ( (m_flNextPrimaryAttack = m_flNextSecondaryAttack + 1 < UTIL_WeaponTimeBase() ) || g_pGameRules->IsMultiplayer()  )
 		{
 			// first swing does full damage
 			pEntity->TraceAttack(m_pPlayer->pev, pev->dmg*2, gpGlobals->v_forward, &tr, DMG_CRUSH ); 
@@ -529,25 +531,19 @@ int CCrowbar::Swing( int fFirst )
 
 void CCrowbar::WeaponIdle( void )
 {
+	Reload( );
 
-if (allowmonsters3.value != 1)
-	return;
-if (allowmonsters10.value == 1)
-	return;
-if (allowmonsters9.value == 0)
-	return;
 
 	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6) 
 	{
-		if (  m_pPlayer->m_flNextChatTime11 < gpGlobals->time ) //need delay
+		if (  m_pPlayer->m_flNextCrowbarReloadTime < gpGlobals->time ) //need delay
 		{
 			Vector GunPosition = m_pPlayer->GetGunPosition( );
 			GunPosition = GunPosition + gpGlobals->v_forward * 0;
 			GunPosition = GunPosition + gpGlobals->v_right   * 7;
 			GunPosition = GunPosition + gpGlobals->v_up      * 0;
 
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-			m_pPlayer->m_flNextChatTime11 = gpGlobals->time + 2;
+			
 			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 
@@ -557,15 +553,18 @@ if (allowmonsters9.value == 0)
 			CBaseEntity::Create( "weapon_rocketlauncher", GunPosition, vecThrow, m_pPlayer->edict() );
 
 			// its fun prerelease 1.34
-			if (allowmonsters15.value != 0)
+			if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 16)
 			{
 				CBaseEntity::Create( "weapon_rocketlauncher", GunPosition+Vector(-20,0,0), vecThrow, m_pPlayer->edict() );
 				CBaseEntity::Create( "weapon_rocketlauncher", GunPosition+Vector(20,0,0), vecThrow, m_pPlayer->edict() );
 			}
 
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 6;
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.75; //1.5
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.75; //1.5
+			m_pPlayer->m_flNextCrowbarReloadTime = gpGlobals->time + 0.75;
+			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
+			m_flRechargeTime = gpGlobals->time + 0.5;
 			
 			// if (m_pPlayer->pev->effects == EF_NODRAW) //reset values
 			// {
@@ -609,7 +608,7 @@ void    CRC :: Spawn( )
 	pev->velocity = gpGlobals->v_forward * BLASTER_BEAM_SPEED;
 	pev->angles.x = -(pev->angles.x);
 	pev->nextthink = gpGlobals->time + 0.1;
-	pev->dmg = 90; //90 old
+	pev->dmg = 100; //90 old
 	pev->effects = EF_MUZZLEFLASH;
 	
 	MESSAGE_BEGIN           ( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -776,7 +775,7 @@ void    CRc2 :: Spawn( )
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->effects = EF_MUZZLEFLASH;
 	m_flDie = gpGlobals->time + 15;
-	pev->dmg = 120;
+	pev->dmg = 200;
 	
 	// make rocket sound
 	EMIT_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav", 0.3, 0.4 );
@@ -859,6 +858,28 @@ void    CRc2 :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_BYTE( 16 ); // life
 	MESSAGE_END();
 	
+	// torus
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_BEAMTORUS );
+		WRITE_COORD( pev->origin.x);
+		WRITE_COORD( pev->origin.y);
+		WRITE_COORD( pev->origin.z); 
+		WRITE_COORD( pev->origin.x);
+		WRITE_COORD( pev->origin.y);
+		WRITE_COORD( pev->origin.z + 1200 ); // reach damage radius over .2 seconds
+		WRITE_SHORT( m_iSpriteTexture );
+		WRITE_BYTE( 0 ); // startframe
+		WRITE_BYTE( 0 ); // framerate
+		WRITE_BYTE( 2 ); // life
+		WRITE_BYTE( 3 );  // width
+		WRITE_BYTE( 0 );   // noise
+		WRITE_BYTE( 255 );   // r, g, b
+		WRITE_BYTE( 255 );   // r, g, b
+		WRITE_BYTE( 200 );   // r, g, b
+		WRITE_BYTE( 64 ); // brightness
+		WRITE_BYTE( 0 );		// speed
+	MESSAGE_END();
+	
 	//beam
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 		WRITE_BYTE( TE_BEAMCYLINDER );
@@ -881,8 +902,8 @@ void    CRc2 :: Explode( TraceResult* TResult, int DamageType )
 		WRITE_BYTE( 8 );		// speed
 	MESSAGE_END();
 	
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 220, CLASS_NONE, DMG_CRUSH  ); //explDMG
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*3, 36, CLASS_NONE, DMG_BULLET  ); //directalDMG
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 250, CLASS_NONE, DMG_CRUSH  ); //explDMG
+	//::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*2, 30, CLASS_NONE, DMG_BULLET  ); //directalDMG
 	
 	UTIL_Remove( this );
 }
@@ -921,72 +942,8 @@ void    CRc2 :: MoveThink( )
 		STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
 
 	}
-	// 4fun
-	if ( (pl->pev->button & IN_JUMP) && (  pl->m_flNextChatTime3 < gpGlobals->time ) && (allowmonsters10.value == 1)) // lol !!  ! EEEEE
-		{
-			pl->m_flNextChatTime3 = gpGlobals->time + 1; //1 sec reload
 
-			CBaseEntity *pEntity = NULL;
-			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 112 )) != NULL)
-				{
-				if (pEntity->pev->friction != 1.0) //1.30a antifriction
-					pEntity->pev->friction = 1.0;
-				
-				if ((pEntity->pev->takedamage==DAMAGE_YES || pEntity->pev->movetype==MOVETYPE_WALK) && (FVisible( pEntity ))) ///check only players
-					{
-						if (pEntity->edict() != pev->owner)
-						{
-							pEntity->TakeHealth(25, DMG_GENERIC);
-							pEntity->pev->armorvalue += 3; 
-						}
-						else
-						{
-							pEntity->TakeHealth(1, DMG_GENERIC);
-							pEntity->pev->armorvalue += 1;
-						}
-					}
-				}
-				
-			MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-				WRITE_BYTE( TE_BEAMCYLINDER );
-				WRITE_COORD( pev->origin.x);
-				WRITE_COORD( pev->origin.y);
-				WRITE_COORD( pev->origin.z);
-				WRITE_COORD( pev->origin.x);
-				WRITE_COORD( pev->origin.y);
-				WRITE_COORD( pev->origin.z + 250 ); // reach damage radius over .2 seconds
-				WRITE_SHORT( m_iSpriteTexture );
-				WRITE_BYTE( 0 ); // startframe
-				WRITE_BYTE( 0 ); // framerate
-				WRITE_BYTE( 2 ); // life
-				WRITE_BYTE( 30 );  // width
-				WRITE_BYTE( 0 );   // noise
-				WRITE_BYTE( 0 );   // r, g, b
-				WRITE_BYTE( 200 );   // r, g, b
-				WRITE_BYTE( 200 );   // r, g, b
-				WRITE_BYTE( 100 ); // brightness
-				WRITE_BYTE( 0 );		// speed
-			MESSAGE_END();
-			
-			// EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.8, ATTN_NORM); //play sound
-			EMIT_SOUND_DYN(ENT(pl->pev), CHAN_WEAPON, "zxc/crystal_heal.wav", 0.8, ATTN_NORM, 0, 80 + RANDOM_LONG(128,0x4f));
 
-			
-		}
-	
-	if (allowmonsters10.value == 1)
-	{
-		if ( (pl != NULL) && (pEntity->edict() == pev->owner) && (pev->renderamt == 100) && (pl->pev->button & IN_RELOAD))
-		{
-			if ( (pl->m_pActiveItem->m_iId == WEAPON_CROWBAR)) // once crash reason, moved to this position
-				m_flDie = -1;
-		}
-		else if ((pev->renderamt == 45) && (pEntity->edict() == pev->owner) && (pl->pev->button & IN_RELOAD))
-		{
-			m_flDie = -1; // destroy that after respawn
-		}
-	}
-	
 	
 	if (gpGlobals->time >= m_flDie) //time out 15 s
 		{
@@ -1019,16 +976,6 @@ void    CRc2 :: MoveThink( )
 			UTIL_Remove( this );
 		}
 		
-	if (allowmonsters10.value == 1)
-		{
-		if (m_moving == 0 && (gpGlobals->time >= m_flDie-12.5))
-		{
-			switch ( RANDOM_LONG( 0, 15 ) )
-			{
-				case 5:	m_moving = 1;
-			}
-		}
-	}
 	
 
 

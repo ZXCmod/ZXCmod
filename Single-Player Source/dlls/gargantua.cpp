@@ -739,7 +739,7 @@ void CGargantua :: Spawn()
 	Precache( );
 
 	SET_MODEL(ENT(pev), "models/garg.mdl");
-	UTIL_SetSize( pev, VEC_HUMAN_HULL_MIN, VEC_HULL_MAX );
+	UTIL_SetSize( pev, VEC_HUMAN_HULL_MIN, Vector( 16, 16, 136) );
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;

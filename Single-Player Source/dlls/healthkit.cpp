@@ -40,7 +40,7 @@ LINK_ENTITY_TO_CLASS( item_healthkit, CHealthKit );
 
 void CHealthKit :: Spawn( void )
 {
-	if (allowmonsters4.value != 0)
+	if (g_zxc_mp_dmode.value != 0)
 		return;
 
 	Precache( );
@@ -144,10 +144,7 @@ void CWallHealth::Spawn()
 	UTIL_SetOrigin(pev, pev->origin);		// set size and link into world
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	SET_MODEL(ENT(pev), STRING(pev->model) );
-	if (allowmonsters10.value == 0)
-		m_iJuice = 100;
-	else
-		m_iJuice = 1000;
+	m_iJuice = 100;
 	pev->frame = 0;			
 	multiple = 0.0;
 	
@@ -229,12 +226,10 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 
 void CWallHealth::Recharge(void)
 {
-		EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/medshot4.wav", 1.0, ATTN_NORM );
+	EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/medshot4.wav", 1.0, ATTN_NORM );
 		
-	if (allowmonsters10.value == 0)
-		m_iJuice = 100;
-	else
-		m_iJuice = 1000;
+	m_iJuice = 100;
+
 	pev->frame = 0;			
 	SetThink( SUB_DoNothing );
 }

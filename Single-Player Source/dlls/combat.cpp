@@ -583,7 +583,7 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 	pev->rendermode = kRenderNormal;
 	pev->renderfx = kRenderFxNone;
 	pev->renderamt = 0;
-	FTime2 = 0.0;
+	FreezeTime = 0.0;
 
 	pev->takedamage = DAMAGE_NO;
 
@@ -607,13 +607,13 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 	//feature was removed from 1.26
 	//cvar mp_fragmonsters added in 1.27 
 	
-	if ((allowmonsters2.value != 0) || g_flWeaponCheat.value != 3 )
+	if ((g_zxc_mp_fragmonsters.value != 0) || g_zxc_cheats.value != 3 )
 	{
 		CBaseEntity *pPlayer = CBaseEntity::Instance( pevAttacker );
 		if ( pPlayer && pPlayer->Classify() == CLASS_PLAYER )
 			{
 				CBasePlayer *PK = (CBasePlayer*)pPlayer;
-				pPlayer->AddPoints(allowmonsters2.value, true); //dynamic values
+				pPlayer->AddPoints(g_zxc_mp_fragmonsters.value, true); //dynamic values
 			} 
 	}
 	
@@ -885,14 +885,12 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 	// DMG_BLAST is armor sawer
 	if ( bitsDamageType & DMG_BLAST )
 	{
-		// blasts damage armor more.
-		flBonus *= 2.75;
+		flBonus *= 1.75;
 	}
-	// v1.33 (97hp - 98ar after damage crowbar rocket with DMG_BURN type for testing [without will be 94hp - 87ar ])
-	if ( ( pev->armorvalue >= 1 && (bitsDamageType & DMG_BULLET )) )
+	if ( ( pev->armorvalue > 0 && (bitsDamageType & DMG_BULLET )) )
 	{
 		// armor so hard for bullets
-		flBonus *= 0.25; 
+		flBonus *= 0.5; 
 		flDamage *= 0.5; // take half dmg hp
 	}
 	
@@ -904,7 +902,7 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 	float flArmor;
 	
 	// Armor 1 kinetic. 
-	if (pev->armorvalue && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_NERVEGAS|DMG_POISON)) )// armor doesn't protect against fall or drown damage!
+	if (pev->armorvalue && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_NERVEGAS|DMG_POISON|DMG_BLAST)) )// armor doesn't protect against fall or drown damage!
 	{
 		
 
@@ -923,10 +921,10 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 			pev->armorvalue -= flArmor;
 			
 		
-		flDamage = flNew*1.2;
+		flDamage = flNew;
 	}
-	// Armor 2. 
-	if (pev->fuser1 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_CRUSH|DMG_MORTAR|DMG_BLAST|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM)) )// armor doesn't protect against fall or drown damage!
+	// Armor 2 shield. 
+	if (pev->fuser1 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_NERVEGAS|DMG_CRUSH|DMG_MORTAR|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_POISON)) )// armor doesn't protect against fall or drown damage!
 	{
 		flArmor = (flDamage - flNew) * flBonus;
 
@@ -942,27 +940,9 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 		else
 			pev->fuser1 -= flArmor;
 		
-		flDamage = flNew*1.2;
+		flDamage = flNew;
 	}
-	// Armor 3. 
-	if (pev->fuser2 && !(bitsDamageType & (DMG_FALL|DMG_DROWN|DMG_RADIATION|DMG_GENERIC|DMG_BULLET|DMG_SLASH|DMG_FREEZE|DMG_FALL|DMG_CLUB|DMG_NEVERGIB|DMG_NERVEGAS|DMG_CRUSH|DMG_MORTAR|DMG_RADIATION|DMG_ACID|DMG_PARALYZE|DMG_POISON)) )// armor doesn't protect against fall or drown damage!
-	{
-		flArmor = (flDamage - flNew) * flBonus;
 
-		// Does this use more armor than we have?
-		if (flArmor > pev->fuser2)
-		{
-			flArmor = pev->fuser2;
-			flArmor *= (1/flBonus);
-			flNew = flDamage - flArmor;
-			pev->fuser2 = 0;
-			
-		}
-		else
-			pev->fuser2 -= flArmor;
-		
-		flDamage = flNew*1.2;
-	}
 	
 	
 	
@@ -1022,8 +1002,8 @@ int CBaseMonster :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker,
 
 		pev->dmg_take += flTake;
 		
-		if (allowmonsters20.value == 1)
-			PTime += flTake*0.9; // RANDOM_FLOAT(0.5,1.0);
+		//if (g_zxc_mp_fragmonsters0.value == 1)
+		//PTime += flTake*0.9; // RANDOM_FLOAT(0.5,1.0);
 			
 
 
@@ -1411,18 +1391,18 @@ BOOL CBaseMonster :: FInViewCone ( CBaseEntity *pEntity )
 //pEntity = CBaseEntity::Instance(FIND_ENTITY_BY_CLASSNAME( NULL, "player"));
 	
 	
-if (FTime2 > 0)
+if (FreezeTime > 0)
     {
-		  if (FTime2 <= gpGlobals->time)
+		  if (FreezeTime <= gpGlobals->time)
 		  {
 			 //EnableControl(TRUE);
 			 pev->rendermode = kRenderNormal;
 			 pev->renderfx = kRenderFxNone;
 			 pev->renderamt = 0;
-			 FTime2 = 0;
+			 FreezeTime = 0;
 		  }
 	  }
-      if (FTime2 >= gpGlobals->time)
+      if (FreezeTime >= gpGlobals->time)
       {
 		// if (pEntity != NULL && pEntity->pev->takedamage && pEntity->IsPlayer())
 			// pev->nextthink = gpGlobals->time + 0.1;
@@ -1432,9 +1412,10 @@ if (FTime2 > 0)
 	
 	
 	
-	if (PTime != 0) // monsters papalize timer, new in 1.35
+	if (PTime > 0) // monsters papalize timer, new in 1.35
 		{
-			pev->velocity = g_vecZero;// only change move
+			pev->velocity.x = 0;
+			pev->velocity.y = 0;
 			PTime--;
 		}
 	
@@ -1847,7 +1828,7 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 			
 			case BULLET_PLAYER_357:		
 				pEntity->TraceAttack(pevAttacker, 30, vecDir, &tr, DMG_BULLET); 
-				iDamage = RANDOM_LONG(20,35);
+				iDamage = 100;
 				break;
 				
 			case BULLET_NONE: // FIX 

@@ -475,7 +475,7 @@ int CCrossbow::GetItemInfo(ItemInfo *p)
 
 BOOL CCrossbow::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	if (m_iClip)
 		return DefaultDeploy( "models/v_crossbow.mdl", "models/p_crossbow.mdl", CROSSBOW_DRAW1, "bow" );
 	return DefaultDeploy( "models/v_crossbow.mdl", "models/p_crossbow.mdl", CROSSBOW_DRAW2, "bow" );
@@ -499,7 +499,7 @@ void CCrossbow::Holster( int skiplocal /* = 0 */ )
 
 void CCrossbow::PrimaryAttack( void )
 {
-	if (g_flWeaponCheat.value == 2)
+	if (g_zxc_cheats.value == 2)
 	{
 		//lowest accuracy
 		if ( !FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) // the true sensor
@@ -536,7 +536,7 @@ void CCrossbow::FireSniperBolt()
 	UTIL_MakeVectors( anglesAim ); //Vector( 0.03268, 0.13716, 0.13134 )
 	Vector vecSrc = m_pPlayer->GetGunPosition( ) - gpGlobals->v_up * 2;
 	Vector vecDir = gpGlobals->v_forward ; // + Vector( RANDOM_FLOAT( -0.005, 0.005 ), RANDOM_FLOAT( -0.005, 0.005 ),RANDOM_FLOAT( -0.005, 0.005 )
-	if (g_flWeaponCheat.value != 2)
+	if (g_zxc_cheats.value != 2)
 		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, ignore_monsters, m_pPlayer->edict(), &tr);
 	else
 		UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
@@ -568,7 +568,7 @@ void CCrossbow::FireSniperBolt()
 	
 
 	//for ( int i = 0; i < 3; i++ )
-	if (g_flWeaponCheat.value != 2) // only not for sv_cheats 2
+	if (g_zxc_cheats.value != 2) // only not for sv_cheats 2
 	{
 		
 		if (!m_pPlayer->IsInWorld() && (UTIL_PointContents(tr.vecEndPos ) == CONTENTS_SKY)) // && (Instance( tr.pHit )->IsBSPModel())
@@ -576,8 +576,6 @@ void CCrossbow::FireSniperBolt()
 			return;
 		}
 		TraceResult	tr2;
-		//UTIL_MakeVectors(pev->angles);
-	
 		UTIL_TraceHull(  tr.vecEndPos + (tr.vecPlaneNormal * 40), m_pPlayer->Center(), dont_ignore_monsters, human_hull, m_pPlayer->edict(), &tr2 );
 		
 		if ( tr2.fStartSolid )
@@ -714,9 +712,6 @@ void CCrossbow::SecondaryAttack()
 void CCrossbow::ThirdAttack()
 {
 
-	if (allowmonsters9.value == 0)
-		return;
-
 
 	TraceResult	tr;	
 	
@@ -753,11 +748,11 @@ void CCrossbow::ThirdAttack()
 		if ( !FBitSet( m_pPlayer->pev->flags, FL_DUCKING ) ) //the true sensor
 		{
 			m_pPlayer->pev->punchangle.y = RANDOM_FLOAT(-3.75,3.75);
-			pev->dmg = 35; // 75
+			pev->dmg = 36; // 75
 		}
 		else
 		{
-			m_pPlayer->pev->punchangle.y = RANDOM_FLOAT(-1.8,1.8);
+			m_pPlayer->pev->punchangle.y = RANDOM_FLOAT(-1.0,1.0);
 			pev->dmg = 35;
 		}
 				//15.35
@@ -800,10 +795,6 @@ void CCrossbow::ThirdAttack()
 
 void CCrossbow::FourthAttack()
 {
-
-	if (allowmonsters9.value == 0)
-		return;
-
 
 	Vector vecThrow = gpGlobals->v_forward * 2048; //1600
 

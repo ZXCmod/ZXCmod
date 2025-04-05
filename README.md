@@ -7,6 +7,19 @@ Visit [this](https://github.com/ZXCmod/ZXCmod-info) repo for read other informat
 
 #Changelog
 
+###1.37 `28.11.2023`
+
+- Fixed Crowbar for new versions of HL client, charge regenerated to 16. Damage from missiles is enhanced. Triple missile salvo on R if charges is full. 
+- New type of damage resistance. Instead of kinetic, chemical and electric armor now Armor and Shield. Armor is great against bullets and explosions. Shield from everything else.
+- Turret counter and timers for superweapons are shown.
+- Hand Grenade sparks a Barney guard, consuming 1 unit of turret limit.
+- The first attack on Gauss fires Bullsquid projectiles. A hit deals 37 damage and reduces the target's Friction to zero.
+- The first attack on Egon is now melee. The second attack allows you to fly forward.
+- The bullet on the Magnum's first attack explodes with 80 damage on impact, hitting everyone around it and creating a strong recoil.
+- If shield is greater than 50, MP5 fires 3 plasma instead of 1.
+- Removed unused cvars from previous versions.
+- Many other changes in balance, weapon behavior, bug fixes.
+
 ###1.36
 - ZXC Mod 1.36 Final version (unreleased, from zxc albanian mod main server) including needed sprites, models sounds, etc. and the source code (now fixed for latest steam hlds version).
  

@@ -90,8 +90,6 @@ class CBasePlayer : public CBaseMonster
 {
 public:
 
-	//float				FTime1; //frrrreeeeezzzzzz
-	//float				FTime2; //frrrreeeeezzzzzz2
 
 	int					random_seed;    // See that is shared between client & server for shared weapons code
 
@@ -172,6 +170,12 @@ public:
 	int			m_iClientHideHUD;
 	int			m_iFOV;			// field of view
 	int			m_iClientFOV;	// client's known FOV
+	
+	
+	
+	
+	
+	
 	// usable player items 
 	CBasePlayerItem	*m_rgpPlayerItems[MAX_ITEM_TYPES];
 	CBasePlayerItem *m_pActiveItem;
@@ -328,23 +332,31 @@ public:
 	char m_SbarString0[ SBAR_STRING_SIZE ];
 	char m_SbarString1[ SBAR_STRING_SIZE ];
 	
+	//super weapons
+	int m_flNextNukeTime; //nuke delay
+	int m_flNextShotgunFlareTime; //shotgun flare delay
+	int m_flNextEgonStormTime; //egon Storm delay
+	
+
+	
+	
 	float m_flNextChatTime; //chat timer
-	float m_flNextChatTime2; //crystal delay
-	int m_flNextChatTime3; //nuke delay
-	int m_flNextChatTime4; //satchels limit
-	int m_flNextChatTime5; //tripmine limit
-	float m_flNextChatTime6; //GravGrenades delay
-//	float m_flNextChatTime7; //turrets limit
-	float m_flNextChatTime8; //hornetgun reload delay
-	float m_flNextChatTime9; //heavy turets reload delay
-	float m_flNextChatTime10; //egon reload delay
-	float m_flNextChatTime11; //crowbar reload delay
-	float m_flNextChatTime12; //shotgun flare delay
-	int m_flNextChatTime13; //turrets limit
-	int m_flNextChatTime14; //freeze bags limit
-	float m_flNextChatTime15; //egon Storm delay
-	int m_flNextChatTime16; //Dcrystal delay
+	float m_flNextCrystalTime; //crystal delay
+	
+	int m_flNextSatchelsLimit; //satchels limit
+	int m_flNextTripmineLimit; //tripmine limit
+	float m_flNextGravGrenadesTime; //GravGrenades delay
+	float m_flNextHornetgunGrensTime; //hornetgun grens reload delay
+	float m_flNextHeavyTuretsTime; //heavy turets reload delay
+	float m_flNextEgonBombTime; //egon reload delay
+	float m_flNextCrowbarReloadTime; //crowbar reload delay
+	
+	int m_flNextTurretsLimit; //turrets limit
+	int m_flNextHornetgunFreezebagLimit; //freeze bags limit
+	
+	int m_flNexTripleCrystalTime; //Damag crystal delay
 	Vector	m_angle;
+	CBaseEntity *pevEntity;
 
 };
 

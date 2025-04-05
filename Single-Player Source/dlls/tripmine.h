@@ -52,7 +52,7 @@ class CTripmineGrenade2 : public CGrenade
 	void EXPORT DelayDeathThink( void );
 	void Killed( entvars_t *pevAttacker, int iGib );
 
-	int m_flNextChatTime5;
+	int m_flNextTripmineLimit;
 	void MakeBeam( void );
 	void KillBeam( void );
 	

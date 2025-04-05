@@ -195,9 +195,9 @@ void CSqueakGrenade :: Spawn( void )
 	//pev->flags |= FL_MONSTER;
 	pev->takedamage		= 1;
 	pev->health			= 10;
-	pev->gravity		= 0.01;
+	pev->gravity		= 0.7;
 	pev->friction		= 0.04;
-	pev->dmg			= 64;
+	pev->dmg			= 33;
 	
 
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -496,7 +496,7 @@ void CSqueak::Spawn( )
 	pev->sequence = 1;
 	pev->animtime = gpGlobals->time;
 	pev->framerate = 1.0;
-	m_flNextChatTime16 = gpGlobals->time; //start timer
+	m_flNexTripleCrystalTime = gpGlobals->time; //start timer
 }
 
 
@@ -536,7 +536,7 @@ int CSqueak::GetItemInfo(ItemInfo *p)
 
 BOOL CSqueak::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	// play hunt sound
 	float flRndSound = RANDOM_FLOAT ( 0.0 , 1.0 );
 
@@ -569,10 +569,7 @@ void CSqueak::Holster( int skiplocal /* = 0 */ )
 
 void CSqueak::FourthAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
-
-	if (  m_pPlayer->m_flNextChatTime16 < gpGlobals->time )
+	if (  m_pPlayer->m_flNexTripleCrystalTime < gpGlobals->time )
 	{
 		if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 18)
 		{
@@ -585,18 +582,14 @@ void CSqueak::FourthAttack( void )
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
 			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
-			m_pPlayer->m_flNextChatTime16 = gpGlobals->time + 90;
+			m_pPlayer->m_flNexTripleCrystalTime = gpGlobals->time + 90;
 		}
 	}
 }
 
 void CSqueak::PrimaryAttack()
 {
-	if (allowmonsters10.value == 1)
-		{
-			ThirdAttack();
-			return;
-		}
+
 	if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 1 )
 	{
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
@@ -649,8 +642,6 @@ void CSqueak::PrimaryAttack()
 
 void CSqueak::SecondaryAttack( void )
 {
-	if (allowmonsters9.value == 0 || allowmonsters10.value == 1)
-		return;
 
 		
 	if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 2 )
@@ -673,7 +664,7 @@ void CSqueak::SecondaryAttack( void )
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 			CBaseEntity *pSqueak = CBaseEntity::Create( "monster_larve", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-			pSqueak->pev->velocity = gpGlobals->v_forward * 512;
+			pSqueak->pev->velocity = gpGlobals->v_forward * 200;
 
 			int RND = RANDOM_LONG( 0 , 1 );
 
@@ -684,18 +675,15 @@ void CSqueak::SecondaryAttack( void )
 
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=2;
 			m_fJustThrown = 1;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.1;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.1;
+			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
 		}
 	}
 }
 
 void CSqueak::ThirdAttack( void )
 {
-	if (allowmonsters9.value == 0)
-		return;
-
-	pev->dmg = 50*m_pPlayer->TripleShotS;
+	pev->dmg = 45*m_pPlayer->TripleShotS;
 
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 	{
@@ -875,10 +863,10 @@ void CSqueakGrenade2 :: Spawn( void )
 	ResetSequenceInfo( );
 	
 	pev->takedamage		= DAMAGE_YES;
-	pev->health			= 300;
-	pev->gravity		= 0.02;
-	pev->friction		= 0.01;
-	pev->dmg 			= 2.5;
+	pev->health			= 500;
+	pev->gravity		= 0.42;
+	pev->friction		= 0.08;
+	pev->dmg 			= 12.5;
 	
 	m_hEnemy = NULL;
 
@@ -936,6 +924,49 @@ void CSqueakGrenade2 :: Killed( entvars_t *pevAttacker, int iGib )
 	CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, SMALL_EXPLOSION_VOLUME, 3.0 );
 
 	UTIL_BloodDrips( pev->origin, g_vecZero, BloodColor(), 80 );
+	TraceResult tr = UTIL_GetGlobalTrace( );
+	
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*2, pev->dmg*12, CLASS_NONE, DMG_SHOCK  ); 
+		// torus
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_BEAMTORUS );
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z); 
+			WRITE_COORD( pev->origin.x);
+			WRITE_COORD( pev->origin.y);
+			WRITE_COORD( pev->origin.z + 1200 ); // reach damage radius over .2 seconds
+			WRITE_SHORT( g_sModelIndexSmoke );
+			WRITE_BYTE( 0 ); // startframe
+			WRITE_BYTE( 0 ); // framerate
+			WRITE_BYTE( 2 ); // life
+			WRITE_BYTE( 3 );  // width
+			WRITE_BYTE( 0 );   // noise
+			WRITE_BYTE( 255 );   // r, g, b
+			WRITE_BYTE( 255 );   // r, g, b
+			WRITE_BYTE( 200 );   // r, g, b
+			WRITE_BYTE( 64 ); // brightness
+			WRITE_BYTE( 0 );		// speed
+		MESSAGE_END();
+		// balls ice
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SPRITETRAIL );// TE_RAILTRAIL);
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_COORD( pev->origin.x + tr.vecPlaneNormal.x*3 );
+			WRITE_COORD( pev->origin.y  + tr.vecPlaneNormal.y*4 );
+			WRITE_COORD( pev->origin.z + tr.vecPlaneNormal.z*5  );
+			WRITE_SHORT( g_sModelIndexSmoke );		// model
+			WRITE_BYTE( 8  );				// count
+			WRITE_BYTE( 2 );				// life * 10
+			WRITE_BYTE( 2 );				// size * 10
+			WRITE_BYTE( 30 );				// amplitude * 0.1
+			WRITE_BYTE( 8 );				// speed * 100
+		MESSAGE_END();
+	
+	
+	
 
 	if (m_hOwner == NULL)
 		return;
@@ -969,7 +1000,7 @@ void CSqueakGrenade2::HuntThink( void )
 		return;
 	}
 	
-	pev->nextthink = gpGlobals->time + 16;
+	pev->nextthink = gpGlobals->time + 8;
 	SetThink( SUB_Remove );
 	
 	// explode delay
@@ -1145,9 +1176,9 @@ void CSqueakGrenade2::SuperBounceTouch( CBaseEntity *pOther )
 		WRITE_BYTE( 16 );				// speed * 100
 	MESSAGE_END();
 	
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*2, pev->dmg*64, CLASS_NONE, DMG_SHOCK  ); 
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg*4, pev->dmg*4, CLASS_NONE, DMG_SHOCK  ); 
 
-	pev->dmg += 0.2;
+	pev->dmg += 3.6;
 
 	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build1.wav", 1.0, ATTN_NORM, 0, RANDOM_LONG(200,255));
 }
@@ -1156,6 +1187,7 @@ void CSqueakGrenade2::ParasiteThink( void )
 {
 	if (m_hEnemy!=NULL && ( m_hEnemy->pev->deadflag == DEAD_DYING || m_hEnemy->pev->health <= 0) || ( m_hEnemy->infected == 0 ) )
 	{
+		
 		m_hEnemy->pev->rendermode = kRenderTransAlpha;
 		m_hEnemy->pev->renderamt = 255;
 		pev->health = -1;
@@ -1252,91 +1284,91 @@ void Dcrystal::MoveThink( )
 	
 	CBaseEntity *pEntity = NULL;
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 286 )) != NULL)
-       	{		
+	{
 		if ( (FVisible( pEntity )))
-			{
-				CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
-				if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE))
+		{
+			CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
+			if ( (g_pGameRules->PlayerRelationship( pOwner, pEntity ) != GR_TEAMMATE))
+				{
+				if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()))
 					{
-					if ((pEntity->edict() != pev->owner) && pEntity->pev->takedamage && (pEntity->edict() != edict()))
-						{
-						// shock ray 1
-						MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-							WRITE_BYTE( TE_BEAMPOINTS );
-							WRITE_COORD(pev->origin.x);
-							WRITE_COORD(pev->origin.y);
-							WRITE_COORD(pev->origin.z+85);
-							WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
-							WRITE_COORD( pEntity->pev->origin.y );
-							WRITE_COORD( pEntity->pev->origin.z );
-							WRITE_SHORT( m_LaserSprite ); //sprite
-							WRITE_BYTE( 1 ); // Starting frame
-							WRITE_BYTE( 0  ); // framerate * 0.1
-							WRITE_BYTE( 4 ); // life * 0.1
-							WRITE_BYTE( 22 ); // width
-							WRITE_BYTE( 0 ); // noise
-							WRITE_BYTE( 100 ); // color r,g,b
-							WRITE_BYTE( 10 ); // color r,g,b
-							WRITE_BYTE( 15 ); // color r,g,b
-							WRITE_BYTE( 250 ); // brightness
-							WRITE_BYTE( 64 ); // scroll speed
-						MESSAGE_END();
-						
-						//shock ray 2
-						MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-							WRITE_BYTE( TE_BEAMPOINTS );
-							WRITE_COORD(pev->origin.x);
-							WRITE_COORD(pev->origin.y);
-							WRITE_COORD(pev->origin.z+85);
-							WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
-							WRITE_COORD( pEntity->pev->origin.y );
-							WRITE_COORD( pEntity->pev->origin.z );
-							WRITE_SHORT( m_LaserSprite ); //sprite
-							WRITE_BYTE( 1 ); // Starting frame
-							WRITE_BYTE( 0  ); // framerate * 0.1
-							WRITE_BYTE( 5 ); // life * 0.1
-							WRITE_BYTE( 12 ); // width
-							WRITE_BYTE( 0 ); // noise
-							WRITE_BYTE( 100 ); // color r,g,b
-							WRITE_BYTE( 100 ); // color r,g,b
-							WRITE_BYTE( 15 ); // color r,g,b
-							WRITE_BYTE( 200 ); // brightness
-							WRITE_BYTE( 128 ); // scroll speed
-						MESSAGE_END();
-						
-						//lights
-						Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
-						MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
-							WRITE_BYTE(TE_DLIGHT);
-							WRITE_COORD(pEntity->pev->origin.x);	// X
-							WRITE_COORD(pEntity->pev->origin.y);	// Y
-							WRITE_COORD(pEntity->pev->origin.z);	// Z
-							WRITE_BYTE( 16 );		// radius * 0.1
-							WRITE_BYTE( 200 );		// r
-							WRITE_BYTE( 30 );		// g
-							WRITE_BYTE( 30 );		// b
-							WRITE_BYTE( 128 );		// time * 10
-							WRITE_BYTE( 32 );		// decay * 0.1
-						MESSAGE_END( );
-	
-						
-						UTIL_ScreenShake( pEntity->pev->origin, pev->dmg, 90.5, 0.3, 1 );
+					// shock ray 1
+					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+						WRITE_BYTE( TE_BEAMPOINTS );
+						WRITE_COORD(pev->origin.x);
+						WRITE_COORD(pev->origin.y);
+						WRITE_COORD(pev->origin.z+85);
+						WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+						WRITE_COORD( pEntity->pev->origin.y );
+						WRITE_COORD( pEntity->pev->origin.z );
+						WRITE_SHORT( m_LaserSprite ); //sprite
+						WRITE_BYTE( 1 ); // Starting frame
+						WRITE_BYTE( 0  ); // framerate * 0.1
+						WRITE_BYTE( 4 ); // life * 0.1
+						WRITE_BYTE( 22 ); // width
+						WRITE_BYTE( 0 ); // noise
+						WRITE_BYTE( 100 ); // color r,g,b
+						WRITE_BYTE( 10 ); // color r,g,b
+						WRITE_BYTE( 15 ); // color r,g,b
+						WRITE_BYTE( 250 ); // brightness
+						WRITE_BYTE( 64 ); // scroll speed
+					MESSAGE_END();
 					
-						pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_SHOCK);
-						pEntity->pev->armorvalue -= 1;
-						pEntity->pev->velocity.z += pEntity->pev->velocity.z + 256;
-						//sounds
-						switch(RANDOM_LONG(0,8))
-						{
-							case 0: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build1.wav", 0.95, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
-							case 3: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build2.wav", 0.95, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
-							case 5: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build3.wav", 0.95, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
-							case 8: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build4.wav", 0.90, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
-						}
+					//shock ray 2
+					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+						WRITE_BYTE( TE_BEAMPOINTS );
+						WRITE_COORD(pev->origin.x);
+						WRITE_COORD(pev->origin.y);
+						WRITE_COORD(pev->origin.z+85);
+						WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
+						WRITE_COORD( pEntity->pev->origin.y );
+						WRITE_COORD( pEntity->pev->origin.z );
+						WRITE_SHORT( m_LaserSprite ); //sprite
+						WRITE_BYTE( 1 ); // Starting frame
+						WRITE_BYTE( 0  ); // framerate * 0.1
+						WRITE_BYTE( 5 ); // life * 0.1
+						WRITE_BYTE( 12 ); // width
+						WRITE_BYTE( 0 ); // noise
+						WRITE_BYTE( 100 ); // color r,g,b
+						WRITE_BYTE( 100 ); // color r,g,b
+						WRITE_BYTE( 15 ); // color r,g,b
+						WRITE_BYTE( 200 ); // brightness
+						WRITE_BYTE( 128 ); // scroll speed
+					MESSAGE_END();
+					
+					//lights
+					Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
+					MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
+						WRITE_BYTE(TE_DLIGHT);
+						WRITE_COORD(pEntity->pev->origin.x);	// X
+						WRITE_COORD(pEntity->pev->origin.y);	// Y
+						WRITE_COORD(pEntity->pev->origin.z);	// Z
+						WRITE_BYTE( 16 );		// radius * 0.1
+						WRITE_BYTE( 200 );		// r
+						WRITE_BYTE( 30 );		// g
+						WRITE_BYTE( 30 );		// b
+						WRITE_BYTE( 128 );		// time * 10
+						WRITE_BYTE( 32 );		// decay * 0.1
+					MESSAGE_END( );
+
+					
+					UTIL_ScreenShake( pEntity->pev->origin, pev->dmg, 90.5, 0.3, 1 );
+				
+					pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_SHOCK);
+					pEntity->pev->armorvalue -= 1;
+					pEntity->pev->velocity.z += pEntity->pev->velocity.z + 256;
+					//sounds
+					switch(RANDOM_LONG(0,8))
+					{
+						case 0: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build1.wav", 0.95, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
+						case 3: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build2.wav", 0.95, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
+						case 5: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build3.wav", 0.95, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
+						case 8: EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build4.wav", 0.90, ATTN_NORM, 0, RANDOM_LONG(140,180)); break;
 					}
 				}
 			}
 		}
+	}
 
 	// EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/ar2_altfire1.wav", 1.0, ATTN_NORM);
 	pev->nextthink = gpGlobals->time + 1.0; 
@@ -1345,7 +1377,7 @@ void Dcrystal::MoveThink( )
 	if (m_flDie <= 0)
 	{
 		UTIL_Remove( this );
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg*2.5, CLASS_NONE, DMG_POISON  ); 
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg, CLASS_NONE, DMG_SHOCK  ); 
 		EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/explode3.wav", 1.0, ATTN_NORM); //play sound
 		// random explosions
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );

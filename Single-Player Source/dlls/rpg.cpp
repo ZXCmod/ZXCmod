@@ -312,8 +312,8 @@ void CRpg::Reload( void )
 #ifndef CLIENT_DLL
 	if ( m_pSpot && m_fSpotActive )
 	{
-		m_pSpot->Suspend( 2.1 );
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 2.1;
+		m_pSpot->Suspend( 1.1 );
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.1;
 	}
 #endif
 
@@ -321,16 +321,16 @@ void CRpg::Reload( void )
 		iResult = DefaultReload( RPG_MAX_CLIP, RPG_RELOAD, 2 );
 	
 	if ( iResult )
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 	
 }
 
 void CRpg::Spawn( )
 {
 	Precache( );
-	m_flNextChatTime9 = gpGlobals->time;
+	m_flNextHeavyTuretsTime = gpGlobals->time;
 	m_iId = WEAPON_RPG;
-	m_flNextChatTime13;
+	m_flNextTurretsLimit;
 
 	SET_MODEL(ENT(pev), "models/w_rpg.mdl");
 	m_fSpotActive = 1;
@@ -405,10 +405,10 @@ int CRpg::AddToPlayer( CBasePlayer *pPlayer )
 
 BOOL CRpg::Deploy( )
 {
-	if (m_pPlayer->m_flNextChatTime13 < 0)
-		m_pPlayer->m_flNextChatTime13 = 0;
+	if (m_pPlayer->m_flNextTurretsLimit < 0)
+		m_pPlayer->m_flNextTurretsLimit = 0;
 	
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 270 );
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	if ( m_iClip == 0 )
 	{
 		return DefaultDeploy( "models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW_UL, "rpg" );
@@ -431,7 +431,6 @@ BOOL CRpg::CanHolster( void )
 
 void CRpg::Holster( int skiplocal /* = 0 */ )
 {
-	//g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 0 );
 	m_fInReload = FALSE;// cancel any reload in progress.
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
@@ -452,14 +451,13 @@ void CRpg::Holster( int skiplocal /* = 0 */ )
 
 void CRpg::PrimaryAttack()
 {
-if (allowmonsters10.value == 0)
-	{
-		if ( m_iClip )
-		{
-			m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-			m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 
-	#ifndef CLIENT_DLL
+	if ( m_iClip )
+	{
+		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+		#ifndef CLIENT_DLL
 			// player "shoot" animation
 			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
@@ -470,37 +468,29 @@ if (allowmonsters10.value == 0)
 
 			UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
 			pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
-	#endif
+		#endif
 
 
-			PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
+		PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 
-			m_iClip--; 
-					
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-		}
-		else
-		{
-			PlayEmptySound( );
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-		}
-		UpdateSpot( );
+		m_iClip--; 
+				
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	}
 	else
 	{
-		FourthAttack();
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.3;
-		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.3;
+		PlayEmptySound( );
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
 	}
+	UpdateSpot( );
+
 }
 
 
 void CRpg::SecondaryAttack()
 {
 //do not create the sentry in wall (< 1.26)
-	if (allowmonsters9.value == 0)
-		return;
 
 if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	{
@@ -516,7 +506,7 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 
 	 
 	//experiment with trace hull 
-	if (m_pPlayer->m_flNextChatTime13 < m_limit) //limit turrets (5 normal, 3 sv_cheats)
+	if (m_pPlayer->m_flNextTurretsLimit < m_limit) //limit turrets (5 normal, 3 sv_cheats)
 	{
 	UTIL_TraceHull( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, ignore_monsters, head_hull, edict(), &tr );
 	if ( !tr.fStartSolid ) //if ( tr.fStartSolid ) - sentry be created only in walls, use negative '!'
@@ -532,7 +522,7 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	CBaseEntity *pHornet = CBaseEntity::Create( "monster_sentry", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, vecThrow, m_pPlayer->edict() );
 	#endif
 	//multiply hp x2
-	if (g_flWeaponCheat.value != 0)
+	if (g_zxc_cheats.value != 0)
 		pHornet->pev->health = pHornet->pev->health * 2; 
 	
 	//simple test for future Tesla-gun
@@ -554,10 +544,10 @@ if ( m_iClip ) //if has 1 ammo after reloading, shot it
 	
 	PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 	m_iClip--; 
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.25;
-	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
-	m_pPlayer->m_flNextChatTime13 ++;
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+	m_pPlayer->m_flNextTurretsLimit ++;
 	}
 	}
 else
@@ -573,37 +563,31 @@ else
 
 void CRpg::ThirdAttack()
 {
-	if (allowmonsters10.value == 1)
-		return;
-	if (allowmonsters9.value == 0)
-		return;
-
-if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 
 	{
 		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 
-	#ifndef CLIENT_DLL
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * -17 + gpGlobals->v_up * -8;
-		Vector vecSrc2 = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 17 + gpGlobals->v_up * -8;
-		CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
-		CRpgRocket *pRocket2 = CRpgRocket::CreateRpgRocket( vecSrc2, m_pPlayer->pev->v_angle, m_pPlayer, this );
-		pRocket->pev->dmg = 88;
-		pRocket->pev->ltime = 80;
-		pRocket->pev->nextthink = gpGlobals->time + 0.50; //post delay
-		pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
+		#ifndef CLIENT_DLL
+			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+			UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+			Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * -17 + gpGlobals->v_up * -8;
+			Vector vecSrc2 = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 17 + gpGlobals->v_up * -8;
+			CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
+			CRpgRocket *pRocket2 = CRpgRocket::CreateRpgRocket( vecSrc2, m_pPlayer->pev->v_angle, m_pPlayer, this );
+			pRocket->pev->dmg = 88;
+			pRocket->pev->ltime = 80;
+			pRocket->pev->nextthink = gpGlobals->time + 0.50; //post delay
+			pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
 
-		pRocket2->pev->dmg = 89;
-		pRocket2->pev->ltime = 250;
-		pRocket2->pev->nextthink = gpGlobals->time + 0.40; //post delay
-		pRocket2->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
-	
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
-	
+			pRocket2->pev->dmg = 89;
+			pRocket2->pev->ltime = 250;
+			pRocket2->pev->nextthink = gpGlobals->time + 0.40; //post delay
+			pRocket2->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
+		
+			UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
+		
 		#endif
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--; 
 		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/rocketfire1.wav", 0.9, ATTN_NORM);
@@ -618,19 +602,10 @@ if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1)
 
 void CRpg::FourthAttack()
 {
-	if (allowmonsters9.value == 0)
-		return;
 
-	if (allowmonsters10.value == 1)
-		{
-		if (m_pPlayer->m_flNextChatTime14 > 12)
-			return;
-		}
-	else
-		{
-		if (m_pPlayer->m_flNextChatTime14 > 2)
-			return;
-		}
+	if (m_pPlayer->m_flNextHornetgunFreezebagLimit > 2)
+		return;
+	
 
 
 	if (m_iClip)
@@ -669,7 +644,7 @@ void CRpg::FourthAttack()
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
 		PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 		m_iClip--; 
-		m_pPlayer->m_flNextChatTime14 ++;
+		m_pPlayer->m_flNextHornetgunFreezebagLimit ++;
 
 		UpdateSpot( );
 	}
@@ -684,20 +659,13 @@ void CRpg::WeaponIdle( void )
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = 0;
 	
-	// 1.30 smart balance
-	if (g_flWeaponCheat.value != 0)
-		m_limit = 3;
-	else
-		m_limit = 5;
+	m_limit = 3;
 
-	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 1) 
+	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0) 
 		if (m_iClip >= 1)
 		{
 			// do not create in wall
 			{
-				if (allowmonsters9.value == 0)
-					return;
-
 				UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 				TraceResult tr;
 				Vector trace_origin;
@@ -712,13 +680,13 @@ void CRpg::WeaponIdle( void )
 
 				if ( !tr.fAllSolid && !tr.fStartSolid )
 				{
-				if (m_pPlayer->m_flNextChatTime13 < m_limit)
+				if (m_pPlayer->m_flNextTurretsLimit < m_limit)
 					{
 						{
-						if (  m_pPlayer->m_flNextChatTime9 < gpGlobals->time ) //need delay
+						if (  m_pPlayer->m_flNextHeavyTuretsTime < gpGlobals->time ) //need delay
 							{
-							m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-							m_pPlayer->m_flNextChatTime9 = gpGlobals->time + 3;
+							m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+							m_pPlayer->m_flNextHeavyTuretsTime = gpGlobals->time + 3;
 							m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 							m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 
@@ -726,18 +694,18 @@ void CRpg::WeaponIdle( void )
 							m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 							UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 							Vector vecThrow = gpGlobals->v_forward;
-							m_pPlayer->m_flNextChatTime13 ++;
+							m_pPlayer->m_flNextTurretsLimit ++;
 							CBaseEntity *pHornet = CBaseEntity::Create( "monster_turret", pev->origin, vecThrow, m_pPlayer->edict() );
 							//multiply hp x2
-							if (g_flWeaponCheat.value != 0)
+							if (g_zxc_cheats.value != 0)
 								pHornet->pev->health = pHornet->pev->health * 1.5; 
 
 							PLAYBACK_EVENT( FEV_GLOBAL, m_pPlayer->edict(), m_usRpg );
 							m_iClip--; 
 							m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 1;
-							m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
-							m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
-							m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+							m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+							m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+							m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 						}
 
 						else
@@ -771,7 +739,7 @@ void CRpg::WeaponIdle( void )
 			else
 				iAnim = RPG_IDLE;
 
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 		}
 		else
 		{
@@ -789,6 +757,21 @@ void CRpg::WeaponIdle( void )
 	{
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 	}
+	char  szText[24];
+	hudtextparms_t hText;
+	sprintf(szText,  "Turrets left: %d", INT(  max(0, m_limit-m_pPlayer->m_flNextTurretsLimit)  ) ); 
+	hText.channel = 16;
+	hText.x = 0.90;
+	hText.y = 0.86;
+	hText.effect = 0; // Fade in/out
+	hText.r1 = 255;
+	hText.g1 = hText.b1 = 150;
+	hText.a1 = 20;
+	hText.fadeinTime = 0.2;
+	hText.fadeoutTime = 0.5;
+	hText.holdTime = 2.0;
+	hText.fxTime = 2.0;
+	if (  m_pPlayer->pevEntity!=NULL ) UTIL_HudMessage(m_pPlayer->pevEntity, hText, szText);
 }
 
 

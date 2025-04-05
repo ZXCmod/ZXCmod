@@ -442,7 +442,7 @@ void CBasePlayerItem :: FallInit( void )
 {
 
 
-	pev->movetype = MOVETYPE_BOUNCE;
+	pev->movetype = MOVETYPE_TOSS;
 	pev->gravity = 1.0;
 	pev->friction = 1.0;
 	pev->solid = SOLID_TRIGGER;
@@ -459,6 +459,7 @@ void CBasePlayerItem :: FallInit( void )
 	
 	modelindexsave=0; //SP
     modelsave=iStringNull; 
+	
 }
 
 //=========================================================
@@ -471,14 +472,11 @@ void CBasePlayerItem :: FallInit( void )
 void CBasePlayerItem::FallThink ( void )
 {
 
-	pev->nextthink = gpGlobals->time + 0.1;
+	pev->nextthink = gpGlobals->time + 0.2;
 
 	if ( pev->flags & FL_ONGROUND )
 	{
-		// clatter if we have an owner (i.e., dropped by someone)
-		// don't clatter if the gun is waiting to respawn (if it's waiting, it is invisible!)
-		if ( !FNullEnt( pev->owner ) )
-			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "items/weapondrop1.wav", 1, ATTN_NORM, 0, 100);	
+
 
 		// lie flat
 		pev->angles.x = 0;
@@ -494,13 +492,8 @@ void CBasePlayerItem::FallThink ( void )
 void CBasePlayerItem::Materialize( void )
 {
 
-
 	if ( pev->effects & EF_NODRAW )
 	{
-
-			
-		
-		// UTIL_SetOrigin( pev, tmp ); // return to spawn point
 		
 		// changing from invisible state to visible.
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -512,15 +505,14 @@ void CBasePlayerItem::Materialize( void )
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, 150 );
 		pev->effects &= ~EF_NODRAW;
 		pev->effects |= EF_MUZZLEFLASH;
+		
 	}
-
 
 	pev->solid = SOLID_TRIGGER;
 
 	UTIL_SetOrigin( pev, pev->origin );// link into world.
 	SetTouch (DefaultTouch);
 	SetThink (NULL);
-
 }
 
 //=========================================================
@@ -532,7 +524,7 @@ void CBasePlayerItem::AttemptToMaterialize( void )
 
 	float time = g_pGameRules->FlWeaponTryRespawn( this );
 
-	if ( time == 0 && g_flWeaponCheat.value == 0 )
+	if ( time == 0 )
 	{
 		Materialize();
 		return;
@@ -575,17 +567,14 @@ CBaseEntity* CBasePlayerItem::Respawn( void )
 		pNewWeapon->pev->effects |= EF_NODRAW;// invisible for now
 		pNewWeapon->SetTouch( NULL );// no touch
 		pNewWeapon->SetThink( AttemptToMaterialize );
-
 		DROP_TO_FLOOR ( ENT(pev) );
 		
-		
-
 		// not a typo! We want to know when the weapon the player just picked up should respawn! This new entity we created is the replacement,
 		// but when it should respawn is based on conditions belonging to the weapon that was taken.
 		pNewWeapon->pev->nextthink = g_pGameRules->FlWeaponRespawnTime( this );
 	}
 
-
+	
 	return pNewWeapon;
 }
 
@@ -600,8 +589,6 @@ void CBasePlayerItem::DefaultTouch( CBaseEntity *pOther )
 	// can I have this?
 	if ( !g_pGameRules->CanHavePlayerItem( pPlayer, this ) )
 	{
-		if ( gEvilImpulse101 )
-			UTIL_Remove( this );
 		
 		return;
 	}
@@ -1150,10 +1137,11 @@ void CBasePlayerWeapon::Holster( int skiplocal /* = 0 */ )
 void CBasePlayerAmmo::Spawn( void )
 {
 
-	pev->movetype = MOVETYPE_BOUNCE;
+	pev->movetype = MOVETYPE_TOSS;
 	pev->gravity = 1.0;
 	pev->friction = 1.0;
 	pev->health = 100;
+	pev->dmg = 100;
 	pev->takedamage = 1;
 	pev->solid = SOLID_TRIGGER;
 	UTIL_SetSize(pev, Vector(-16, -16, 0), Vector(16, 16, 16));
@@ -1170,7 +1158,13 @@ int CBasePlayerAmmo::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker,
 		return 0;
 
 	pev->health -= flDamage;
-	pev->angles = UTIL_VecToAngles (pev->velocity);
+	if (pev->velocity.z > 1)
+		pev->angles = UTIL_VecToAngles (pev->velocity);
+	else
+	{
+		pev->angles.x = 0;
+		pev->angles.z = 0;
+	}
 	
 	if (pev->health <= 0)
 	{
@@ -1181,9 +1175,41 @@ int CBasePlayerAmmo::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker,
 			WRITE_COORD( pev->origin.y );
 			WRITE_COORD( pev->origin.z );
 		MESSAGE_END();
+		
+		
+		
+		//lights
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE(TE_DLIGHT);
+			WRITE_COORD(pev->origin.x);
+			WRITE_COORD(pev->origin.y);
+			WRITE_COORD(pev->origin.z);
+			WRITE_BYTE( 24 );		// radius * 0.1
+			WRITE_BYTE( 250 );		// r
+			WRITE_BYTE( 250 );		// g
+			WRITE_BYTE( 150 );		// b
+			WRITE_BYTE( 128 );		// time * 10
+			WRITE_BYTE( 16 );		// decay * 0.1
+		MESSAGE_END( );
+		
+		//smoke
+		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+			WRITE_BYTE( TE_SMOKE );
+			WRITE_COORD( pev->origin.x );
+			WRITE_COORD( pev->origin.y );
+			WRITE_COORD( pev->origin.z );
+			WRITE_SHORT( g_sModelIndexSmoke );
+			WRITE_BYTE( pev->dmg ); // smoke scale * 10
+			WRITE_BYTE( 24  ); // framerate
+		MESSAGE_END();
+					
+		
+		pev->movetype = MOVETYPE_NONE;
+		pev->takedamage = 0;
+		pev->effects |= EF_NODRAW;
 		SetThink ( Materialize );
 		SetTouch( NULL );
-		pev->effects |= EF_NODRAW;
+		
 		return 0;
 	}
 
@@ -1209,9 +1235,7 @@ CBaseEntity* CBasePlayerAmmo::Respawn( void )
 
 void CBasePlayerAmmo::Materialize( void )
 {
-	if (g_flWeaponCheat.value != 0)
-		return;
-		
+
 	if ( pev->effects & EF_NODRAW )
 	{
 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -1223,14 +1247,19 @@ void CBasePlayerAmmo::Materialize( void )
 		
 		UTIL_SetOrigin( pev, tmp ); 
 		pev->health = 100;
-		pev->velocity = g_vecZero;
 		pev->angles.x = 0;
 		pev->angles.z = 0;
+		
+		pev->takedamage = 1;
+		pev->solid = SOLID_TRIGGER;
+		DROP_TO_FLOOR ( ENT(pev) );
+		
 		
 		// changing from invisible state to visible.
 		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "items/suitchargeok1.wav", 1, ATTN_NORM, 0, 150 );
 		pev->effects &= ~EF_NODRAW;
 		pev->effects |= EF_MUZZLEFLASH;
+		pev->nextthink = gpGlobals->time + 0.2;
 	}
 
 	SetTouch( DefaultTouch );
@@ -1238,12 +1267,11 @@ void CBasePlayerAmmo::Materialize( void )
 
 void CBasePlayerAmmo :: DefaultTouch( CBaseEntity *pOther )
 {
-	if (pev->velocity != g_vecZero)
+
+	if (pev->origin.z < -8000)
 	{
-		pev->velocity.x = 0; 
-		pev->velocity.y = 0; 
+		UTIL_SetOrigin( pev, tmp ); 
 	}
-		// pev->velocity = pev->velocity * 0.25;
 		
 	if ( !pOther->IsPlayer() )
 	{
@@ -1264,13 +1292,7 @@ void CBasePlayerAmmo :: DefaultTouch( CBaseEntity *pOther )
 			pev->nextthink = gpGlobals->time + .1;
 		}
 	}
-	// else if (gEvilImpulse101)
-	// {
-		// evil impulse 101 hack, kill always
-		// SetTouch( NULL );
-		// SetThink(SUB_Remove);
-		// pev->nextthink = gpGlobals->time + .1;
-	// }
+
 }
 
 //=========================================================
@@ -1378,7 +1400,7 @@ void CWeaponBox :: KeyValue( KeyValueData *pkvd )
 
 void CWeaponBox::Spawn( void )
 {
-	// if (g_flWeaponCheat != 0.0)
+	// if (g_zxc_cheats != 0.0)
 		// UTIL_Remove( this );
 	
 	Precache( );

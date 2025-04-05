@@ -137,7 +137,7 @@ public:
 class CBaseEntity 
 {
 public:
-	float				FTime2; // player freeze
+	float				FreezeTime; // player freeze
 	int					PTime; // player paralize
 	int 				m_flDie; // some stuff for timer
 	int					Charge; // lock dmg for players per one shot
@@ -400,12 +400,13 @@ public:
 	int m_chargeReady;
 	int m_fInAttack;
 
-	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE };
+	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE, FIRE_CHARGE2};
 	int m_fireState;
 
 	int     m_type; //two types of think's: freeze|explode
 	
 	edict_t		*pevCreateTemp;
+	edict_t		*pevCreateFact;
 };
 
 
