@@ -43,7 +43,10 @@ public:
 	void DeathNotice ( entvars_t *pevChild );// monster maker children use this to tell the monster maker that they have died.
 	void MakeMonster( void );
 
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+	static	TYPEDESCRIPTION m_SaveData[];
 	
 	string_t m_iszMonsterClassname;// classname of the monster(s) that will be created.
 	
@@ -61,6 +64,19 @@ public:
 
 LINK_ENTITY_TO_CLASS( monstermaker, CMonsterMaker );
 
+TYPEDESCRIPTION	CMonsterMaker::m_SaveData[] = 
+{
+	DEFINE_FIELD( CMonsterMaker, m_iszMonsterClassname, FIELD_STRING ),
+	DEFINE_FIELD( CMonsterMaker, m_cNumMonsters, FIELD_INTEGER ),
+	DEFINE_FIELD( CMonsterMaker, m_cLiveChildren, FIELD_INTEGER ),
+	DEFINE_FIELD( CMonsterMaker, m_flGround, FIELD_FLOAT ),
+	DEFINE_FIELD( CMonsterMaker, m_iMaxLiveChildren, FIELD_INTEGER ),
+	DEFINE_FIELD( CMonsterMaker, m_fActive, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CMonsterMaker, m_fFadeChildren, FIELD_BOOLEAN ),
+};
+
+
+IMPLEMENT_SAVERESTORE( CMonsterMaker, CBaseMonster );
 
 void CMonsterMaker :: KeyValue( KeyValueData *pkvd )
 {
@@ -193,20 +209,20 @@ void CMonsterMaker::MakeMonster( void )
 	pevCreate->origin = pev->origin;
 	pevCreate->angles = pev->angles;
 	SetBits( pevCreate->spawnflags, SF_MONSTER_FALL_TO_GROUND );
-	
+
 	
 
 	// Children hit monsterclip brushes
 	if ( pev->spawnflags & SF_MONSTERMAKER_MONSTERCLIP )
 		SetBits( pevCreate->spawnflags, SF_MONSTER_HITMONSTERCLIP );
-		
+
 	// Fix the monstermaker spawn-events (<1.34)
 		
 	CBaseEntity *pEntity = CBaseEntity::Instance(pevCreate);
 
 	DispatchSpawn( ENT( pevCreate ) );
 	pevCreate->owner = edict();
-	if (pEntity!=NULL)
+if (pEntity!=NULL)
 		pEntity->pevCreateTemp = pevCreate->owner;
 
 	if ( !FStringNull( pev->netname ) )

@@ -28,11 +28,13 @@
 class CNihilanth : public CBaseMonster
 {
 public:
-	
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	void Spawn( void );
 	void Precache( void );
-	int  Classify(  ) { return CLASS_ALIEN_MILITARY; };
+	int  Classify( void ) { return CLASS_ALIEN_MONSTER; };
 	int  BloodColor( void ) { return BLOOD_COLOR_YELLOW; }
 	void Killed( entvars_t *pevAttacker, int iGib );
 	void GibMonster( void );
@@ -131,9 +133,48 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_nihilanth, CNihilanth );
 
+TYPEDESCRIPTION	CNihilanth::m_SaveData[] = 
+{
+	DEFINE_FIELD( CNihilanth, m_flForce, FIELD_FLOAT ),
+	DEFINE_FIELD( CNihilanth, m_flNextPainSound, FIELD_TIME ),
+	DEFINE_FIELD( CNihilanth, m_velocity, FIELD_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_avelocity, FIELD_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_vecTarget, FIELD_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_posTarget, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_vecDesired, FIELD_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_posDesired, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_flMinZ, FIELD_FLOAT ),
+	DEFINE_FIELD( CNihilanth, m_flMaxZ, FIELD_FLOAT ),
+	DEFINE_FIELD( CNihilanth, m_vecGoal, FIELD_VECTOR ),
+	DEFINE_FIELD( CNihilanth, m_flLastSeen, FIELD_TIME ),
+	DEFINE_FIELD( CNihilanth, m_flPrevSeen, FIELD_TIME ),
+	DEFINE_FIELD( CNihilanth, m_irritation, FIELD_INTEGER ),
+	DEFINE_FIELD( CNihilanth, m_iLevel, FIELD_INTEGER ),
+	DEFINE_FIELD( CNihilanth, m_iTeleport, FIELD_INTEGER ),
+	DEFINE_FIELD( CNihilanth, m_hRecharger, FIELD_EHANDLE ),
+	DEFINE_ARRAY( CNihilanth, m_hSphere, FIELD_EHANDLE, N_SPHERES ),
+	DEFINE_FIELD( CNihilanth, m_iActiveSpheres, FIELD_INTEGER ),
+	DEFINE_FIELD( CNihilanth, m_flAdj, FIELD_FLOAT ),
+	DEFINE_FIELD( CNihilanth, m_pBall, FIELD_CLASSPTR ),
+	DEFINE_ARRAY( CNihilanth, m_szRechargerTarget, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( CNihilanth, m_szDrawUse, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( CNihilanth, m_szTeleportUse, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( CNihilanth, m_szTeleportTouch, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( CNihilanth, m_szDeadUse, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( CNihilanth, m_szDeadTouch, FIELD_CHARACTER, 64 ),
+	DEFINE_FIELD( CNihilanth, m_flShootEnd, FIELD_TIME ),
+	DEFINE_FIELD( CNihilanth, m_flShootTime, FIELD_TIME ),
+	DEFINE_ARRAY( CNihilanth, m_hFriend, FIELD_EHANDLE, 3 ),
+};
+
+IMPLEMENT_SAVERESTORE( CNihilanth, CBaseMonster );
+
 class CNihilanthHVR : public CBaseMonster
 {
 public:
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	void Spawn( void );
 	void Precache( void );
@@ -176,6 +217,17 @@ public:
 LINK_ENTITY_TO_CLASS( nihilanth_energy_ball, CNihilanthHVR );
 
 
+TYPEDESCRIPTION	CNihilanthHVR::m_SaveData[] = 
+{
+	DEFINE_FIELD( CNihilanthHVR, m_flIdealVel, FIELD_FLOAT ),
+	DEFINE_FIELD( CNihilanthHVR, m_vecIdeal, FIELD_VECTOR ),
+	DEFINE_FIELD( CNihilanthHVR, m_pNihilanth, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CNihilanthHVR, m_hTouch, FIELD_EHANDLE ),
+	DEFINE_FIELD( CNihilanthHVR, m_nFrames, FIELD_INTEGER ),
+};
+
+
+IMPLEMENT_SAVERESTORE( CNihilanthHVR, CBaseMonster );
 
 
 //=========================================================
@@ -238,7 +290,7 @@ void CNihilanth :: Spawn( void )
 
 	pev->flags			|= FL_MONSTER;
 	pev->takedamage		= DAMAGE_AIM;
-	pev->health			= 100;
+	pev->health			= 1000;
 	pev->view_ofs		= Vector( 0, 0, 300 );
 
 	m_flFieldOfView = -1; // 360 degrees
@@ -301,7 +353,7 @@ void CNihilanth :: PainSound( void )
 	
 	m_flNextPainSound = gpGlobals->time + RANDOM_FLOAT( 2, 5 );
 
-	if (pev->health > 50)
+	if (pev->health > 1000 / 2)
 	{
 		EMIT_SOUND( edict(), CHAN_VOICE, RANDOM_SOUND_ARRAY( pLaughSounds ), 1.0, 0.2 ); 
 	}
@@ -659,7 +711,7 @@ void CNihilanth :: NextActivity( )
 		}
 	}
 
-	if ((pev->health < 50 || m_iActiveSpheres < N_SPHERES / 2) && m_hRecharger == NULL && m_iLevel <= 9)
+	if ((pev->health < 1000 / 2 || m_iActiveSpheres < N_SPHERES / 2) && m_hRecharger == NULL && m_iLevel <= 9)
 	{
 		char szName[64];
 
@@ -745,7 +797,7 @@ void CNihilanth :: NextActivity( )
 	{
 		if (m_flLastSeen + 5 > gpGlobals->time && flDist < 256 && flDot > 0)
 		{
-			if (m_irritation >= 2 && pev->health < 50)
+			if (m_irritation >= 2 && pev->health < 1000 / 2.0)
 			{
 				pev->sequence = LookupSequence( "attack1_open" );
 			}
@@ -785,7 +837,7 @@ void CNihilanth :: NextActivity( )
 
 void CNihilanth :: HuntThink( void )
 {
-	pev->nextthink = gpGlobals->time + 0.1;
+	pev->nextthink = gpGlobals->time + 1.1;
 	DispatchAnimEvents( );
 	StudioFrameAdvance( );
 
@@ -802,9 +854,9 @@ void CNihilanth :: HuntThink( void )
 	// ALERT( at_console, "health %.0f\n", pev->health );
 
 	// if damaged, try to abosorb some spheres
-	if (pev->health < 50 && AbsorbSphere( ))
+	if (pev->health < 1000 && AbsorbSphere( ))
 	{
-		pev->health += 20;
+		pev->health += 1000 / N_SPHERES;
 	}
 
 	// get new sequence
@@ -814,7 +866,7 @@ void CNihilanth :: HuntThink( void )
 		pev->frame = 0;
 		NextActivity( );
 		ResetSequenceInfo( );
-		pev->framerate = 2.0 - 1.0 * (pev->health);
+		pev->framerate = 2.0 - 1.0 * (pev->health / 1000);
 	}
 
 	// look for current enemy	
@@ -976,10 +1028,10 @@ void CNihilanth :: 	TargetSphere( USE_TYPE useType, float value )
 				break;
 		}
 	}
-	if (i == N_SPHERES)
-	{
-		return;
-	}
+	// if (i == N_SPHERES)
+	// {
+	// 	return;
+	// }
 
 	Vector vecSrc, vecAngles;
 	GetAttachment( 2, vecSrc, vecAngles ); 
@@ -1195,7 +1247,7 @@ void CNihilanth::TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vec
 	{
 		Vector vecBlood = (ptr->vecEndPos - pev->origin).Normalize( );
 
-		UTIL_BloodStream( ptr->vecEndPos, vecBlood, BloodColor(), flDamage + (100 - 100 * (pev->health)));
+		UTIL_BloodStream( ptr->vecEndPos, vecBlood, BloodColor(), flDamage + (100 - 100 * (pev->health / 1000)));
 	}
 
 	// SpawnBlood(ptr->vecEndPos, BloodColor(), flDamage * 5.0);// a little surface blood.
@@ -1418,7 +1470,7 @@ void CNihilanthHVR :: ZapThink( void  )
 		if (pEntity != NULL && pEntity->pev->takedamage)
 		{
 			ClearMultiDamage( );
-			pEntity->TraceAttack( pev, 42, pev->velocity, &tr, DMG_SHOCK );
+			pEntity->TraceAttack( pev, 13, pev->velocity, &tr, DMG_SHOCK );
 			ApplyMultiDamage( pev, pev );
 		}
 

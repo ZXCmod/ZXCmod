@@ -20,7 +20,6 @@
 
 */
 
-
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
@@ -333,7 +332,10 @@ void CGlobalState :: EntitySetState( string_t globalname, GLOBALESTATE state )
 	globalentity_t *pEnt = Find( globalname );
 
 	if ( pEnt )
+	{
 		pEnt->state = state;
+		
+	}
 }
 
 
@@ -355,21 +357,70 @@ GLOBALESTATE CGlobalState :: EntityGetState( string_t globalname )
 }
 
 
+// Global Savedata for Delay
+TYPEDESCRIPTION	CGlobalState::m_SaveData[] = 
+{
+	DEFINE_FIELD( CGlobalState, m_listCount, FIELD_INTEGER ),
+};
+
+// Global Savedata for Delay
+TYPEDESCRIPTION	gGlobalEntitySaveData[] = 
+{
+	DEFINE_ARRAY( globalentity_t, name, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( globalentity_t, levelName, FIELD_CHARACTER, 32 ),
+	DEFINE_FIELD( globalentity_t, state, FIELD_INTEGER ),
+};
+
+
+int CGlobalState::Save( CSave &save )
+{
+	int i;
+	globalentity_t *pEntity;
+
+	if ( !save.WriteFields( "GLOBAL", this, m_SaveData, ARRAYSIZE(m_SaveData) ) )
+		return 0;
+	
+	pEntity = m_pList;
+	for ( i = 0; i < m_listCount && pEntity; i++ )
+	{
+		if ( !save.WriteFields( "GENT", pEntity, gGlobalEntitySaveData, ARRAYSIZE(gGlobalEntitySaveData) ) )
+			return 0;
+
+		pEntity = pEntity->pNext;
+	}
+	
+	return 1;
+}
+
+int CGlobalState::Restore( CRestore &restore )
+{
+	int i, listCount;
+	globalentity_t tmpEntity;
+
+
+	ClearStates();
+	if ( !restore.ReadFields( "GLOBAL", this, m_SaveData, ARRAYSIZE(m_SaveData) ) )
+		return 0;
+	
+	listCount = m_listCount;	// Get new list count
+	m_listCount = 0;				// Clear loaded data
+
+	for ( i = 0; i < listCount; i++ )
+	{
+		if ( !restore.ReadFields( "GENT", &tmpEntity, gGlobalEntitySaveData, ARRAYSIZE(gGlobalEntitySaveData) ) )
+			return 0;
+		EntityAdd( MAKE_STRING(tmpEntity.name), MAKE_STRING(tmpEntity.levelName), tmpEntity.state );
+	}
+	return 1;
+}
 
 void CGlobalState::EntityUpdate( string_t globalname, string_t mapname )
 {
-
-	
-	// gEngfuncs.pTriAPI->Fog ( 100, 100, 100, 1 );
-
-
-
 	globalentity_t *pEnt = Find( globalname );
 
 	if ( pEnt )
 		strcpy( pEnt->levelName, STRING(mapname) );
-		
-}
+		}
 
 
 void CGlobalState::ClearStates( void )
@@ -387,13 +438,15 @@ void CGlobalState::ClearStates( void )
 
 void SaveGlobalState( SAVERESTOREDATA *pSaveData )
 {
-
+CSave saveHelper( pSaveData );
+	gGlobalState.Save( saveHelper );
 }
 
 
 void RestoreGlobalState( SAVERESTOREDATA *pSaveData )
 {
-
+CRestore restoreHelper( pSaveData );
+	gGlobalState.Restore( restoreHelper );
 }
 
 
@@ -433,7 +486,7 @@ void CWorld :: Spawn( void )
 
 void CWorld :: Precache( void )
 {
-
+	UTIL_PrecacheOther( "monster_miniturret" );
 	UTIL_PrecacheOther( "monster_sentry" );
 	UTIL_PrecacheOther( "monster_turret" ); //new weapon: turret
 	UTIL_PrecacheOther( "monster_gman" );
@@ -444,7 +497,7 @@ void CWorld :: Precache( void )
 //pev->sv_gravity=1;
 	CVAR_SET_STRING("sv_gravity", "800"); // 65ft/sec
 	CVAR_SET_STRING("sv_stepsize", "18");
-	CVAR_SET_STRING("sv_maxspeed", "350");
+	CVAR_SET_STRING("sv_maxspeed", "500");
 	CVAR_SET_STRING("pausable", "0");
 	//::nreload = 0;
 
@@ -521,7 +574,7 @@ void CWorld :: Precache( void )
 //
 
 	// 0 normal
-	LIGHT_STYLE(0, "s");
+	LIGHT_STYLE(0, "o");
 	
 	// 1 FLICKER (first variety)
 	LIGHT_STYLE(1, "mmnmmommommnonmmonqnmmo");
@@ -651,7 +704,7 @@ void CWorld :: KeyValue( KeyValueData *pkvd )
 		// Sent over net now.
 		pev->scale = atof(pkvd->szValue) * (1.0/8.0);
 		pkvd->fHandled = TRUE;
-		CVAR_SET_FLOAT( "sv_wateramp", 0 );
+		CVAR_SET_FLOAT( "sv_wateramp", pev->scale );
 	}
 	else if ( FStrEq(pkvd->szKeyName, "MaxRange") )
 	{

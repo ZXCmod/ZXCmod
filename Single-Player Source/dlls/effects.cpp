@@ -42,8 +42,10 @@ public:
 	void	EXPORT FizzThink( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 	virtual int		ObjectCaps( void ) { return CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+static	TYPEDESCRIPTION m_SaveData[];
 
 	int		m_density;
 	int		m_frequency;
@@ -53,6 +55,16 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_bubbles, CBubbling );
 
+TYPEDESCRIPTION	CBubbling::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBubbling, m_density, FIELD_INTEGER ),
+	DEFINE_FIELD( CBubbling, m_frequency, FIELD_INTEGER ),
+	DEFINE_FIELD( CBubbling, m_state, FIELD_INTEGER ),
+	// Let spawn restore this!
+	//	DEFINE_FIELD( CBubbling, m_bubbleModel, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CBubbling, CBaseEntity );
 
 
 #define SF_BUBBLES_STARTOFF		0x0001
@@ -379,7 +391,9 @@ public:
 		return FALSE;
 	}
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	void	BeamUpdateVars( void );
 
@@ -421,6 +435,24 @@ void CTripBeam::Spawn( void )
 
 
 
+TYPEDESCRIPTION	CLightning::m_SaveData[] = 
+{
+	DEFINE_FIELD( CLightning, m_active, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_iszStartEntity, FIELD_STRING ),
+	DEFINE_FIELD( CLightning, m_iszEndEntity, FIELD_STRING ),
+	DEFINE_FIELD( CLightning, m_life, FIELD_FLOAT ),
+	DEFINE_FIELD( CLightning, m_boltWidth, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_noiseAmplitude, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_brightness, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_speed, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_restrike, FIELD_FLOAT ),
+	DEFINE_FIELD( CLightning, m_spriteTexture, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_iszSpriteName, FIELD_STRING ),
+	DEFINE_FIELD( CLightning, m_frameStart, FIELD_INTEGER ),
+	DEFINE_FIELD( CLightning, m_radius, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CLightning, CBeam );
 
 
 void CLightning::Spawn( void )
@@ -856,7 +888,7 @@ void CLightning::BeamUpdateVars( void )
 {
 	int beamType;
 	int pointStart, pointEnd;
-
+//return;
 	edict_t *pStart = FIND_ENTITY_BY_TARGETNAME ( NULL, STRING(m_iszStartEntity) );
 	edict_t *pEnd = FIND_ENTITY_BY_TARGETNAME ( NULL, STRING(m_iszEndEntity) );
 	pointStart = IsPointEntity( CBaseEntity::Instance(pStart) );
@@ -918,6 +950,15 @@ void CLightning::BeamUpdateVars( void )
 
 
 LINK_ENTITY_TO_CLASS( env_laser, CLaser );
+
+TYPEDESCRIPTION	CLaser::m_SaveData[] = 
+{
+	DEFINE_FIELD( CLaser, m_pSprite, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CLaser, m_iszSpriteName, FIELD_STRING ),
+	DEFINE_FIELD( CLaser, m_firePosition, FIELD_POSITION_VECTOR ),
+};
+
+IMPLEMENT_SAVERESTORE( CLaser, CBeam );
 
 void CLaser::Spawn( void )
 {
@@ -1079,7 +1120,9 @@ public:
 	void Spawn( void );
 	void Think( void );
 	void Animate( float frames );
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	float		m_lastTime;
 	float		m_maxFrame;
@@ -1087,6 +1130,13 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_glow, CGlow );
 
+TYPEDESCRIPTION	CGlow::m_SaveData[] = 
+{
+	DEFINE_FIELD( CGlow, m_lastTime, FIELD_TIME ),
+	DEFINE_FIELD( CGlow, m_maxFrame, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CGlow, CPointEntity );
 
 void CGlow::Spawn( void )
 {
@@ -1124,6 +1174,13 @@ void CGlow::Animate( float frames )
 
 LINK_ENTITY_TO_CLASS( env_sprite, CSprite );
 
+TYPEDESCRIPTION	CSprite::m_SaveData[] = 
+{
+	DEFINE_FIELD( CSprite, m_lastTime, FIELD_TIME ),
+	DEFINE_FIELD( CSprite, m_maxFrame, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CSprite, CPointEntity );
 
 void CSprite::Spawn( void )
 {
@@ -1301,7 +1358,9 @@ public:
 
 	virtual CGib *CreateGib( void );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int	m_iGibs;
 	int m_iGibCapacity;
@@ -1312,7 +1371,18 @@ public:
 	float m_flGibLife;
 };
 
+TYPEDESCRIPTION CGibShooter::m_SaveData[] =
+{
+	DEFINE_FIELD( CGibShooter, m_iGibs, FIELD_INTEGER ),
+	DEFINE_FIELD( CGibShooter, m_iGibCapacity, FIELD_INTEGER ),
+	DEFINE_FIELD( CGibShooter, m_iGibMaterial, FIELD_INTEGER ),
+	DEFINE_FIELD( CGibShooter, m_iGibModelIndex, FIELD_INTEGER ),
+	DEFINE_FIELD( CGibShooter, m_flGibVelocity, FIELD_FLOAT ),
+	DEFINE_FIELD( CGibShooter, m_flVariance, FIELD_FLOAT ),
+	DEFINE_FIELD( CGibShooter, m_flGibLife, FIELD_FLOAT ),
+};
 
+IMPLEMENT_SAVERESTORE( CGibShooter, CBaseDelay );
 LINK_ENTITY_TO_CLASS( gibshooter, CGibShooter );
 
 

@@ -39,6 +39,78 @@ enum tripmine_e
 	TRIPMINE_GROUND,
 };
 
+class CTripmineGrenade2 : public CGrenade
+{
+public:
+	void Spawn(void);
+	void Precache(void);
+	int Classify(void);
+	int TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType);
+	void EXPORT WarningThink(void);
+	void EXPORT PowerupThink(void);
+	void EXPORT DelayDeathThink(void);
+	void EXPORT MakeBeam(void);
+	void Killed(entvars_t *pevAttacker, int iGib);
+	void KillBeam(void);
+	// int m_flNextTripmineLimit;
+
+private:
+	float m_flPowerUp;
+	Vector m_vecDir;
+	Vector m_vecEnd;
+	Vector vec_tmp;
+	float m_flBeamLength;
+	short m_LaserSprite;
+	EHANDLE m_hOwner;
+	CBeam *m_pBeam;
+	Vector m_posOwner;
+	Vector m_angleOwner;
+	edict_t *m_pRealOwner; // tracelines don't hit PEV->OWNER, which means a player couldn't detonate his own trip mine, so we store the owner here.
+};
+
+class CTripmineGrenade3 : public CGrenade
+{
+public:
+	void Spawn(void);
+	void Precache(void);
+	void EXPORT WarningThink(void);
+	void EXPORT PowerupThink(void);
+	void EXPORT BeamBreakThink(void);
+	void EXPORT DelayDeathThink(void);
+	void EXPORT HealThink(void);
+	void EXPORT MakeBeam(void);
+	void Killed(entvars_t *pevAttacker, int iGib);
+	int TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType);
+	void KillBeam(void);
+
+private:
+	float m_flPowerUp;
+	Vector m_vecDir;
+	Vector m_vecEnd;
+	float m_flBeamLength;
+	short m_LaserSprite;
+	EHANDLE m_hOwner;
+	CBeam *m_pBeam;
+	Vector m_posOwner;
+	Vector m_angleOwner;
+	edict_t *m_pRealOwner; // tracelines don't hit PEV->OWNER, which means a player couldn't detonate his own trip mine, so we store the owner here.
+};
+
+TYPEDESCRIPTION CTripmineGrenade::m_SaveData[] =
+	{
+		DEFINE_FIELD(CTripmineGrenade, m_flPowerUp, FIELD_TIME),
+		DEFINE_FIELD(CTripmineGrenade, m_vecDir, FIELD_VECTOR),
+		DEFINE_FIELD(CTripmineGrenade, m_vecEnd, FIELD_POSITION_VECTOR),
+		DEFINE_FIELD(CTripmineGrenade, m_flBeamLength, FIELD_FLOAT),
+		DEFINE_FIELD(CTripmineGrenade, m_hOwner, FIELD_EHANDLE),
+		DEFINE_FIELD(CTripmineGrenade, m_pBeam, FIELD_CLASSPTR),
+		DEFINE_FIELD(CTripmineGrenade, m_posOwner, FIELD_POSITION_VECTOR),
+		DEFINE_FIELD(CTripmineGrenade, m_angleOwner, FIELD_VECTOR),
+		DEFINE_FIELD(CTripmineGrenade, m_pRealOwner, FIELD_EDICT),
+};
+
+IMPLEMENT_SAVERESTORE(CTripmineGrenade, CGrenade);
+
 void CTripmineGrenade ::Spawn(void)
 {
 	Precache();
@@ -48,12 +120,13 @@ void CTripmineGrenade ::Spawn(void)
 
 	SET_MODEL(ENT(pev), "models/v_tripmine.mdl");
 	pev->frame = 0;
+	pev->effects = kRenderFxNone;
 	pev->body = 3;
 	pev->sequence = TRIPMINE_WORLD;
 	// ResetSequenceInfo( );
 	pev->framerate = 0;
 
-	UTIL_SetSize(pev, Vector(-8, -8, -8), Vector(8, 8, 8));
+	UTIL_SetSize(pev, Vector(-4, -4, -4), Vector(4, 4, 4));
 	UTIL_SetOrigin(pev, pev->origin);
 
 	// power up in 2.5 seconds
@@ -63,8 +136,8 @@ void CTripmineGrenade ::Spawn(void)
 	pev->nextthink = gpGlobals->time + 0.2;
 
 	pev->takedamage = DAMAGE_YES;
-	pev->dmg = 150;
-	pev->health = 5; // don't let die normally
+	pev->dmg = 150.0;
+	pev->health = 10.0; // don't let die normally
 
 	if (pev->owner != NULL)
 	{
@@ -78,7 +151,10 @@ void CTripmineGrenade ::Spawn(void)
 	UTIL_MakeAimVectors(pev->angles);
 
 	m_vecDir = gpGlobals->v_forward;
-	m_vecEnd = pev->origin + m_vecDir * 2048;
+	if (pev->rendermode == kRenderNormal)
+		m_vecEnd = pev->origin + m_vecDir * 1;
+	else
+		m_vecEnd = pev->origin + m_vecDir * 2048;
 }
 
 void CTripmineGrenade ::Precache(void)
@@ -100,12 +176,18 @@ void CTripmineGrenade ::PowerupThink(void)
 {
 	TraceResult tr;
 
+	if (pev->rendermode == kRenderNormal)
+		m_vecEnd = pev->origin + m_vecDir * 1;
+	else
+		m_vecEnd = pev->origin + m_vecDir * 2048;
+
 	if (m_hOwner == NULL)
 	{
 		// find an owner
 		edict_t *oldowner = pev->owner;
 		pev->owner = NULL;
 		UTIL_TraceLine(pev->origin + m_vecDir * 8, pev->origin - m_vecDir * 32, dont_ignore_monsters, ENT(pev), &tr);
+		// m_TelevecEnd = pev->origin + m_vecDir * 30;
 		if (tr.fStartSolid || (oldowner && tr.pHit == oldowner))
 		{
 			pev->owner = oldowner;
@@ -129,15 +211,40 @@ void CTripmineGrenade ::PowerupThink(void)
 			KillBeam();
 			return;
 		}
+
+		TraceResult tr2;
+		if (pev->rendermode == kRenderNormal)
+		{
+			UTIL_TraceHull(pev->origin + m_vecDir * 34, pev->origin - m_vecDir * 54, ignore_monsters, human_hull, ENT(pev), &tr2);
+
+			m_TelevecEnd = (((tr2.vecEndPos) + (tr2.vecPlaneNormal * 32)) + Vector(0, 0, -36));
+
+			if (m_pRealOwner != NULL && tr2.flFraction == 1.0)
+			{
+				MESSAGE_BEGIN(MSG_ONE, gmsgHudText, NULL, ENT(m_pRealOwner)); 
+				WRITE_STRING("Tripmine Teleport destination is wrong.");
+				MESSAGE_END();
+
+				STOP_SOUND(ENT(pev), CHAN_VOICE, "weapons/mine_deploy.wav");
+				STOP_SOUND(ENT(pev), CHAN_BODY, "weapons/mine_charge.wav");
+				CBaseEntity *pMine = Create("weapon_tripmine", pev->origin + m_vecDir * 24, pev->angles);
+				pMine->pev->spawnflags |= SF_NORESPAWN;
+				SetThink(SUB_Remove);
+				KillBeam();
+				pev->nextthink = gpGlobals->time + 0.1;
+			}
+		}
+		// m_pBeam = CBeam::BeamCreate(g_pModelNameLaser, 15);
+		// m_pBeam->PointEntInit(m_TelevecEnd, entindex());
+		// m_pBeam->SetColor(255, 0, 0);
+		// m_pBeam->SetScrollRate(128);
+		// m_pBeam->SetBrightness(250);
 	}
 	else if (m_posOwner != m_hOwner->pev->origin || m_angleOwner != m_hOwner->pev->angles)
 	{
 		// disable
 		STOP_SOUND(ENT(pev), CHAN_VOICE, "weapons/mine_deploy.wav");
 		STOP_SOUND(ENT(pev), CHAN_BODY, "weapons/mine_charge.wav");
-		CBaseEntity *pMine = Create("weapon_tripmine", pev->origin + m_vecDir * 24, pev->angles);
-		pMine->pev->spawnflags |= SF_NORESPAWN;
-
 		SetThink(SUB_Remove);
 		KillBeam();
 		pev->nextthink = gpGlobals->time + 0.1;
@@ -146,13 +253,9 @@ void CTripmineGrenade ::PowerupThink(void)
 
 	if (gpGlobals->time > m_flPowerUp)
 	{
-		// make solid
 		pev->solid = SOLID_BBOX;
 		UTIL_SetOrigin(pev, pev->origin);
-
 		MakeBeam();
-
-		// play enabled sound
 		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "weapons/mine_activate.wav", 0.5, ATTN_NORM, 1.0, 75);
 	}
 	pev->nextthink = gpGlobals->time + 0.1;
@@ -178,14 +281,17 @@ void CTripmineGrenade ::MakeBeam(void)
 	// set to follow laser spot
 	SetThink(BeamBreakThink);
 	pev->nextthink = gpGlobals->time + 0.1;
-
-	Vector vecTmpEnd = pev->origin + m_vecDir * 2048 * m_flBeamLength;
+	Vector vecTmpEnd;
+	if (pev->rendermode == kRenderNormal)
+		vecTmpEnd = pev->origin + m_vecDir * 8 * m_flBeamLength;
+	else
+		vecTmpEnd = pev->origin + m_vecDir * 2048 * m_flBeamLength;
 
 	m_pBeam = CBeam::BeamCreate(g_pModelNameLaser, 10);
 	m_pBeam->PointEntInit(vecTmpEnd, entindex());
-	m_pBeam->SetColor(255, 128, 128);
+	m_pBeam->SetColor(64, 64, 255);
 	m_pBeam->SetScrollRate(128);
-	m_pBeam->SetBrightness(50);
+	m_pBeam->SetBrightness(150);
 }
 
 void CTripmineGrenade ::BeamBreakThink(void)
@@ -237,16 +343,16 @@ void CTripmineGrenade ::BeamBreakThink(void)
 
 int CTripmineGrenade ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType)
 {
-	if (gpGlobals->time < m_flPowerUp && flDamage < pev->health)
+	// if (gpGlobals->time < m_flPowerUp && flDamage < pev->health)
+	if (pev->health < 1)
 	{
-		// SetThink( SUB_Remove );
 		pev->takedamage = DAMAGE_NO;
 		pev->nextthink = gpGlobals->time + 0.1;
 		KillBeam();
 		UTIL_Remove(this);
 		return FALSE;
 	}
-	return CGrenade::TakeDamage(pevInflictor, pevAttacker, pev->dmg, bitsDamageType);
+	return CGrenade::TakeDamage(pevInflictor, pevAttacker, flDamage, bitsDamageType);
 }
 
 void CTripmineGrenade::Killed(entvars_t *pevAttacker, int iGib)
@@ -322,7 +428,6 @@ int CTripmine::GetItemInfo(ItemInfo *p)
 
 BOOL CTripmine::Deploy()
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320);
 	return DefaultDeploy("models/v_tripmine.mdl", "models/p_tripmine.mdl", TRIPMINE_DRAW, "trip");
 }
 
@@ -364,12 +469,10 @@ void CTripmine::FourthAttack(void)
 				if (pEntity->pev->ltime == 0)
 				{
 					pEntity->pev->ltime = 1;
-					pEntity->pev->health += 50;
 				}
 				else
 				{
 					pEntity->pev->ltime = 0;
-					pEntity->pev->health -= 50;
 				}
 			}
 		}
@@ -396,8 +499,8 @@ void CTripmine::FourthAttack(void)
 				WRITE_BYTE(4);	 // life
 				WRITE_BYTE(128); // width
 				WRITE_BYTE(0);	 // noise
-				WRITE_BYTE(155); // r, g, b
-				WRITE_BYTE(155); // r, g, b
+				WRITE_BYTE(55);	 // r, g, b
+				WRITE_BYTE(55);	 // r, g, b
 				WRITE_BYTE(200); // r, g, b
 				WRITE_BYTE(200); // brightness
 				WRITE_BYTE(0);	 // speed
@@ -411,13 +514,31 @@ void CTripmine::FourthAttack(void)
 				pEntity->Classify2 = pEntity->Classify();
 				pEntity->pev->owner = pEntity->pevCreateTemp; // dinamical restore edict
 															  // see a monsters.cpp and monstermaker.cpp
-				UTIL_Sparks(tr.vecEndPos);
-				
+				// torus 2
+				MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+				WRITE_BYTE(TE_BEAMTORUS);
+				WRITE_COORD(pEntity->pev->origin.x);
+				WRITE_COORD(pEntity->pev->origin.y);
+				WRITE_COORD(pEntity->pev->origin.z);
+				WRITE_COORD(pEntity->pev->origin.x);
+				WRITE_COORD(pEntity->pev->origin.y);
+				WRITE_COORD(pEntity->pev->origin.z + 400); // reach damage radius over .2 seconds
+				WRITE_SHORT(m_iTrail);
+				WRITE_BYTE(0);	 // startframe
+				WRITE_BYTE(8);	 // framerate
+				WRITE_BYTE(4);	 // life
+				WRITE_BYTE(255); // width
+				WRITE_BYTE(0);	 // noise
+				WRITE_BYTE(155); // r, g, b
+				WRITE_BYTE(0);	 // r, g, b
+				WRITE_BYTE(0);	 // r, g, b
+				WRITE_BYTE(200); // brightness
+				WRITE_BYTE(0);	 // speed
+				MESSAGE_END();
 			}
 		}
 
-		// capture the nukemissile for create Red Crystal ( >1.35 )
-		if (FClassnameIs(pEntity->pev, "nuke"))
+		if (FClassnameIs(pEntity->pev, "nuke")) // capture the nukemissile for create Red Crystal ( >1.35 )
 		{
 			// balls
 			MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
@@ -440,9 +561,7 @@ void CTripmine::FourthAttack(void)
 			m_pPlayer->m_flNextNukeTime = gpGlobals->time + 45;
 			pEntity->SUB_Remove();
 		}
-
-		// capture the DCrystal for create White FCrystal ( >1.36 )
-		if (FClassnameIs(pEntity->pev, "weapon_aicore"))
+		else if (FClassnameIs(pEntity->pev, "weapon_aicore")) // capture the DCrystal for create White FCrystal ( >1.36 )
 		{
 			// balls
 			MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
@@ -464,9 +583,30 @@ void CTripmine::FourthAttack(void)
 			Create("zone_shelter", pEntity->pev->origin + gpGlobals->v_up * 16, Vector(0, 0, 0), pev->owner);
 			pEntity->SUB_Remove();
 		}
+		else if (FClassnameIs(pEntity->pev, "heal_crystal")) // capture the HCrystal
+		{
+			// balls
+			MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+			WRITE_BYTE(TE_SPRITETRAIL); // TE_RAILTRAIL);
+			WRITE_COORD(pEntity->pev->origin.x);
+			WRITE_COORD(pEntity->pev->origin.y);
+			WRITE_COORD(pEntity->pev->origin.z);
+			WRITE_COORD(pEntity->pev->origin.x + tr.vecPlaneNormal.x * 2);
+			WRITE_COORD(pEntity->pev->origin.y + tr.vecPlaneNormal.y * 3);
+			WRITE_COORD(pEntity->pev->origin.z + tr.vecPlaneNormal.z * 16);
+			WRITE_SHORT(m_iTrail2); // model
+			WRITE_BYTE(30);			// count
+			WRITE_BYTE(12);			// life * 10
+			WRITE_BYTE(3);			// size * 10
+			WRITE_BYTE(24);			// amplitude * 0.1
+			WRITE_BYTE(4);			// speed * 100
+			MESSAGE_END();
 
-		// capture the satchel for lauch a tripmine rocket ( >1.36 )
-		if (FClassnameIs(pEntity->pev, "monster_satchel"))
+			CBaseEntity *pAntidote = Create("item_antidote", pEntity->pev->origin + gpGlobals->v_up * 1, Vector(0, 0, 0), NULL);
+			pAntidote->pev->spawnflags |= SF_NORESPAWN;
+			pEntity->SUB_Remove();
+		}
+		else if (FClassnameIs(pEntity->pev, "monster_satchel") && pEntity->pev->body == 0) // capture the satchel for lauch a tripmine rocket ( >1.36 )
 		{
 			// balls
 			MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
@@ -485,7 +625,27 @@ void CTripmine::FourthAttack(void)
 			WRITE_BYTE(4);			// speed * 100
 			MESSAGE_END();
 			Create("info_airstrike_node", pEntity->pev->origin + gpGlobals->v_up * 16, Vector(80, m_pPlayer->pev->v_angle.y, 0), m_pPlayer->edict());
-			m_pPlayer->m_flNextSatchelsLimit--;
+			pEntity->SUB_Remove();
+		}
+		else if (FClassnameIs(pEntity->pev, "monster_satchel") && pEntity->pev->body == 1) // capture the Jumping_Satchel for spawn gman ( >1.38 )
+		{
+			// balls
+			MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+			WRITE_BYTE(TE_SPRITETRAIL); // TE_RAILTRAIL);
+			WRITE_COORD(pEntity->pev->origin.x);
+			WRITE_COORD(pEntity->pev->origin.y);
+			WRITE_COORD(pEntity->pev->origin.z);
+			WRITE_COORD(pEntity->pev->origin.x + tr.vecPlaneNormal.x * 2);
+			WRITE_COORD(pEntity->pev->origin.y + tr.vecPlaneNormal.y * 3);
+			WRITE_COORD(pEntity->pev->origin.z + tr.vecPlaneNormal.z * 16);
+			WRITE_SHORT(m_iTrail2); // model
+			WRITE_BYTE(12);			// count
+			WRITE_BYTE(12);			// life * 10
+			WRITE_BYTE(3);			// size * 10
+			WRITE_BYTE(24);			// amplitude * 0.1
+			WRITE_BYTE(4);			// speed * 100
+			MESSAGE_END();
+			Create("monster_gman", pEntity->pev->origin + gpGlobals->v_up * 16, pEntity->pev->angles, pev->owner);
 			pEntity->SUB_Remove();
 		}
 	}
@@ -529,7 +689,7 @@ void CTripmine::PrimaryAttack(void)
 
 	TraceResult tr;
 
-	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 128, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 25600, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
 
 	PLAYBACK_EVENT_FULL(FEV_GLOBAL, m_pPlayer->edict(), m_usTripFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0);
 
@@ -563,40 +723,44 @@ void CTripmine::PrimaryAttack(void)
 
 void CTripmine::SecondaryAttack(void)
 {
-	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 1)
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		return;
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
-	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecAiming = gpGlobals->v_forward;
 
-	TraceResult tr;
 
-	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 128, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+		UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
+		Vector vecSrc = m_pPlayer->GetGunPosition();
+		Vector vecAiming = gpGlobals->v_forward;
 
-	PLAYBACK_EVENT_FULL(FEV_GLOBAL, m_pPlayer->edict(), m_usTripFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0);
+		TraceResult tr;
 
-	if (tr.flFraction < 1.0)
-	{
-		CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
-		if (pEntity && !(pEntity->pev->flags & FL_CONVEYOR))
+		UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 128, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+
+		PLAYBACK_EVENT_FULL(FEV_GLOBAL, m_pPlayer->edict(), m_usTripFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0);
+
+		if (tr.flFraction < 1.0)
 		{
-			Vector angles = UTIL_VecToAngles(tr.vecPlaneNormal);
-
-			CBaseEntity *pEnt = CBaseEntity::Create("monster_replicateur", tr.vecEndPos + tr.vecPlaneNormal * 8, angles, m_pPlayer->edict());
-
-			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 2;
-
-			// player "shoot" animation
-			m_pPlayer->SetAnimation(PLAYER_ATTACK1);
-
-			if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+			CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
+			if (pEntity && !(pEntity->pev->flags & FL_CONVEYOR))
 			{
-				// no more mines!
-				RetireWeapon();
-				return;
+				Vector angles = UTIL_VecToAngles(tr.vecPlaneNormal);
+
+				CBaseEntity *pEnt = CBaseEntity::Create("monster_replicateur", tr.vecEndPos + tr.vecPlaneNormal * 8, angles, m_pPlayer->edict());
+
+				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 1;
+
+				// player "shoot" animation
+				m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+
+				if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+				{
+					// no more mines!
+					RetireWeapon();
+					return;
+				}
 			}
 		}
-	}
+	
+
 
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 7.0;
@@ -604,7 +768,7 @@ void CTripmine::SecondaryAttack(void)
 
 void CTripmine::ThirdAttack(void)
 {
-	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+	if (g_zxc_promode.value == 0 && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
 
 		UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
@@ -636,7 +800,7 @@ void CTripmine::ThirdAttack(void)
 	else
 	{
 		PlayEmptySound();
-		//RetireWeapon();
+		// RetireWeapon();
 	}
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
@@ -650,7 +814,7 @@ void CTripmine::WeaponIdle(void)
 
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
-		SendWeaponAnim(TRIPMINE_DRAW);
+		SendWeaponAnim(TRIPMINE_IDLE1, 2);
 	}
 	else
 	{
@@ -658,11 +822,14 @@ void CTripmine::WeaponIdle(void)
 		return;
 	}
 
-	SendWeaponAnim(TRIPMINE_IDLE1);
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 7.5;
 }
+
+//////////new tripz ///////////
 
 void CTripmineGrenade2 ::Spawn(void)
 {
+	Precache();
 	pev->movetype = MOVETYPE_NONE;
 	pev->solid = SOLID_NOT;
 	pev->classname = MAKE_STRING("weapon_tripmine");
@@ -674,18 +841,15 @@ void CTripmineGrenade2 ::Spawn(void)
 	ResetSequenceInfo();
 	pev->framerate = 0;
 	pev->flags |= FL_NOTARGET;
-
 	UTIL_SetSize(pev, Vector(-8, -8, -8), Vector(8, 8, 8));
 	UTIL_SetOrigin(pev, pev->origin);
-
 	m_flPowerUp = gpGlobals->time + 1.5;
-
 	SetThink(PowerupThink);
 	pev->nextthink = gpGlobals->time + 0.2;
 
 	pev->takedamage = DAMAGE_YES;
-	pev->dmg = 25;
-	pev->health = 100;
+	pev->dmg = 150.0;
+	pev->health = 7.0;
 	pev->max_health = pev->health;
 
 	if (pev->owner != NULL)
@@ -693,56 +857,56 @@ void CTripmineGrenade2 ::Spawn(void)
 		// play deploy sound
 		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/mine_deploy.wav", 1.0, ATTN_NORM);
 		EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/mine_charge.wav", 0.2, ATTN_NORM); // chargeup
-
-		m_pRealOwner = pev->owner; // see CTripmineGrenade for why.
+		m_pRealOwner = pev->owner;
 	}
 
 	UTIL_MakeAimVectors(pev->angles);
-
 	m_vecDir = gpGlobals->v_forward;
 	vec_tmp = m_vecDir;
-	m_vecEnd = pev->origin + m_vecDir * 2048;
-	m_flNextTripmineLimit = gpGlobals->time + 150; // start timer
+	m_vecEnd = pev->origin + m_vecDir * 8000;
+	// m_flNextTripmineLimit = gpGlobals->time + 180;
 }
 
 void CTripmineGrenade2 ::Precache(void)
 {
+	m_LaserSprite = PRECACHE_MODEL("sprites/xenobeam.spr");
 }
 
 void CTripmineGrenade2 ::WarningThink(void)
 {
-
-	SetThink(PowerupThink);
 	pev->nextthink = gpGlobals->time + 1.0;
+	SetThink(PowerupThink);
+}
+
+int CTripmineGrenade2::Classify()
+{
+	return CLASS_HUMAN_PASSIVE;
 }
 
 void CTripmineGrenade2 ::PowerupThink(void)
 {
+	// CBaseEntity *pList[2];					 // check two any entity
+	// Vector delta = Vector(1000, 1000, 1000); // check size
+	// Vector mins = pev->origin - delta;
+	// Vector maxs = pev->origin + delta;
+	// int count = UTIL_EntitiesInBox(pList, 2, mins, maxs, (FL_NOTARGET));
+	// if (count) // check another laser mines for destroy
+	// {
+	// 	for (int i = 0; i < count; i++)
+	// 	{
+	// 		if (pList[i] != this && (pList[i]->pev->owner == pPlayer->edict()))
+	// 		{
+	// 			SetThink(DelayDeathThink);
+	// 			pev->nextthink = gpGlobals->time + 0.25;
+	// 		}
+	// 	}
+	// }
 
 	CBaseEntity *pEntity = CBaseEntity::Instance(pev->owner);
 	CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
-
-	CBaseEntity *pList[2];					 // check two any entity
-	Vector delta = Vector(1000, 1000, 1000); // check size
-	Vector mins = pev->origin - delta;
-	Vector maxs = pev->origin + delta;
-
-	int count = UTIL_EntitiesInBox(pList, 2, mins, maxs, (FL_NOTARGET));
-
-	if (count) // check another laser mines for destroy
-	{
-		for (int i = 0; i < count; i++)
-		{
-			// only clients and monsters
-			if (pList[i] != this && (pList[i]->pev->owner == pPlayer->edict())) // pList[i] != this ||
-			{
-				SetThink(DelayDeathThink);
-				pev->nextthink = gpGlobals->time + 0.25;
-			}
-		}
-	}
-
 	TraceResult tr;
+	pev->nextthink = gpGlobals->time + 0.1;
+
 	if (m_hOwner == NULL)
 	{
 
@@ -782,27 +946,20 @@ void CTripmineGrenade2 ::PowerupThink(void)
 		STOP_SOUND(ENT(pev), CHAN_BODY, "weapons/mine_charge.wav");
 		CBaseEntity *pMine = Create("weapon_tripmine", pev->origin + m_vecDir * 24, pev->angles);
 		pMine->pev->spawnflags |= SF_NORESPAWN;
-
+		pev->nextthink = gpGlobals->time + 0.1;
 		SetThink(SUB_Remove);
 		KillBeam();
-		pev->nextthink = gpGlobals->time + 0.1;
 		return;
 	}
 
 	if (gpGlobals->time > m_flPowerUp)
 	{
-
-		// make solid
 		pev->solid = SOLID_BBOX;
 		UTIL_SetOrigin(pev, pev->origin);
-
-		SetThink(MakeBeam);
-		pev->nextthink = gpGlobals->time + 0.2;
-
-		// play enabled sound
 		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "weapons/mine_activate.wav", 0.5, ATTN_NORM, 1.0, 75);
+		pev->nextthink = gpGlobals->time + 0.1;
+		SetThink(MakeBeam);
 	}
-	pev->nextthink = gpGlobals->time + 0.1;
 }
 
 void CTripmineGrenade2 ::KillBeam(void)
@@ -816,45 +973,51 @@ void CTripmineGrenade2 ::KillBeam(void)
 
 void CTripmineGrenade2 ::MakeBeam(void)
 {
+	pev->nextthink = gpGlobals->time + 0.04; // delay redraw
+
 	TraceResult tr;
 	gpGlobals->trace_flags = FTRACE_SIMPLEBOX;
-
-	short m_LaserSprite = PRECACHE_MODEL("sprites/xenobeam.spr");
 
 	CBaseEntity *pEntity = NULL;
 
 	CBaseEntity *pOwner = CBaseEntity::Instance(pev->owner);
 
-	m_vecEnd = pev->origin + m_vecDir * 2048;
+	m_vecEnd = pev->origin + m_vecDir * 8000;
 	pev->owner = m_pRealOwner;
 
-	Vector vecTmpEnd = pev->origin + m_vecDir * 2048 * m_flBeamLength;
+	Vector vecTmpEnd = pev->origin + m_vecDir * 8000 * m_flBeamLength;
 
-	UTIL_TraceLine(pev->origin, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr); // dont leave player
+	UTIL_TraceLine(pev->origin, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr);
 	m_flBeamLength = tr.flFraction;
 
 	if (pev->ltime == 0)
 	{
 		m_vecDir = vec_tmp;
-		if ((Instance(tr.pHit)->pev->takedamage))
+		if ((Instance(tr.pHit)->pev->takedamage > 0))
 		{
-			::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), pev->dmg, 20, CLASS_NONE, DMG_BULLET); // end blast
+			::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), pev->dmg, 20, CLASS_HUMAN_PASSIVE, DMG_BULLET);
 			UTIL_DecalTrace(&tr, DECAL_GUNSHOT1);
+			if (Instance(tr.pHit)->IsPlayer())
+			{
+				TakeDamage(pev, pev, 3.0, DMG_BLAST);
+			}
 		}
 	}
 	else if (pev->ltime == 1)
 	{
 		while ((pEntity = UTIL_FindEntityByClassname(pEntity, "player")) != NULL)
 		{
-
-			if (pEntity->edict() == pev->owner && (pEntity->edict() != edict()) && (pEntity->pev->health > 1)) // (FVisible( pEntity )) &&
+			if (pEntity->edict() == pev->owner && (pEntity->edict() != edict()))
 			{
-
 				m_vecDir = (pEntity->EyePosition() - Vector(0, 0, 20)) - pev->origin;
-				if ((Instance(tr.pHit)->pev->takedamage))
+				if ((Instance(tr.pHit)->pev->takedamage > 0))
 				{
-					::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), pev->dmg * 2, 20, CLASS_NONE, DMG_BULLET); // end blast
+					::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), pev->dmg, 20, CLASS_HUMAN_PASSIVE, DMG_BULLET);
 					UTIL_DecalTrace(&tr, DECAL_GUNSHOT1);
+					if (Instance(tr.pHit)->IsPlayer())
+					{
+						TakeDamage(pev, pev, 3.0, DMG_BLAST);
+					}
 				}
 			}
 		}
@@ -877,28 +1040,22 @@ void CTripmineGrenade2 ::MakeBeam(void)
 	WRITE_BYTE(80);	 // color r,g,b
 	WRITE_BYTE(0);	 // color r,g,b
 	WRITE_BYTE(0);	 // color r,g,b
-	WRITE_BYTE(150); // brightness
+	WRITE_BYTE(200); // brightness
 	WRITE_BYTE(0);	 // scroll speed
 	MESSAGE_END();
 
-	pev->nextthink = gpGlobals->time + 0.04; // delay redraw
-
-	if (m_flNextTripmineLimit < gpGlobals->time)
-	{
-		SetThink(SUB_Remove);
-		pev->nextthink = gpGlobals->time + 0.2;
-		KillBeam();
-		return;
-	}
-}
-
-void CTripmineGrenade2 ::BeamBreakThink(void)
-{
+	// if (m_flNextTripmineLimit < gpGlobals->time)
+	// {
+	// 	SetThink(SUB_Remove);
+	// 	pev->nextthink = gpGlobals->time + 0.2;
+	// 	KillBeam();
+	// 	return;
+	// }
 }
 
 int CTripmineGrenade2 ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType)
 {
-	if (gpGlobals->time < m_flPowerUp && flDamage < pev->health)
+	if (pev->health < 1)
 	{
 		SetThink(SUB_Remove);
 		pev->nextthink = gpGlobals->time + 0.1;
@@ -954,7 +1111,7 @@ void CTripmineGrenade3 ::Spawn(void)
 
 	pev->takedamage = DAMAGE_YES;
 	pev->dmg = 20;
-	pev->health = 100;
+	pev->health = 30;
 	pev->max_health = pev->health;
 
 	if (pev->owner != NULL)
@@ -977,8 +1134,8 @@ void CTripmineGrenade3 ::Precache(void)
 
 void CTripmineGrenade3 ::WarningThink(void)
 {
-	SetThink(PowerupThink);
 	pev->nextthink = gpGlobals->time + 1.0;
+	SetThink(PowerupThink);
 }
 
 void CTripmineGrenade3 ::PowerupThink(void)
@@ -1011,7 +1168,6 @@ void CTripmineGrenade3 ::PowerupThink(void)
 			STOP_SOUND(ENT(pev), CHAN_BODY, "weapons/mine_charge.wav");
 			SetThink(SUB_Remove);
 			pev->nextthink = gpGlobals->time + 0.1;
-			ALERT(at_console, "WARNING:Tripmine at %.0f, %.0f, %.0f removed\n", pev->origin.x, pev->origin.y, pev->origin.z);
 			KillBeam();
 			return;
 		}
@@ -1094,11 +1250,11 @@ void CTripmineGrenade3 ::HealThink(void)
 	{
 		// recover limit health
 		if (pEntity->pev->max_health < 100)
-			pEntity->pev->max_health += 5;
+			pEntity->pev->max_health += 1;
 
 		// heal anyone
 		if (pEntity->pev->health <= pEntity->pev->max_health)
-			pEntity->TakeHealth(5, DMG_GENERIC);
+			pEntity->TakeHealth(17, DMG_GENERIC);
 	}
 
 	pev->nextthink = gpGlobals->time + 0.2;
@@ -1149,7 +1305,7 @@ void CTripmineGrenade3 ::BeamBreakThink(void)
 
 int CTripmineGrenade3 ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType)
 {
-	if (gpGlobals->time < m_flPowerUp && flDamage < pev->health)
+	if (pev->health < 1)
 	{
 		SetThink(SUB_Remove);
 		pev->nextthink = gpGlobals->time + 0.1;
@@ -1195,3 +1351,7 @@ void CTripmineGrenade3::DelayDeathThink(void)
 	UTIL_TraceLine(pev->origin + m_vecDir * 8, pev->origin - m_vecDir * 64, dont_ignore_monsters, ENT(pev), &tr);
 	Explode(&tr, DMG_CRUSH);
 }
+
+LINK_ENTITY_TO_CLASS(monster_tripmine, CTripmineGrenade);
+LINK_ENTITY_TO_CLASS(weapon_energy, CTripmineGrenade3);
+LINK_ENTITY_TO_CLASS(monster_replicateur, CTripmineGrenade2);

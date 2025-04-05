@@ -34,7 +34,7 @@
 // Try this on a model with hulls/tracehull?
 //
 
-/* 
+
 #include	"float.h"
 #include	"extdll.h"
 #include	"util.h"
@@ -191,7 +191,7 @@ void CLeech::Spawn( void )
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_FLY;
 	SetBits(pev->flags, FL_SWIM);
-	pev->health			= gSkillData.leechHealth;
+	pev->health			= 1;
 
 	m_flFieldOfView		= -0.5;	// 180 degree FOV
 	m_flDistLook		= 750;
@@ -340,7 +340,7 @@ void CLeech::HandleAnimEvent( MonsterEvent_t *pEvent )
 
 			
 			if ( DotProduct(dir, face) > 0.9 )		// Only take damage if the leech is facing the prey
-				pEnemy->TakeDamage( pev, pev, gSkillData.leechDmgBite, DMG_SLASH );
+				pEnemy->TakeDamage( pev, pev, 1, DMG_SLASH );
 		}
 		m_stateTime -= 2;
 		break;
@@ -719,5 +719,5 @@ void CLeech::Killed(entvars_t *pevAttacker, int iGib)
 	pev->takedamage = DAMAGE_NO;
 	SetThink( DeadThink );
 }
- */
+
 

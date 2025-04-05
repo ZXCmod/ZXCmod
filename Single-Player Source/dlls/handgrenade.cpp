@@ -102,7 +102,6 @@ int CHandGrenade::GetItemInfo(ItemInfo *p)
 
 BOOL CHandGrenade::Deploy( )
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320 );
 	m_flReleaseThrow = -1;
 	return DefaultDeploy( "models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar" );
 }
@@ -163,37 +162,28 @@ void CHandGrenade::SecondaryAttack()
 
 void CHandGrenade::ThirdAttack()
 {
-	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 10) 
-		{
-		int iAnim;
-		Vector vecSrc = m_pPlayer->pev->origin;
-		Vector vecThrow = gpGlobals->v_forward * 1000 + m_pPlayer->pev->velocity;
-
-
-		CBaseEntity *hGren = Create( "weapon_canister", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
-		hGren->pev->velocity = vecThrow;
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-		iAnim = HANDGRENADE_THROW1;
-		SendWeaponAnim( iAnim );
-
-		m_fInAttack = 0;
-		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 10;
-		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-		}
-}
-
-void CHandGrenade::FourthAttack()
-{
-
-	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] >= 5 )
+	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] > 0 )
 	{
 		m_flStartThrow2 = gpGlobals->time;
 		m_flReleaseThrow = 0;
 
 		SendWeaponAnim( HANDGRENADE_PINPULL );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-		m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ]-=4;
+		m_type = 2; 
+		
+	}
+}
+
+void CHandGrenade::FourthAttack()
+{
+
+	if ( !m_flStartThrow2 && m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] > 0 )
+	{
+		m_flStartThrow2 = gpGlobals->time;
+		m_flReleaseThrow = 0;
+
+		SendWeaponAnim( HANDGRENADE_PINPULL );
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 		m_type = 1; 
 		
 	}
@@ -202,14 +192,14 @@ void CHandGrenade::FourthAttack()
 void CHandGrenade::WeaponIdle( void )
 {
 
-	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 5) 
+	if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0) 
 	{
 		if (  m_pPlayer->m_flNextGravGrenadesTime < gpGlobals->time ) // delay
 			{
 
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.7;
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.35;
 				Reload();
-				m_pPlayer->m_flNextGravGrenadesTime = gpGlobals->time + 0.7;
+				m_pPlayer->m_flNextGravGrenadesTime = gpGlobals->time + 0.35;
 				return;
 			}
 	}
@@ -330,8 +320,10 @@ void CHandGrenade::WeaponIdle( void )
 
 		if (m_type == 0)
 			CGrenade::ShootTimed( m_pPlayer->pev, vecSrc, vecThrow, time );
-		else
+		else if (m_type == 1)
 			CGrenade::ShootTimed2( m_pPlayer->pev, vecSrc, vecThrow, time );
+		else
+			CGrenade::ShootTimed3( m_pPlayer->pev, vecSrc, vecThrow, time );
 
 		if ( flVel < 500 )
 		{
@@ -417,7 +409,7 @@ void CHandGrenade :: Reload( void )
 	SendWeaponAnim( HANDGRENADE_THROW1 );
 
 	m_fInAttack = 0;
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 5; //(<1.26)
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 }
 
 void    CGrav1 :: Spawn( void )
@@ -427,7 +419,7 @@ void    CGrav1 :: Spawn( void )
 	SET_MODEL( ENT(pev), "models/zxc_grenade.mdl" );
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -4, -4, -1), Vector(4, 4, 8) );
+	UTIL_SetSize(pev, Vector(-3, -3, 0), Vector(3, 3, 3));
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_grenade" );
 	m_flDie = 0;
@@ -439,6 +431,7 @@ void    CGrav1 :: Spawn( void )
 	pev->angles = UTIL_VecToAngles (pev->velocity);
 	pev->avelocity.y = 128;
 	m_Sprite = PRECACHE_MODEL( "sprites/xflare2.spr" );
+
 	
 	pev->nextthink = gpGlobals->time + 6.0;
 	SetThink( MoveThink );
@@ -550,8 +543,8 @@ void    CGrav1::Touch( CBaseEntity *pOther )
 					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/snd3m.wav", 1.0, ATTN_NORM);
 					EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/snd3m.wav", 1.0, ATTN_NORM);
 
-					pEntity->pev->dmg += 3; // add more dmg
-					pEntity->m_flDie -= 17; // increace timer delay
+					pEntity->pev->dmg += 1; // add more dmg
+					pEntity->m_flDie -= 2; // increace timer delay
 					pEntity->pev->nextthink = gpGlobals->time + 5.0;
 					UTIL_Remove( this );
 				}
@@ -586,29 +579,57 @@ void    CGrav1 :: MoveThink( void )
 	Vector vecDir = Vector( 0, 0, 0 ); 
 	Vector direction = Vector(0,0,1); 
 	static float i; // resize cube effect 
-	radius = 200 + (pev->dmg * 16); // set more radius
+	radius = 200 + (pev->dmg * 35); // set more radius
 	
 	// Make a lightning strike
 	Vector vecEnd = Vector( 0, 0, 150 ); 
 	vecEnd = pev->origin + vecEnd.Normalize() * 512;
 	UTIL_TraceLine( pev->origin, vecEnd, ignore_monsters, ENT(pev), &tr);
-	
-	// effect cube
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BOX );
-		WRITE_COORD( pev->origin.x - i ); //start
-		WRITE_COORD( pev->origin.y - i );
-		WRITE_COORD( pev->origin.z - i );
-		WRITE_COORD( pev->origin.x + i ); //start
-		WRITE_COORD( pev->origin.y + i );
-		WRITE_COORD( pev->origin.z + i );
-		WRITE_SHORT( 1 );
-		WRITE_BYTE( 255 ); // color r,g,b
-		WRITE_BYTE( 155 ); // color r,g,b
-		WRITE_BYTE( 55 ); // color r,g,b
+
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+	WRITE_BYTE(TE_BEAMCYLINDER);
+	WRITE_COORD(pev->origin.x);
+	WRITE_COORD(pev->origin.y);
+	WRITE_COORD(pev->origin.z);
+	WRITE_COORD(pev->origin.x );
+	WRITE_COORD(pev->origin.y );
+	WRITE_COORD(pev->origin.z + radius*2); 
+	WRITE_SHORT(m_iSpriteTexture);
+	WRITE_BYTE(0);	 // startframe
+	WRITE_BYTE(16);	 // framerate
+	WRITE_BYTE(4);	 // life
+	WRITE_BYTE(radius*5); // width
+	WRITE_BYTE(8);	 // noise
+	WRITE_BYTE(55);	 // r, g, b
+	WRITE_BYTE(55);	 // r, g, b
+	WRITE_BYTE(155);	 // r, g, b
+	WRITE_BYTE(155);	 // brightness
+	WRITE_BYTE(4);	 // speed
+	MESSAGE_END();
+
+	// torus
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+	WRITE_BYTE(TE_BEAMTORUS);
+	WRITE_COORD(pev->origin.x);
+	WRITE_COORD(pev->origin.y);
+	WRITE_COORD(pev->origin.z);
+	WRITE_COORD(pev->origin.x);
+	WRITE_COORD(pev->origin.y);
+	WRITE_COORD(pev->origin.z - radius*2); // reach damage radius over .2 seconds
+	WRITE_SHORT(m_iSpriteTexture);
+	WRITE_BYTE(0);	 // startframe
+	WRITE_BYTE(0);	 // framerate
+	WRITE_BYTE(2);	 // life
+	WRITE_BYTE(3);	 // width
+	WRITE_BYTE(0);	 // noise
+	WRITE_BYTE(155); // r, g, b
+	WRITE_BYTE(0); // r, g, b
+	WRITE_BYTE(200); // r, g, b
+	WRITE_BYTE(164);	 // brightness
+	WRITE_BYTE(0);	 // speed
 	MESSAGE_END();
 	
-	i -= 0.4; // decrease cube size for nice visual effect
+	// i -= 0.4; // decrease cube size for nice visual effect
 	
 	// particles
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -616,60 +637,47 @@ void    CGrav1 :: MoveThink( void )
 		WRITE_COORD( pev->origin.x );
 		WRITE_COORD( pev->origin.y );
 		WRITE_COORD( pev->origin.z );
-		WRITE_BYTE( 64 + (pev->dmg*10) );	// rad
+		WRITE_BYTE( pev->dmg*25 );	// rad
 		WRITE_BYTE( 24 );		// count
 		WRITE_BYTE( 8 );		// life
 	MESSAGE_END();
 
-	//find and capture nearest objects, from 1.35 this rebalanced !
+	//find and capture nearest objects, from 1.35 this rebalanced ! 1.38 is proper gravy
 	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, radius )) != NULL)
+	{
+		if ((pEntity->pev->takedamage > 0) && pEntity->IsAlive() && (pEntity->edict() != edict())) // == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP
 		{
-			if ((pEntity->pev->takedamage != DAMAGE_NO) && pEntity->IsAlive() && (pEntity->edict() != edict())) // == MOVETYPE_WALK || pEntity->pev->movetype == MOVETYPE_STEP
-			{
-				pEntity->pev->velocity = pEntity->pev->velocity * 0.1; 
-				UTIL_ScreenShake( pEntity->pev->origin, radius, 60, 0.5, 1 );
-				
-				// dont hurt through wall
-				if (FVisible( pEntity ) && pev->dmg != 1)
-				{
-					pEntity->TakeDamage(pev, VARS( pev->owner ), pev->dmg, DMG_SHOCK);	// direct attack
-					 
-					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-						WRITE_BYTE( TE_BEAMENTS );
-						WRITE_SHORT( ENTINDEX( this->edict() ) );
-						WRITE_SHORT( ENTINDEX( pEntity->edict() ) );
-						WRITE_SHORT( m_LaserSprite );
-						WRITE_BYTE( 0 ); // framestart
-						WRITE_BYTE( 0 ); // framerate
-						WRITE_BYTE( 1 ); // life
-						WRITE_BYTE( 7 );  // width
-						WRITE_BYTE( 0 );   // noise
-						WRITE_BYTE( 140 );   // r, g, b
-						WRITE_BYTE( 140 );   // r, g, b
-						WRITE_BYTE( 140 );   // r, g, b +pSightEnt->pev->health
-						WRITE_BYTE( 200 );	// brightness
-						WRITE_BYTE( 0 );		// speed
-					MESSAGE_END();	
-				}
-				else
-					pEntity->TakeDamage(pev, VARS( pev->owner ), 1, DMG_SHOCK);	// direct attack
+			Vector vecMid = pev->origin;					  // get self
+			Vector vecMidEnemy = pEntity->BodyTarget(vecMid); // get target
+			Vector vecDirToEnemy = vecMidEnemy - vecMid;			  // calculate dir and dist to enemy
 
-				// spark effects
-				MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-					WRITE_BYTE( TE_STREAK_SPLASH );
-					WRITE_COORD( pev->origin.x );		// origin
-					WRITE_COORD( pev->origin.y );
-					WRITE_COORD( pev->origin.z );
-					WRITE_COORD( direction.x );	// direction
-					WRITE_COORD( direction.y );
-					WRITE_COORD( direction.z );
-					WRITE_BYTE( 64 );	// Streak color 6
-					WRITE_SHORT( 3 );	// count
-					WRITE_SHORT( 512 );
-					WRITE_SHORT( 512 );	// Random velocity modifier
-				MESSAGE_END();
+			vecDir = (pEntity->Center() - Center()).Normalize();
+			pEntity->pev->velocity =  -(vecDir *  vecDirToEnemy.Length() * 3);
+			
+			UTIL_ScreenShake( pEntity->pev->origin, radius, 60, 0.5, 1 );
+			
+			// check wall
+			if (FVisible( pEntity ))
+			{					
+				MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+					WRITE_BYTE( TE_BEAMENTS );
+					WRITE_SHORT( ENTINDEX( this->edict() ) );
+					WRITE_SHORT( ENTINDEX( pEntity->edict() ) );
+					WRITE_SHORT( m_LaserSprite );
+					WRITE_BYTE( 0 ); // framestart
+					WRITE_BYTE( 0 ); // framerate
+					WRITE_BYTE( 1 ); // life
+					WRITE_BYTE( 10 );  // width
+					WRITE_BYTE( 0 );   // noise
+					WRITE_BYTE( 140 );   // r, g, b
+					WRITE_BYTE( 140 );   // r, g, b
+					WRITE_BYTE( 140 );   // r, g, b +pSightEnt->pev->health
+					WRITE_BYTE( 200 );	// brightness
+					WRITE_BYTE( 0 );		// speed
+				MESSAGE_END();	
 			}
 		}
+	}
 
 
 	if (pev->effects != EF_LIGHT)
@@ -698,7 +706,7 @@ void    CGrav1 :: MoveThink( void )
 		if (pitch < 50)
 			pitch = 50;
 		EMIT_SOUND_DYN( ENT(pev), CHAN_ITEM, "weapons/gravgren.wav", 1.0, ATTN_NORM, 1.0, pitch );
-		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "ambience/alien_creeper.wav", 1.0, ATTN_NORM, 1.0, pitch );
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "ambience/alien_creeper.wav", 0.5, ATTN_NORM, 1.0, pitch );
 		
 	}
 	
@@ -706,22 +714,19 @@ void    CGrav1 :: MoveThink( void )
 	if (m_flDie >= 52) // full explode and self destroy
 	{		
 
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), radius * 0.25, 512, CLASS_NONE, DMG_CRUSH  );
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), radius, radius, CLASS_NONE, DMG_BULLET  );
 
-		// spark effects
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-			WRITE_BYTE( TE_STREAK_SPLASH );
-			WRITE_COORD( pev->origin.x );		// origin
-			WRITE_COORD( pev->origin.y );
-			WRITE_COORD( pev->origin.z );
-			WRITE_COORD( direction.x );	// direction
-			WRITE_COORD( direction.y );
-			WRITE_COORD( direction.z );
-			WRITE_BYTE( 255 );	// Streak color 6
-			WRITE_SHORT( 64 );	// count
-			WRITE_SHORT( 1024 );
-			WRITE_SHORT( 1600 );	// Random velocity modifier
-		MESSAGE_END();
+		while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, radius )) != NULL)
+		{
+			if ((pEntity->pev->takedamage > 0) && pEntity->IsAlive())
+			{				
+				if (!FVisible( pEntity )) // hit thr walls
+				{
+					pEntity->TakeDamage(pev, VARS( pev->owner ), radius*0.115, DMG_BLAST);
+					UTIL_ScreenShake( pEntity->pev->origin, radius, 60, 1.5, 1.0 );
+				}
+			}
+		}
 
 		// cylinder shape 
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
@@ -780,7 +785,7 @@ void    CSmoke :: Spawn( void )
 	
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -4, -4, -8), Vector(4, 4, 8) );
+	UTIL_SetSize(pev, Vector(-3, -3, 0), Vector(3, 3, 3));
 	UTIL_SetOrigin( pev, pev->origin );
 	pev->classname = MAKE_STRING( "weapon_grenade" );
 	m_flDie = gpGlobals->time + 0; // deprecated

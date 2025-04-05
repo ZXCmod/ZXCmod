@@ -150,7 +150,9 @@ public:
 	const globalentity_t	*EntityFromTable( string_t globalname );
 	GLOBALESTATE	EntityGetState( string_t globalname );
 	int				EntityInTable( string_t globalname ) { return (Find( globalname ) != NULL) ? 1 : 0; }
-
+	int				Save( CSave &save );
+	int				Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
 
 //#ifdef _DEBUG
 	void			DumpGlobals( void );

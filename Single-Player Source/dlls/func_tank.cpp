@@ -51,7 +51,7 @@ public:
 	void	Precache( void );
 	void	KeyValue( KeyValueData *pkvd );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void	EXPORT Think( void );
+	void	Think( void );
 	void	TrackTarget( void );
 
 	virtual void Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
@@ -88,12 +88,14 @@ public:
 
 	void		AdjustAnglesForBarrel( Vector &angles, float distance );
 
-
+virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	BOOL OnControls( entvars_t *pevTest );
 	BOOL StartControl( CBasePlayer* pController );
 	void StopControl( void );
-	void ControllerPostFrame();
+	void ControllerPostFrame( void );
 
 
 protected:
@@ -132,6 +134,38 @@ protected:
 };
 
 
+TYPEDESCRIPTION	CFuncTank::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncTank, m_yawCenter, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_yawRate, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_yawRange, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_yawTolerance, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_pitchCenter, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_pitchRate, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_pitchRange, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_pitchTolerance, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_fireLast, FIELD_TIME ),
+	DEFINE_FIELD( CFuncTank, m_fireRate, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_lastSightTime, FIELD_TIME ),
+	DEFINE_FIELD( CFuncTank, m_persist, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_minRange, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_maxRange, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_barrelPos, FIELD_VECTOR ),
+	DEFINE_FIELD( CFuncTank, m_spriteScale, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTank, m_iszSpriteSmoke, FIELD_STRING ),
+	DEFINE_FIELD( CFuncTank, m_iszSpriteFlash, FIELD_STRING ),
+	DEFINE_FIELD( CFuncTank, m_bulletType, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTank, m_sightOrigin, FIELD_VECTOR ),
+	DEFINE_FIELD( CFuncTank, m_spread, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTank, m_pController, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CFuncTank, m_vecControllerUsePos, FIELD_VECTOR ),
+	DEFINE_FIELD( CFuncTank, m_flNextAttack, FIELD_TIME ),
+	DEFINE_FIELD( CFuncTank, m_iBulletDamage, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTank, m_iszMaster, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CFuncTank, CBaseEntity );
+
 static Vector gTankSpread[] =
 {
 	Vector( 0, 0, 0 ),		// perfect
@@ -147,7 +181,6 @@ void CFuncTank :: Spawn( void )
 {
 	Precache();
 	
-
 	pev->movetype	= MOVETYPE_PUSH;  // so it doesn't get pushed by anything
 	pev->solid		= SOLID_BSP;
 	SET_MODEL( ENT(pev), STRING(pev->model) );
@@ -361,9 +394,9 @@ void CFuncTank :: StopControl()
 }
 
 // Called each frame by the player's ItemPostFrame
-void CFuncTank :: ControllerPostFrame()
+void CFuncTank :: ControllerPostFrame( void )
 {
-	ASSERT(m_pController != NULL);
+	
 
 	
 	
@@ -387,7 +420,7 @@ void CFuncTank :: ControllerPostFrame()
 	}
 	
 	//second attack
-	if ( (m_pController->pev->button & IN_ATTACK2) && !(m_pController->pev->button & (IN_ATTACK | IN_RELOAD)) )
+	else if ( (m_pController->pev->button & IN_ATTACK2)  )
 	{
 		Vector vecForward;
 		UTIL_MakeVectorsPrivate( pev->angles, vecForward, NULL, NULL );
@@ -404,7 +437,7 @@ void CFuncTank :: ControllerPostFrame()
 
 	}
 	//reload
-	if ( (m_pController->pev->button & IN_RELOAD) && !(m_pController->pev->button & (IN_ATTACK | IN_ATTACK2)) )
+	else if ( (m_pController->pev->button & IN_RELOAD) )
 	{
 		Vector vecForward;
 		UTIL_MakeVectorsPrivate( pev->angles, vecForward, NULL, NULL );
@@ -486,12 +519,9 @@ void CFuncTank :: Think( void )
 	else
 		StopRotSound();
 }
-////////////////////////////////////////////////////////////////////////////////////////
-/////if delete the code void CFuncTank::TrackTarget( void ), tank cant rotate by player.
-////////////////////////////////////////////////////////////////////////////////////////
+
 void CFuncTank::TrackTarget( void )
 {
-
 	TraceResult tr;
 	edict_t *pPlayer = FIND_CLIENT_IN_PVS( edict() );
 	BOOL updateTime = FALSE, lineOfSight;
@@ -623,7 +653,7 @@ void CFuncTank::TrackTarget( void )
 
 		if ( fire )
 		{
-			Fire( BarrelPosition(), forward, pev ); //shit, what it that?!!!!
+			Fire( BarrelPosition(), forward, pev );
 		}
 		else
 			m_fireLast = 0;
@@ -658,7 +688,6 @@ void CFuncTank::AdjustAnglesForBarrel( Vector &angles, float distance )
 
 
 // Fire targets and spawn sprites
-////WTF? 
 void CFuncTank::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
 	if ( m_fireLast != 0 )
@@ -800,9 +829,12 @@ public:
 	void	Activate( void );
 	void	KeyValue( KeyValueData *pkvd );
 	void	Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
-	void	EXPORT Think( void );
+	void	Think( void );
 	CLaser *GetLaser( void );
 
+virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	CLaser	*m_pLaser;
@@ -810,6 +842,13 @@ private:
 };
 LINK_ENTITY_TO_CLASS( func_tanklaser, CFuncTankLaser );
 
+TYPEDESCRIPTION	CFuncTankLaser::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncTankLaser, m_pLaser, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CFuncTankLaser, m_laserTime, FIELD_TIME ),
+};
+
+IMPLEMENT_SAVERESTORE( CFuncTankLaser, CFuncTank );
 
 void CFuncTankLaser::Activate( void )
 {
@@ -961,7 +1000,7 @@ void CFuncTankMortar::KeyValue( KeyValueData *pkvd )
 		CFuncTank::KeyValue( pkvd );
 }
 
-/////////////////
+
 void CFuncTankMortar::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
 	if ( m_fireLast != 0 )
@@ -1109,13 +1148,22 @@ public:
 	virtual int	ObjectCaps( void );
 	void Spawn( void );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void EXPORT Think( void );
+	void Think( void );
 
+virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
 
 	CFuncTank *m_pTank;
 };
 LINK_ENTITY_TO_CLASS( func_tankcontrols, CFuncTankControls );
 
+TYPEDESCRIPTION	CFuncTankControls::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncTankControls, m_pTank, FIELD_CLASSPTR ),
+};
+
+IMPLEMENT_SAVERESTORE( CFuncTankControls, CBaseEntity );
 
 int	CFuncTankControls :: ObjectCaps( void ) 
 { 
@@ -1125,40 +1173,6 @@ int	CFuncTankControls :: ObjectCaps( void )
 
 void CFuncTankControls :: Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 { // pass the Use command onto the controls
-/*
-			TraceResult tr;
-			// TankTrace needs gpGlobals->v_up, etc.
-			UTIL_MakeAimVectors(pev->angles);
-			TankTrace( barrelEnd, forward, gTankSpread[m_spread], tr );
-
-		//create direct line shot
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-					 WRITE_BYTE( TE_BEAMPOINTS );
-					 WRITE_COORD( pev->origin.x);
-					 WRITE_COORD( pev->origin.y);
-					 WRITE_COORD( pev->origin.z);
-					 WRITE_COORD( tr.vecEndPos.x);
-					 WRITE_COORD( tr.vecEndPos.y);
-					 WRITE_COORD( tr.vecEndPos.z);
-					 WRITE_SHORT(g_sModelIndexLaser ); // model
-					 WRITE_BYTE( 0 ); // framestart?
-					 WRITE_BYTE( 0 ); // framerate?
-					 WRITE_BYTE( 30 ); // life
-					 WRITE_BYTE( 12 ); // width
-					 WRITE_BYTE( 0 ); // noise
-					 WRITE_BYTE( 0 ); // r, g, b
-					 WRITE_BYTE( 200); // r, g, b
-					 WRITE_BYTE( 0 ); // r, g, b
-					 WRITE_BYTE( 200 ); // brightness
-					 WRITE_BYTE( 0 ); // speed?
-		MESSAGE_END(); 
-		*/
-
-
-
-		
-		
-		//next
 	if ( m_pTank )
 		m_pTank->Use( pActivator, pCaller, useType, value );
 

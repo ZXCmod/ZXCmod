@@ -1,3 +1,55 @@
+﻿1.38    [25.02.2024]
+
+
+RU:
+- Гранаты заменены на кислотную, электрическую и гравитационную. Вместо Барни спавнится ALIEN GRUNT.
+- Второй выстрел шотнана с бронебойной пулей по центру с дамагом 50. 
+- Обычная трипмина теперь точка телепорта. Третья атака на гаусе телепортирует к ней. 
+- Исправлены снарки. На хорнетгане хорнеты заменены на снарки. При щите > 50 стреляет паразитными снарками.
+- Броня и щит подсвечивают игрока. Чем больше, тем ярче.
+- Кислота на гаусе отскакивает от стен.
+- Радиус и урон электрошока на МР5 зависит от количества щитов.
+- Теперь ракеты и гранаты притягиваются гравбуллетами на глоке и черной дырой на шотгане.
+- Исправлены trigger_hurt (как на crossfire) и func_tank. 
+- Убитые игроки больше не исчезают.
+- Турели атакуют чужие турели.
+- Взрывы наносят 10% урона сквозь стены.
+- Возвращение Singleplay.
+- Оптимизирован код. Стабильность мода многократно увеличена.
+- Добавлен CVAR: zxc_mspawn 0. Рандумно спавнит монстров на карте до указанного значения.
+- Добавлен CVAR: zxc_promode 0. 1 - Включить. Ограничивает атаки на оружиях.
+- Добавлен CVAR: zxc_hp 100. Количество хелсов на спавне. 
+- Монстры прибавляют HP и броню за килл.
+- Большие изменения в балансе оружия.
+
+EN:
+- Grenades are replaced to acid, electric and grav. ALIEN GRUNT is spawned instead of Barney.
+- Second shotgun attack with armor-piercing bullet on center with 50 damage.
+- Default tripmine is now a teleportation point. Third gauss attack teleports to it.
+- Fixed snarks. Hornetgun hornets are replaced with snarks. Shoots parasite snarks with shield > 50.
+- Armor and shield highlights the player. The more, the brighter.
+- Gauss acid ricochets from walls.
+- MP5's electroshock radius and damage depend on shields amount
+- Now rockets and grenades gravitate to glock's gravbullets and shotgun's black hole.
+- fixed trigger_hurt (like on crossfire) and func_tank.
+- Killed players no longer disappear.
+- Turrets attack enemy turrets.
+- Explosions do 10% damage through walls.
+- Return of Singleplay.
+- Optimized code. Stability is greatly increased.
+- Added CVAR: zxc_mspawn 0. Randomly spawns monsters on a map till specified value.
+- Added CVAR: zxc_promode 0. 1 to enable. Limits weapon attacks.
+- Added CVAR: zxc_hp 100. Health mount on spawn.
+- Monsters add HP and armor per kill.
+- Huge changes in weapon balance.
+
+
+
+
+
+
+
+
 1.35 - 1.37    [28.11.2023]
 
 

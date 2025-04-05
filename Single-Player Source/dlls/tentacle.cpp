@@ -42,6 +42,9 @@ public:
 	void Precache( );
 	void KeyValue( KeyValueData *pkvd );
 
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	// Don't allow the tentacle to go across transitions!!!
 	virtual int	ObjectCaps( void ) { return CBaseMonster :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
@@ -141,6 +144,28 @@ const char *CTentacle::pHitWater[] =
 };
 
 
+TYPEDESCRIPTION	CTentacle::m_SaveData[] = 
+{
+	DEFINE_FIELD( CTentacle, m_flInitialYaw, FIELD_FLOAT ),
+	DEFINE_FIELD( CTentacle, m_iGoalAnim, FIELD_INTEGER ),
+	DEFINE_FIELD( CTentacle, m_iLevel, FIELD_INTEGER ),
+	DEFINE_FIELD( CTentacle, m_iDir, FIELD_INTEGER ),
+	DEFINE_FIELD( CTentacle, m_flFramerateAdj, FIELD_FLOAT ),
+	DEFINE_FIELD( CTentacle, m_flSoundYaw, FIELD_FLOAT ),
+	DEFINE_FIELD( CTentacle, m_iSoundLevel, FIELD_INTEGER ),
+	DEFINE_FIELD( CTentacle, m_flSoundTime, FIELD_TIME ),
+	DEFINE_FIELD( CTentacle, m_flSoundRadius, FIELD_FLOAT ),
+	DEFINE_FIELD( CTentacle, m_iHitDmg, FIELD_INTEGER ),
+	DEFINE_FIELD( CTentacle, m_flHitTime, FIELD_TIME ),
+	DEFINE_FIELD( CTentacle, m_flTapRadius, FIELD_FLOAT ),
+	DEFINE_FIELD( CTentacle, m_flNextSong, FIELD_TIME ),
+	DEFINE_FIELD( CTentacle, m_iTapSound, FIELD_INTEGER ),
+	DEFINE_FIELD( CTentacle, m_flMaxYaw, FIELD_FLOAT ),
+	DEFINE_FIELD( CTentacle, m_vecPrevSound, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CTentacle, m_flPrevSoundTime, FIELD_TIME ),
+};
+IMPLEMENT_SAVERESTORE( CTentacle, CBaseMonster );
+
 
 // animation sequence aliases 
 typedef enum
@@ -229,13 +254,13 @@ void CTentacle :: Spawn( )
 	pev->solid			= SOLID_BBOX;
 	pev->movetype		= MOVETYPE_FLY;
 	pev->effects		= 0;
-	pev->health			= 475;
+	pev->health			= 75;
 	pev->sequence		= 0;
 
 	SET_MODEL(ENT(pev), "models/tentacle2.mdl");
 	UTIL_SetSize( pev, Vector( -32, -32, 0 ), Vector( 32, 32, 64 ) );
 
-	pev->takedamage		= DAMAGE_YES;
+	pev->takedamage		= DAMAGE_AIM;
 	pev->flags			|= FL_MONSTER;
 	
 	m_bloodColor		= BLOOD_COLOR_GREEN;
@@ -256,7 +281,7 @@ void CTentacle :: Spawn( )
 	g_fFlySound = FALSE;
 	g_fSquirmSound = FALSE;
 
-	m_iHitDmg = 100;
+	m_iHitDmg = 20;
 
 	if (m_flMaxYaw <= 0)
 		m_flMaxYaw = 65;
@@ -533,14 +558,11 @@ void CTentacle :: Cycle( void )
 		// ALERT( at_console, "%s done %d %d\n", STRING( pev->targetname ), pev->sequence, m_iGoalAnim );
 		if (pev->health <= 1)
 		{
-			// m_iGoalAnim = TENTACLE_ANIM_Pit_Idle;
-			// if (pev->sequence == TENTACLE_ANIM_Pit_Idle)
-			// {
-				// pev->health = 75;
-			// }
-			pev->takedamage = DAMAGE_NO;
-			SetThink( DieThink );
-			m_iGoalAnim = TENTACLE_ANIM_Engine_Death1;
+			m_iGoalAnim = TENTACLE_ANIM_Pit_Idle;
+			if (pev->sequence == TENTACLE_ANIM_Pit_Idle)
+			{
+				pev->health = 75;
+			}
 		}
 		else if ( m_flSoundTime > gpGlobals->time )
 		{
@@ -842,7 +864,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 
 			vecSrc.z += MyHeight( );
 
-			float flVol = 0.1;
+			float flVol = RANDOM_FLOAT( 0.3, 0.5 );
 
 			switch( m_iTapSound )
 			{
@@ -869,7 +891,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case 1: sound = "tentacle/te_roar2.wav"; break;
 		}
 
-		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 0.4, ATTN_NORM, 0, 100);
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 1.0, ATTN_NORM, 0, 100);
 		break;
 
 	case 8: // search
@@ -879,7 +901,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case 1: sound = "tentacle/te_search2.wav"; break;
 		}
 
-		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 0.4, ATTN_NORM, 0, 100);
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 1.0, ATTN_NORM, 0, 100);
 		break;
 
 	case 9: // swing
@@ -889,7 +911,7 @@ void CTentacle :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		case 1: sound = "tentacle/te_move2.wav"; break;
 		}
 
-		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 0.4, ATTN_NORM, 0, 100);
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin + Vector( 0, 0, MyHeight()), sound, 1.0, ATTN_NORM, 0, 100);
 		break;
 
 	default:
@@ -934,33 +956,18 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 	if (m_flHitTime > gpGlobals->time)
 		return;
 
- 	// ::RadiusDamage( tr.vecEndPos, pev, VARS( pev->owner ), 90, 500, CLASS_NONE, DMG_BULLET );
-	// MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-		// WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
-		// WRITE_COORD( tr.vecEndPos.x);
-		// WRITE_COORD( tr.vecEndPos.y);
-		// WRITE_COORD( tr.vecEndPos.z);
-		// WRITE_SHORT( g_sModelIndexFireball );
-		// WRITE_BYTE( 128  ); // scale * 10
-		// WRITE_BYTE( 8  ); // framerate
-		// WRITE_BYTE( TE_EXPLFLAG_NONE );
-	// MESSAGE_END(); 
-		
 	// only look at the ones where the player hit me
 	if (tr.pHit == NULL || tr.pHit->v.modelindex != pev->modelindex)
 		return;
-		
-
 
 	if (tr.iHitgroup >= 3)
 	{
-		//pOther->TakeDamage( pev, pev, m_iHitDmg*10, DMG_CRUSH );
-
-		
+		pOther->TakeDamage( pev, pev, m_iHitDmg, DMG_CRUSH );
+		// ALERT( at_console, "wack %3d : ", m_iHitDmg );
 	}
 	else if (tr.iHitgroup != 0)
 	{
-		pOther->TakeDamage( pev, pev, 17, DMG_CRUSH );
+		pOther->TakeDamage( pev, pev, 20, DMG_CRUSH );
 		// ALERT( at_console, "tap  %3d : ", 20 );
 	}
 	else
@@ -968,7 +975,7 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 		return; // Huh?
 	}
 
-	m_flHitTime = gpGlobals->time + 1.1;
+	m_flHitTime = gpGlobals->time + 0.5;
 
 	// ALERT( at_console, "%s : ", STRING( tr.pHit->v.classname ) );
 
@@ -978,9 +985,14 @@ void CTentacle :: HitTouch( CBaseEntity *pOther )
 
 int CTentacle::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType )
 {
-
-	pev->health -= flDamage;
-
+	if (flDamage > pev->health)
+	{
+		pev->health = 1;
+	}
+	else
+	{
+		pev->health -= flDamage;
+	}
 	return 1;
 }
 
@@ -1016,7 +1028,7 @@ void CTentacleMaw :: Spawn( )
 	pev->solid			= SOLID_NOT;
 	pev->movetype		= MOVETYPE_STEP;
 	pev->effects		= 0;
-	pev->health			= 1075;
+	pev->health			= 75;
 	pev->yaw_speed		= 8;
 	pev->sequence		= 0;
 	

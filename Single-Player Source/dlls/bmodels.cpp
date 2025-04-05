@@ -286,7 +286,10 @@ public:
 	void RampPitchVol (int fUp );
 	void Blocked( CBaseEntity *pOther );
 	virtual int	ObjectCaps( void ) { return CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	float m_flFanFriction;
 	float m_flAttenuation;
@@ -295,6 +298,16 @@ public:
 	int	  m_sounds;
 };
 
+TYPEDESCRIPTION	CFuncRotating::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncRotating, m_flFanFriction, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncRotating, m_flAttenuation, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncRotating, m_flVolume, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncRotating, m_pitch, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncRotating, m_sounds, FIELD_INTEGER )
+};
+
+IMPLEMENT_SAVERESTORE( CFuncRotating, CBaseEntity );
 
 
 LINK_ENTITY_TO_CLASS( func_rotating, CFuncRotating );
@@ -722,10 +735,11 @@ public:
 	void	Touch( CBaseEntity *pOther );
 	void	EXPORT RopeTouch ( CBaseEntity *pOther );// this touch func makes the pendulum a rope
 	virtual int	ObjectCaps( void ) { return CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 	void	Blocked( CBaseEntity *pOther );
 
-
+	static	TYPEDESCRIPTION m_SaveData[];
 	
 	float	m_accel;			// Acceleration
 	float	m_distance;			// 
@@ -739,6 +753,19 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_pendulum, CPendulum );
 
+TYPEDESCRIPTION	CPendulum::m_SaveData[] = 
+{
+	DEFINE_FIELD( CPendulum, m_accel, FIELD_FLOAT ),
+	DEFINE_FIELD( CPendulum, m_distance, FIELD_FLOAT ),
+	DEFINE_FIELD( CPendulum, m_time, FIELD_TIME ),
+	DEFINE_FIELD( CPendulum, m_damp, FIELD_FLOAT ),
+	DEFINE_FIELD( CPendulum, m_maxSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CPendulum, m_dampSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CPendulum, m_center, FIELD_VECTOR ),
+	DEFINE_FIELD( CPendulum, m_start, FIELD_VECTOR ),
+};
+
+IMPLEMENT_SAVERESTORE( CPendulum, CBaseEntity );
 
 
 

@@ -56,7 +56,10 @@ public:
 	CPathTrack	*GetNext( void );
 	CPathTrack	*GetPrevious( void );
 
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 #if PATH_SPARKLE_DEBUG
 	void EXPORT Sparkle(void);
 #endif
@@ -95,7 +98,10 @@ public:
 	
 	static CFuncTrackTrain *Instance( edict_t *pent );
 
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 	virtual int	ObjectCaps( void ) { return (CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_DIRECTIONAL_USE; }
 
 	virtual void	OverrideReset( void );

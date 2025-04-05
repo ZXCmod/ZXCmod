@@ -33,7 +33,10 @@ public:
 	virtual void	Spawn( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	int		m_iStyle;
@@ -41,6 +44,13 @@ private:
 };
 LINK_ENTITY_TO_CLASS( light, CLight );
 
+TYPEDESCRIPTION	CLight::m_SaveData[] = 
+{
+	DEFINE_FIELD( CLight, m_iStyle, FIELD_INTEGER ),
+	DEFINE_FIELD( CLight, m_iszPattern, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CLight, CPointEntity );
 
 
 //
@@ -78,7 +88,6 @@ If targeted, it will toggle between on or off.
 
 void CLight :: Spawn( void )
 {
-//LIGHT_STYLE(0, "abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba");
 	if (FStringNull(pev->targetname))
 	{       // inert light
 		REMOVE_ENTITY(ENT(pev));
@@ -155,9 +164,9 @@ void CEnvLight::KeyValue( KeyValueData* pkvd )
 		}
 
 		// simulate qrad direct, ambient,and gamma adjustments, as well as engine scaling
-		r = pow( r / 124.0, 0.6 ) * 264;
-		g = pow( g / 124.0, 0.6 ) * 264;
-		b = pow( b / 124.0, 0.6 ) * 264;
+		r = pow( r / 114.0, 0.6 ) * 264;
+		g = pow( g / 114.0, 0.6 ) * 264;
+		b = pow( b / 114.0, 0.6 ) * 264;
 
 		pkvd->fHandled = TRUE;
 		sprintf( szColor, "%d", r );

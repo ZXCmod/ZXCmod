@@ -885,15 +885,22 @@ void CBaseTrigger :: HurtTouch ( CBaseEntity *pOther )
 	if ( (pev->spawnflags & SF_TRIGGER_HURT_NO_CLIENTS) && pOther->IsPlayer() )
 		return;
 		
-	// bEntity = pOther;
-	if (bEntity != NULL)
-		{ pOther->TakeDamage( pev, VARS(bEntity->pev), 150, DMG_NERVEGAS ); bEntity = NULL; }
+	
 
 	// HACKHACK -- In multiplayer, players touch this based on packet receipt.
 	// So the players who send packets later aren't always hurt.  Keep track of
 	// how much time has passed and whether or not you've touched that player
 	if ( g_pGameRules->IsMultiplayer() )
 	{
+		//bEntity = pOther;	
+		if (bEntity != NULL)
+		{
+			pOther->TakeDamage( pev, VARS(bEntity->pev), 150, DMG_NERVEGAS ); 
+		}
+		else
+		{
+			bEntity = NULL; 
+		}
 		if ( pev->dmgtime > gpGlobals->time )
 		{
 			if ( gpGlobals->time != pev->pain_finished )

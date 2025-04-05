@@ -46,11 +46,19 @@ public:
 	// Don't treat as a live target
 	virtual BOOL IsAlive( void ) { return FALSE; }
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int			m_animate;
 };
 
+TYPEDESCRIPTION	CCycler::m_SaveData[] = 
+{
+	DEFINE_FIELD( CCycler, m_animate, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CCycler, CBaseMonster );
 
 
 //
@@ -217,7 +225,9 @@ public:
 	virtual int	TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 	void	Animate( float frames );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	inline int		ShouldAnimate( void ) { return m_animate && m_maxFrame > 1.0; }
 	int			m_animate;
@@ -227,6 +237,14 @@ public:
 
 LINK_ENTITY_TO_CLASS( cycler_sprite, CCyclerSprite );
 
+TYPEDESCRIPTION	CCyclerSprite::m_SaveData[] = 
+{
+	DEFINE_FIELD( CCyclerSprite, m_animate, FIELD_INTEGER ),
+	DEFINE_FIELD( CCyclerSprite, m_lastTime, FIELD_TIME ),
+	DEFINE_FIELD( CCyclerSprite, m_maxFrame, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CCyclerSprite, CBaseEntity );
 
 
 void CCyclerSprite::Spawn( void )
@@ -372,7 +390,9 @@ void CWeaponCycler::SecondaryAttack( void )
 // Flaming Wreakage
 class CWreckage : public CBaseMonster
 {
-
+int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	void Spawn( void );
 	void Precache( void );
@@ -380,6 +400,11 @@ class CWreckage : public CBaseMonster
 
 	int m_flStartTime;
 };
+TYPEDESCRIPTION	CWreckage::m_SaveData[] = 
+{
+	DEFINE_FIELD( CWreckage, m_flStartTime, FIELD_TIME ),
+};
+IMPLEMENT_SAVERESTORE( CWreckage, CBaseMonster );
 
 
 LINK_ENTITY_TO_CLASS( cycler_wreckage, CWreckage );

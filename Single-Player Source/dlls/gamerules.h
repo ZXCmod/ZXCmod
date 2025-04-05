@@ -56,6 +56,8 @@ enum
 	GR_NEUTRAL,
 };
 
+
+
 class CGameRules
 {
 public:
@@ -72,7 +74,7 @@ public:
 	virtual BOOL IsDeathmatch( void ) = 0;//is this a deathmatch game?
 	virtual BOOL IsTeamplay( void ) { return FALSE; };// is this deathmatch game being played with team rules?
 	virtual BOOL IsCoOp( void ) = 0;// is this a coop game?
-	virtual const char *GetGameDescription( void ) { return "Half-Life zxc 1.35"; }  // this is the game name that gets seen in the server browser
+	virtual const char *GetGameDescription( void ) { if (g_zxc_promode.value == 0) return "zxc-mod 1.38"; else return "zxc-mod 1.38 PRO";}  // this is the game name that gets seen in the server browser
 	
 // Client connection/disconnection
 	virtual BOOL ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] ) = 0;// a client just connected to the server (player hasn't spawned yet)
@@ -157,11 +159,18 @@ public:
 
 	// Immediately end a multiplayer game
 	virtual void EndMultiplayerGame( void ) {}
+
+	// some player checks
+	CBaseEntity *pPlayerX;
+	CBaseEntity *pPlayer2;
+	CBaseEntity *plr;
+	CBaseEntity *pPlayerX2;
+	static int	EntCounter;
+	static int	MonSpawnCounter;
 };
 
 extern CGameRules *InstallGameRules( void );
-
-
+ 
 
 //=========================================================
 // CHalfLifeRules - rules for the single player Half-Life 
@@ -247,6 +256,9 @@ public:
 // Teamplay stuff	
 	virtual const char *GetTeamID( CBaseEntity *pEntity ) {return "";};
 	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );
+
+	
+
 };
 
 //=========================================================
@@ -255,17 +267,13 @@ public:
 //=========================================================
 class CHalfLifeMultiplay : public CGameRules
 {
+
 public:
 	CHalfLifeMultiplay();
 
 	float m_flNextSBarUpdateTime2; // teamplay timer updater
 	
-	// some player checks
-	CBaseEntity *pPlayerX;
-	CBaseEntity *pPlayer2;
-	CBaseEntity *plr;
-	CBaseEntity *pPlayerX2;
-
+	
 	
 // GR_Think
 	virtual void Think( void );
@@ -298,7 +306,7 @@ public:
 	virtual BOOL  FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker );
 
 // Client spawn/respawn control
-	virtual void PlayerSpawn( CBasePlayer *pPlayer);
+	virtual void PlayerSpawn( CBasePlayer *pPlayer );
 	virtual void PlayerThink( CBasePlayer *pPlayer );
 	virtual BOOL FPlayerCanRespawn( CBasePlayer *pPlayer );
 	virtual float FlPlayerSpawnTime( CBasePlayer *pPlayer );
@@ -362,12 +370,17 @@ public:
 	// Immediately end a multiplayer game
 	virtual void EndMultiplayerGame( void ) { GoToIntermission(); }
 
+	void MSpawnUpdate ( );
+	void MCounterUpdate ( );
+
 protected:
 	virtual void ChangeLevel( void );
 	virtual void GoToIntermission( void );
 	float m_flIntermissionEndTime;
+	float g_flMSpawnTime;
 	BOOL m_iEndIntermissionButtonHit;
 	void SendMOTDToClient( edict_t *client );
+
 private:
 	int		live;
 	int		notlive;
@@ -378,5 +391,7 @@ private:
 	int		TeamCount2;
 	
 };
+
+
 
 extern DLL_GLOBAL CGameRules*	g_pGameRules;

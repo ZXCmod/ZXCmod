@@ -25,8 +25,6 @@
 #include "decals.h"
 #include "explode.h"
 
-
-
 // Spark Shower
 class CShower : public CBaseEntity
 {
@@ -40,21 +38,21 @@ LINK_ENTITY_TO_CLASS( spark_shower, CShower );
 
 void CShower::Spawn( void )
 {
-	pev->velocity = RANDOM_LONG( 200, 300 ) * pev->angles;
-	pev->velocity.x += RANDOM_LONG(-100,100);
-	pev->velocity.y += RANDOM_LONG(-100,100);
+	pev->velocity = RANDOM_FLOAT( 200, 300 ) * pev->angles;
+	pev->velocity.x += RANDOM_FLOAT(-100.f,100.f);
+	pev->velocity.y += RANDOM_FLOAT(-100.f,100.f);
 	if ( pev->velocity.z >= 0 )
 		pev->velocity.z += 200;
 	else
 		pev->velocity.z -= 200;
 	pev->movetype = MOVETYPE_BOUNCE;
-	pev->gravity = 1.0;
+	pev->gravity = 0.5;
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->solid = SOLID_NOT;
 	SET_MODEL( edict(), "models/grenade.mdl");	// Need a model, just use the grenade, we don't draw it anyway
 	UTIL_SetSize(pev, g_vecZero, g_vecZero );
 	pev->effects |= EF_NODRAW;
-	pev->speed = RANDOM_FLOAT( 0.2, 0.8 );
+	pev->speed = RANDOM_FLOAT( 0.5, 1.5 );
 
 	pev->angles = g_vecZero;
 }
@@ -75,9 +73,9 @@ void CShower::Think( void )
 void CShower::Touch( CBaseEntity *pOther )
 {
 	if ( pev->flags & FL_ONGROUND )
-		pev->velocity = pev->velocity * 3.1;
+		pev->velocity = pev->velocity * 0.1;
 	else
-		pev->velocity = pev->velocity * 3.6;
+		pev->velocity = pev->velocity * 0.6;
 
 	if ( (pev->velocity.x*pev->velocity.x+pev->velocity.y*pev->velocity.y) < 10.0 )
 		pev->speed = 0;
@@ -88,24 +86,24 @@ class CEnvExplosion : public CBaseMonster
 public:
 	void Spawn( );
 	void EXPORT Smoke ( void );
-	void Precache( void );
-	void WriteBeamColor ( void );
-	void KeyValue( KeyValueData *pkvd );
+		void KeyValue( KeyValueData *pkvd );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int m_iMagnitude;// how large is the fireball? how much damage?
 	int m_spriteScale; // what's the exact fireball sprite scale? 
-	int m_iSpriteTexture;
+	};
+
+TYPEDESCRIPTION	CEnvExplosion::m_SaveData[] = 
+{
+	DEFINE_FIELD( CEnvExplosion, m_iMagnitude, FIELD_INTEGER ),
+	DEFINE_FIELD( CEnvExplosion, m_spriteScale, FIELD_INTEGER ),
 };
 
-void CEnvExplosion::Precache( void )
-{
-	m_iSpriteTexture = PRECACHE_MODEL( "sprites/shockwave.spr" );
-}
-
-
+IMPLEMENT_SAVERESTORE( CEnvExplosion, CBaseMonster );
 LINK_ENTITY_TO_CLASS( env_explosion, CEnvExplosion );
 
 void CEnvExplosion::KeyValue( KeyValueData *pkvd )
@@ -118,14 +116,6 @@ void CEnvExplosion::KeyValue( KeyValueData *pkvd )
 	else
 		CBaseEntity::KeyValue( pkvd );
 }
-
-
-
-void CEnvExplosion::WriteBeamColor ( void )
-{
-
-}
-
 
 void CEnvExplosion::Spawn( void )
 { 
@@ -218,18 +208,18 @@ void CEnvExplosion::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 	}
 
 	SetThink( Smoke );
-	pev->nextthink = gpGlobals->time + 0.5;
+	pev->nextthink = gpGlobals->time + 0.3;
 
 	// draw sparks
-	if ( !( pev->spawnflags & SF_ENVEXPLOSION_NOSPARKS ) )
-	{
-		int sparkCount = RANDOM_LONG(0,5);
+	// if ( !( pev->spawnflags & SF_ENVEXPLOSION_NOSPARKS ) )
+	// {
+	// 	int sparkCount = RANDOM_LONG(0,3);
 
-		for ( int i = 0; i < sparkCount; i++ )
-		{
-			Create( "spark_shower", pev->origin, tr.vecPlaneNormal, NULL );
-		}
-	}
+	// 	for ( int i = 0; i < sparkCount; i++ )
+	// 	{
+	// 		Create( "spark_shower", pev->origin, tr.vecPlaneNormal, NULL );
+	// 	}
+	// }
 }
 
 void CEnvExplosion::Smoke( void )
@@ -243,7 +233,7 @@ void CEnvExplosion::Smoke( void )
 			WRITE_COORD( pev->origin.z );
 			WRITE_SHORT( g_sModelIndexSmoke );
 			WRITE_BYTE( (BYTE)m_spriteScale ); // scale * 10
-			WRITE_BYTE( RANDOM_LONG( 1, 3 )); // framerate
+			WRITE_BYTE( 12  ); // framerate
 		MESSAGE_END();
 	}
 

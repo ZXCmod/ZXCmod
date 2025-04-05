@@ -108,7 +108,10 @@ public:
 	SCRIPTSTATE			m_scriptState;		// internal cinematic state
 	CCineMonster		*m_pCine;
 
-
+	virtual int		Save( CSave &save ); 
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	void KeyValue( KeyValueData *pkvd );
 
@@ -126,6 +129,7 @@ public:
 	void Listen ( void );
 
 	virtual BOOL	IsAlive( void ) { return (pev->deadflag != DEAD_DEAD); }
+	virtual	BOOL	IsMonster( void ) { return TRUE; }
 	virtual BOOL	ShouldFadeOnDeath( void );
 
 // Basic Monster AI functions

@@ -12,7 +12,6 @@
 *   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
-/* 
 #ifndef OEM_BUILD
 
 #include "extdll.h"
@@ -128,7 +127,7 @@ void CApache :: Spawn( void )
 
 	pev->flags |= FL_MONSTER;
 	pev->takedamage		= DAMAGE_AIM;
-	pev->health			= gSkillData.apacheHealth;
+	pev->health			= 1000;
 
 	m_flFieldOfView = -0.707; // 270 degrees
 
@@ -295,7 +294,17 @@ void CApache :: DyingThink( void )
 	{
 		Vector vecSpot = pev->origin + (pev->mins + pev->maxs) * 0.5;
 
-
+		/*
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+			WRITE_BYTE( TE_EXPLOSION);		// This just makes a dynamic light now
+			WRITE_COORD( vecSpot.x );
+			WRITE_COORD( vecSpot.y );
+			WRITE_COORD( vecSpot.z + 300 );
+			WRITE_SHORT( g_sModelIndexFireball );
+			WRITE_BYTE( 250 ); // scale * 10
+			WRITE_BYTE( 8  ); // framerate
+		MESSAGE_END();
+		*/
 
 		// fireball
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSpot );
@@ -345,7 +354,7 @@ void CApache :: DyingThink( void )
 
 		RadiusDamage( pev->origin, pev, pev, 300, CLASS_NONE, DMG_BLAST );
 
-		if ((pev->flags & FL_ONGROUND))
+		if (/*!(pev->spawnflags & SF_NOWRECKAGE) && */(pev->flags & FL_ONGROUND))
 		{
 			CBaseEntity *pWreckage = Create( "cycler_wreckage", pev->origin, pev->angles );
 			// SET_MODEL( ENT(pWreckage->pev), STRING(pev->model) );
@@ -667,7 +676,7 @@ void CApache :: Flight( void )
 	}
 
 	// pitch forward or back to get to target
-	if (flDist > 0 && flSpeed < m_flGoalSpeed && pev->angles.x + pev->avelocity.x > -40)
+	if (flDist > 0 && flSpeed < m_flGoalSpeed /* && flSpeed < flDist */ && pev->angles.x + pev->avelocity.x > -40)
 	{
 		// ALERT( at_console, "F " );
 		// lean forward
@@ -887,7 +896,13 @@ int CApache :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, floa
 		flDamage *= 2;
 	}
 
-
+	/*
+	if ( (bitsDamageType & DMG_BULLET) && flDamage > 50)
+	{
+		// clip bullet damage at 50
+		flDamage = 50;
+	}
+	*/
 
 	// ALERT( at_console, "%.0f\n", flDamage );
 	return CBaseEntity::TakeDamage(  pevInflictor, pevAttacker, flDamage, bitsDamageType );
@@ -1033,4 +1048,3 @@ void CApacheHVR :: AccelerateThink( void  )
 
 
 #endif
- */

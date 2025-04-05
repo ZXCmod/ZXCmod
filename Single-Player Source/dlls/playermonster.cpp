@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Â© 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: New version of the slider bar
 //
@@ -27,7 +27,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed( void );
-	int  Classify ( );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	int ISoundMask ( void );
 };
@@ -37,7 +37,7 @@ LINK_ENTITY_TO_CLASS( monster_player, CPlayerMonster );
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CPlayerMonster :: Classify ( )
+int	CPlayerMonster :: Classify ( void )
 {
 	return	CLASS_PLAYER_ALLY;
 }

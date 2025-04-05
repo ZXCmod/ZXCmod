@@ -33,6 +33,7 @@ public:
 
 	static CGrenade *ShootTimed( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time );
 	static CGrenade *ShootTimed2( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time );
+	static CGrenade *ShootTimed3( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time );
 	static CGrenade *ShootContact( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity );
 	static CGrenade *ShootSatchelCharge( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity );
 	static void UseSatchelCharges( entvars_t *pevOwner, SATCHELCODE code );
@@ -51,6 +52,7 @@ public:
 	void EXPORT DetonateUse2( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void EXPORT TumbleThink( void );
 	void EXPORT TumbleThink2( void );
+	void EXPORT TumbleThink3( void );
 
 	virtual void BounceSound( void );
 	virtual int	BloodColor( void ) { return DONT_BLEED; }
@@ -92,19 +94,19 @@ public:
 
 #define MAX_NORMAL_BATTERY	100
 #define MAX_NORMAL_BATTERY2	100
-#define MAX_NORMAL_BATTERY3	100
+#define MAX_NORMAL_BATTERY3	200
 
 
 // weapon weight factors (for auto-switching)   (-1 = noswitch)
-#define CROWBAR_WEIGHT		10
-#define GLOCK_WEIGHT		40
+#define CROWBAR_WEIGHT		0
+#define GLOCK_WEIGHT		10
 #define PYTHON_WEIGHT		15
 #define MP5_WEIGHT			15
 #define SHOTGUN_WEIGHT		15
 #define CROSSBOW_WEIGHT		10
-#define RPG_WEIGHT			30
-#define GAUSS_WEIGHT		30
-#define EGON_WEIGHT			30
+#define RPG_WEIGHT			20
+#define GAUSS_WEIGHT		20
+#define EGON_WEIGHT			20
 #define HORNETGUN_WEIGHT	10
 #define HANDGRENADE_WEIGHT	5
 #define SNARK_WEIGHT		5
@@ -114,14 +116,14 @@ public:
 
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY		200
-#define	_9MM_MAX_CARRY			200
+#define	_9MM_MAX_CARRY			250
 #define _357_MAX_CARRY			64
 #define BUCKSHOT_MAX_CARRY		32
 #define BOLT_MAX_CARRY			20
 #define ROCKET_MAX_CARRY		10
-#define HANDGRENADE_MAX_CARRY	20
+#define HANDGRENADE_MAX_CARRY	10
 #define SATCHEL_MAX_CARRY		10
-#define TRIPMINE_MAX_CARRY		20
+#define TRIPMINE_MAX_CARRY		5
 #define SNARK_MAX_CARRY			30
 #define HORNET_MAX_CARRY		16
 #define M203_GRENADE_MAX_CARRY	20
@@ -132,8 +134,8 @@ public:
 //#define CROWBAR_MAX_CLIP		WEAPON_NOCLIP
 #define GLOCK_MAX_CLIP			20
 #define PYTHON_MAX_CLIP			6
-#define MP5_MAX_CLIP			50
-#define MP5_DEFAULT_AMMO		25
+#define MP5_MAX_CLIP			100
+#define MP5_MAX_AMMO		100
 #define SHOTGUN_MAX_CLIP		8
 #define CROSSBOW_MAX_CLIP		5
 #define RPG_MAX_CLIP			1
@@ -149,31 +151,30 @@ public:
 // the default amount of ammo that comes with each gun when it spawns
 #define GLOCK_DEFAULT_GIVE			20
 #define PYTHON_DEFAULT_GIVE			6
-#define MP5_DEFAULT_GIVE			25
-#define MP5_DEFAULT_AMMO			25
+#define MP5_DEFAULT_GIVE			100
+#define MP5_DEFAULT_AMMO			100
 #define MP5_M203_DEFAULT_GIVE		0
 #define SHOTGUN_DEFAULT_GIVE		12
 #define CROSSBOW_DEFAULT_GIVE		5
 #define RPG_DEFAULT_GIVE			1
 #define GAUSS_DEFAULT_GIVE			25
 #define EGON_DEFAULT_GIVE			25
-#define HANDGRENADE_DEFAULT_GIVE	20
+#define HANDGRENADE_DEFAULT_GIVE	2
 #define SATCHEL_DEFAULT_GIVE		2
-#define TRIPMINE_DEFAULT_GIVE		1
+#define TRIPMINE_DEFAULT_GIVE		2
 #define SNARK_DEFAULT_GIVE			6
 #define HIVEHAND_DEFAULT_GIVE		16
 
 // The amount of ammo given to a player by an ammo item.
-#define AMMO_URANIUMBOX_GIVE	25
+#define AMMO_URANIUMBOX_GIVE	20
 #define AMMO_GLOCKCLIP_GIVE		GLOCK_MAX_CLIP
 #define AMMO_357BOX_GIVE		PYTHON_MAX_CLIP
 #define AMMO_MP5CLIP_GIVE		MP5_MAX_CLIP
 #define AMMO_CHAINBOX_GIVE		100
 #define AMMO_M203BOX_GIVE		2
-#define AMMO_BUCKSHOTBOX_GIVE	12
+#define AMMO_BUCKSHOTBOX_GIVE	8
 #define AMMO_CROSSBOWCLIP_GIVE	CROSSBOW_MAX_CLIP
 #define AMMO_RPGCLIP_GIVE		1
-#define AMMO_URANIUMBOX_GIVE	25
 #define AMMO_SNARKBOX_GIVE		6
 
 // bullet types
@@ -227,7 +228,10 @@ class CBasePlayerItem : public CBaseAnimating
 public:
 	virtual void SetObjectCollisionBox( void );
 
-	//virtual int	 TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual int AddToPlayer( CBasePlayer *pPlayer );	// return TRUE if the item you want the item added to the player inventory
 	virtual int AddDuplicate( CBasePlayerItem *pItem ) { return FALSE; }	// return TRUE if you want your duplicate removed from world
@@ -292,7 +296,10 @@ public:
 class CBasePlayerWeapon : public CBasePlayerItem
 {
 public:
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 	// generic weapon versions of CBasePlayerItem calls
 	virtual int AddToPlayer( CBasePlayer *pPlayer );
@@ -351,6 +358,7 @@ public:
 	float	m_flNextSecondaryAttack;							// soonest time ItemPostFrame will call SecondaryAttack
 	//float	m_flNextThirdAttack;							// 
 	float	m_flTimeWeaponIdle;									// soonest time ItemPostFrame will call WeaponIdle
+	
 	int		m_iPrimaryAmmoType;									// "primary" ammo index into players m_rgAmmo[]
 	int		m_iSecondaryAmmoType;								// "secondary" ammo index into players m_rgAmmo[]
 	int		m_iClip;											// number of shots left in the primary weapon clip, -1 it not used
@@ -436,7 +444,7 @@ extern MULTIDAMAGE gMultiDamage;
 #define VECTOR_CONE_9DEGREES	Vector( 0.07846, 0.07846, 0.07846 )
 #define VECTOR_CONE_10DEGREES	Vector( 0.08716, 0.08716, 0.08716 )
 #define VECTOR_CONE_15DEGREES	Vector( 0.13053, 0.13053, 0.13053 )
-#define VECTOR_CONE_20DEGREES	Vector( 0.27365, 0.27365, 0.27365 )
+#define VECTOR_CONE_20DEGREES	Vector( 0.17365, 0.17365, 0.17365 )
 
 //=========================================================
 // CWeaponBox - a single entity that can store weapons
@@ -457,7 +465,9 @@ class CWeaponBox : public CBaseEntity
 
 public:
 	void EXPORT Kill ( void );
-
+int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	HasWeapon( CBasePlayerItem *pCheckItem );
 	BOOL PackWeapon( CBasePlayerItem *pWeapon );
@@ -525,6 +535,7 @@ public:
 	void EXPORT SwingAgain( void );
 	void EXPORT Smack( void );
 	int GetItemInfo(ItemInfo *p);
+
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void Reload( void );
@@ -672,6 +683,11 @@ class CShotgun : public CBasePlayerWeapon
 {
 public:
 
+#ifndef CLIENT_DLL
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+#endif
 
 
 	void Spawn( void );
@@ -704,6 +720,7 @@ public:
 private:
 	unsigned short m_usDoubleFire;
 	unsigned short m_usSingleFire;
+	float	m_flTimeWeaponIdle2;
 	int m_iShell;
 	unsigned short BSpr;
 };
@@ -726,7 +743,11 @@ class CRpg : public CBasePlayerWeapon
 {
 public:
 
-
+#ifndef CLIENT_DLL
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+#endif
 
 	void Spawn( void );
 	void Precache( void );
@@ -767,7 +788,6 @@ public:
 
 private:
 	unsigned short m_usRpg;
-	int m_flNextTurretsLimit;
 	int m_limit;
 
 };
@@ -775,7 +795,9 @@ private:
 class CRpgRocket : public CGrenade
 {
 public:
-
+int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 	void Spawn( void );
 	void Precache( void );
 	void EXPORT FollowThink( void );
@@ -788,41 +810,17 @@ public:
 	CRpg *m_pLauncher;// pointer back to the launcher that fired me. 
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class CGauss : public CBasePlayerWeapon
 {
 public:
 
+#ifndef CLIENT_DLL
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+#endif
 
-	//int nextnuke;
-    void Spawn( void );
+	    void Spawn( void );
 	void Precache( void );
 	int iItemSlot( void ) { return 4; }
 	int GetItemInfo(ItemInfo *p);
@@ -877,7 +875,11 @@ private:
 class CEgon : public CBasePlayerWeapon
 {
 public:
-
+#ifndef CLIENT_DLL
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+#endif
 
 	void Spawn( void );
 	void Precache( void );
@@ -905,6 +907,7 @@ public:
 	void WeaponIdle( void );
 
 	float m_flAmmoUseTime;// since we use < 1 point of ammo per update, we subtract ammo on a timer.
+
 	float GetPulseInterval( void );
 	float GetDischargeInterval( void );
 	float m_flNextEgonBombTime;
@@ -922,7 +925,6 @@ public:
 	CBeam				*m_pNoise;
 	CSprite				*m_pSprite;
 	
-
 	virtual BOOL UseDecrement( void )
 	{ 
 		#if defined( CLIENT_WEAPONS )
@@ -989,6 +991,7 @@ private:
 	float m_flNextHornetgunGrensTime; //delay
 	int m_iFirePhase;// don't save me.
 	unsigned short BSpr;
+	unsigned short m_iBalls;
 	float FTime1;
 	float m_flNextHornetgunFreezebagLimit;
 };
@@ -1032,7 +1035,11 @@ class CSatchel : public CBasePlayerWeapon
 {
 public:
 
-
+#ifndef CLIENT_DLL
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+#endif
 
 	void Spawn( void );
 	void Precache( void );
@@ -1063,7 +1070,6 @@ public:
 	}
 private:
 	int m_flNextCrystalTime; //delay c heal
-	int m_flNextSatchelsLimit; //limit satchels
 };
 
 
@@ -1086,7 +1092,7 @@ public:
 	void ThirdAttack( void );
 	void FourthAttack( void );
 	BOOL Deploy( void );
-	void Holster( int skiplocal = 0 );
+	void Holster( int skiplocal = 2 );
 	void WeaponIdle( void );
 	short g_sModelIndexLaser;
 
@@ -1103,6 +1109,12 @@ private:
 	unsigned short m_usTripFire;
 
 };
+
+
+
+
+
+
 
 class CSqueak : public CBasePlayerWeapon
 {

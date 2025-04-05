@@ -21,7 +21,7 @@
 #include "soundent.h"
 #include "effects.h"
 #include "customentity.h"
-
+#include "gamerules.h"
 typedef struct 
 {
 	int isValid;
@@ -35,17 +35,19 @@ typedef struct
 #define SF_WAITFORTRIGGER	0x40
 
 
-#define MAX_CARRY	24
+#define MAX_CARRY	4
 
 class COsprey : public CBaseMonster
 {
 public:
-
+	int		Save( CSave &save );
+	int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 	int		ObjectCaps( void ) { return CBaseMonster :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	
 	void Spawn( void );
 	void Precache( void );
-	int  Classify( ) { return CLASS_MACHINE; };
+	int  Classify( void ) { return CLASS_MACHINE; };
 	int  BloodColor( void ) { return DONT_BLEED; }
 	void Killed( entvars_t *pevAttacker, int iGib );
 
@@ -105,6 +107,40 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_osprey, COsprey );
 
+TYPEDESCRIPTION	COsprey::m_SaveData[] = 
+{
+	DEFINE_FIELD( COsprey, m_pGoalEnt, FIELD_CLASSPTR ),
+	DEFINE_FIELD( COsprey, m_vel1, FIELD_VECTOR ),
+	DEFINE_FIELD( COsprey, m_vel2, FIELD_VECTOR ),
+	DEFINE_FIELD( COsprey, m_pos1, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( COsprey, m_pos2, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( COsprey, m_ang1, FIELD_VECTOR ),
+	DEFINE_FIELD( COsprey, m_ang2, FIELD_VECTOR ),
+
+	DEFINE_FIELD( COsprey, m_startTime, FIELD_TIME ),
+	DEFINE_FIELD( COsprey, m_dTime, FIELD_FLOAT ),
+	DEFINE_FIELD( COsprey, m_velocity, FIELD_VECTOR ),
+
+	DEFINE_FIELD( COsprey, m_flIdealtilt, FIELD_FLOAT ),
+	DEFINE_FIELD( COsprey, m_flRotortilt, FIELD_FLOAT ),
+
+	DEFINE_FIELD( COsprey, m_flRightHealth, FIELD_FLOAT ),
+	DEFINE_FIELD( COsprey, m_flLeftHealth, FIELD_FLOAT ),
+
+	DEFINE_FIELD( COsprey, m_iUnits, FIELD_INTEGER ),
+	DEFINE_ARRAY( COsprey, m_hGrunt, FIELD_EHANDLE, MAX_CARRY ),
+	DEFINE_ARRAY( COsprey, m_vecOrigin, FIELD_POSITION_VECTOR, MAX_CARRY ),
+	DEFINE_ARRAY( COsprey, m_hRepel, FIELD_EHANDLE, 4 ),
+
+	// DEFINE_FIELD( COsprey, m_iSoundState, FIELD_INTEGER ),
+	// DEFINE_FIELD( COsprey, m_iSpriteTexture, FIELD_INTEGER ),
+	// DEFINE_FIELD( COsprey, m_iPitch, FIELD_INTEGER ),
+
+	DEFINE_FIELD( COsprey, m_iDoLeftSmokePuff, FIELD_INTEGER ),
+	DEFINE_FIELD( COsprey, m_iDoRightSmokePuff, FIELD_INTEGER ),
+};
+IMPLEMENT_SAVERESTORE( COsprey, CBaseMonster );
+
 
 void COsprey :: Spawn( void )
 {
@@ -114,14 +150,14 @@ void COsprey :: Spawn( void )
 	pev->solid = SOLID_BBOX;
 
 	SET_MODEL(ENT(pev), "models/osprey.mdl");
-	UTIL_SetSize(pev, Vector( -400, -400, -100), Vector(400, 400, 32));
+	UTIL_SetSize(pev, Vector( -40, -40, -0), Vector(40, 40, 32));
 	UTIL_SetOrigin( pev, pev->origin );
 
 	pev->flags |= FL_MONSTER;
 	pev->takedamage		= DAMAGE_YES;
 	m_flRightHealth		= 200;
 	m_flLeftHealth		= 200;
-	pev->health			= 400;
+	pev->health			= 100;
 
 	m_flFieldOfView = 0; // 180 degrees
 
@@ -130,8 +166,8 @@ void COsprey :: Spawn( void )
 	pev->frame = RANDOM_LONG(0,0xFF);
 
 	InitBoneControllers();
-
-	SetThink( FindAllThink );
+	if (!g_pGameRules->IsMultiplayer())
+		SetThink( FindAllThink );
 	SetUse( CommandUse );
 
 	if (!(pev->spawnflags & SF_WAITFORTRIGGER))
@@ -186,7 +222,7 @@ void COsprey :: FindAllThink( void )
 	if (m_iUnits == 0)
 	{
 		ALERT( at_console, "osprey error: no grunts to resupply\n");
-		UTIL_Remove( this );
+		//UTIL_Remove( this );
 		return;
 	}
 	SetThink( FlyThink );
@@ -483,7 +519,7 @@ void COsprey :: Killed( entvars_t *pevAttacker, int iGib )
 
 	UTIL_SetSize( pev, Vector( -32, -32, -64), Vector( 32, 32, 0) );
 	SetThink( DyingThink );
-	SetTouch( CrashTouch );
+	//SetTouch( CrashTouch );
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->health = 0;
 	pev->takedamage = DAMAGE_NO;
@@ -494,13 +530,13 @@ void COsprey :: Killed( entvars_t *pevAttacker, int iGib )
 void COsprey::CrashTouch( CBaseEntity *pOther )
 {
 	// only crash if we hit something solid
-	if ( pOther->pev->solid == SOLID_BSP) 
-	{
-		SetTouch( NULL );
-		m_startTime = gpGlobals->time;
-		pev->nextthink = gpGlobals->time;
-		m_velocity = pev->velocity;
-	}
+	// if ( pOther->pev->solid == SOLID_BSP) 
+	// {
+	// 	SetTouch( NULL );
+	// 	m_startTime = gpGlobals->time;
+	// 	pev->nextthink = gpGlobals->time;
+	// 	m_velocity = pev->velocity;
+	// }
 }
 
 

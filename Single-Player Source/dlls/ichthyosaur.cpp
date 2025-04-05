@@ -12,8 +12,6 @@
 *   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
-/* 
-
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 
 //=========================================================
@@ -34,7 +32,7 @@
 
 #define SEARCH_RETRY	16
 
-#define ICHTHYOSAUR_SPEED 150
+#define ICHTHYOSAUR_SPEED 250
 
 extern CGraph WorldGraph;
 
@@ -69,7 +67,9 @@ public:
 	Schedule_t *GetScheduleOfType ( int Type );
 
 	void Killed( entvars_t *pevAttacker, int iGib );
-	void BecomeDead( void );
+	// void BecomeDead( void );
+
+	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
 
 	void EXPORT CombatUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void EXPORT BiteTouch( CBaseEntity *pOther );
@@ -198,7 +198,7 @@ void CIchthyosaur :: AlertSound( void )
 
 void CIchthyosaur :: AttackSound( void ) 
 { 
-	EMIT_ICKY_SOUND( CHAN_VOICE, pAttackSounds );
+	//EMIT_ICKY_SOUND( CHAN_VOICE, pAttackSounds );
 }
 
 void CIchthyosaur :: BiteSound( void ) 
@@ -337,7 +337,7 @@ int	CIchthyosaur :: Classify ( void )
 //=========================================================
 BOOL CIchthyosaur :: CheckMeleeAttack1 ( float flDot, float flDist )
 {
-	if ( flDot >= 0.7 && m_flEnemyTouched > gpGlobals->time - 0.2 )
+	if ( m_flEnemyTouched > gpGlobals->time - 0.2 ) //flDot >= 0.5 && 
 	{
 		return TRUE;
 	}
@@ -375,7 +375,7 @@ void CIchthyosaur::CombatUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 //=========================================================
 BOOL CIchthyosaur :: CheckRangeAttack1 ( float flDot, float flDist )
 {
-	if ( flDot > -0.7 && (m_bOnAttack || ( flDist <= 192 && m_idealDist <= 192)))
+	if ( (m_bOnAttack || ( flDist <= 300))) // && m_idealDist <= 256
 	{
 		return TRUE;
 	}
@@ -389,28 +389,17 @@ BOOL CIchthyosaur :: CheckRangeAttack1 ( float flDot, float flDist )
 //=========================================================
 void CIchthyosaur :: SetYawSpeed ( void )
 {
-	pev->yaw_speed = 100;
+	pev->yaw_speed = 250;
 }
 
 
 
-//=========================================================
-// Killed - overrides CFlyingMonster.
-//
-void CIchthyosaur :: Killed( entvars_t *pevAttacker, int iGib )
+void CIchthyosaur ::Killed(entvars_t *pevAttacker, int iGib)
 {
-	CBaseMonster::Killed( pevAttacker, iGib );
-	pev->velocity = Vector( 0, 0, 0 );
+	UTIL_BloodDrips(pev->origin, g_vecZero, BloodColor(), 80);
+	CBaseMonster ::Killed(pevAttacker, GIB_ALWAYS);
 }
 
-void CIchthyosaur::BecomeDead( void )
-{
-	pev->takedamage = DAMAGE_YES;// don't let autoaim aim at corpses.
-
-	// give the corpse half of the monster's original maximum health. 
-	pev->health = pev->max_health / 2;
-	pev->max_health = 5; // max_health now becomes a counter for how many blood decals the corpse can place.
-}
 
 #define ICHTHYOSAUR_AE_SHAKE_RIGHT 1
 #define ICHTHYOSAUR_AE_SHAKE_LEFT  2
@@ -432,13 +421,13 @@ void CIchthyosaur :: HandleAnimEvent( MonsterEvent_t *pEvent )
 			{
 				CBaseEntity *pHurt = m_hEnemy;
 
-				if (m_flEnemyTouched < gpGlobals->time - 0.2 && (m_hEnemy->BodyTarget( pev->origin ) - pev->origin).Length() > (32+16+32))
+				if (m_flEnemyTouched < gpGlobals->time - 0.2 && (m_hEnemy->BodyTarget( pev->origin ) - pev->origin).Length() > 134)
 					break;
 
 				Vector vecShootDir = ShootAtEnemy( pev->origin );
 				UTIL_MakeAimVectors ( pev->angles );
 
-				if (DotProduct( vecShootDir, gpGlobals->v_forward ) > 0.707)
+				//if (DotProduct( vecShootDir, gpGlobals->v_forward ) > 0.707)
 				{
 					m_bOnAttack = TRUE;
 					pHurt->pev->punchangle.z = -18;
@@ -446,16 +435,17 @@ void CIchthyosaur :: HandleAnimEvent( MonsterEvent_t *pEvent )
 					pHurt->pev->velocity = pHurt->pev->velocity - gpGlobals->v_right * 300;
 					if (pHurt->IsPlayer())
 					{
-						pHurt->pev->angles.x += RANDOM_FLOAT( -35, 35 );
-						pHurt->pev->angles.y += RANDOM_FLOAT( -90, 90 );
+						pHurt->pev->angles.x += RANDOM_FLOAT( -35.0, 35.0 );
+						pHurt->pev->angles.y += RANDOM_FLOAT( -90.0, 90.0 );
 						pHurt->pev->angles.z = 0;
 						pHurt->pev->fixangle = TRUE;
 					}
-					pHurt->TakeDamage( pev, pev, gSkillData.ichthyosaurDmgShake, DMG_SLASH );
+					pHurt->TakeDamage( pev, VARS(pev->owner), RANDOM_FLOAT( 25.0, 75.0 ), DMG_BULLET );
+					
 				}
 			}
+			
 			BiteSound();
-
 			bDidAttack = TRUE;
 		}
 		break;
@@ -479,20 +469,22 @@ void CIchthyosaur :: Spawn()
 	Precache( );
 
 	SET_MODEL(ENT(pev), "models/icky.mdl");
-	UTIL_SetSize( pev, Vector( -32, -32, -32 ), Vector( 32, 32, 32 ) );
+	UTIL_SetSize( pev, Vector( -32, -32, -32 )/2, Vector( 32, 32, 32 )/2 );
 
 	pev->solid			= SOLID_BBOX;
 	pev->movetype		= MOVETYPE_FLY;
 	m_bloodColor		= BLOOD_COLOR_GREEN;
-	pev->health			= gSkillData.ichthyosaurHealth;
+	pev->health			= 100.0;
 	pev->view_ofs		= Vector ( 0, 0, 16 );
 	m_flFieldOfView		= VIEW_FIELD_WIDE;
-	m_MonsterState		= MONSTERSTATE_NONE;
-	SetBits(pev->flags, FL_SWIM);
+	m_MonsterState		= MONSTERSTATE_IDLE;
+	SetBits(pev->flags, FL_FLY);
 	SetFlyingSpeed( ICHTHYOSAUR_SPEED );
 	SetFlyingMomentum( 2.5 );	// Set momentum constant
 
 	m_afCapability		= bits_CAP_RANGE_ATTACK1 | bits_CAP_SWIM;
+
+	pev->flags		|= FL_MONSTER;
 
 	MonsterInit();
 
@@ -500,9 +492,10 @@ void CIchthyosaur :: Spawn()
 	SetUse( CombatUse );
 
 	m_idealDist = 384;
-	m_flMinSpeed = 80;
-	m_flMaxSpeed = 300;
+	m_flMinSpeed = 10;
+	m_flMaxSpeed = ICHTHYOSAUR_SPEED;
 	m_flMaxDist = 384;
+	m_bOnAttack = TRUE;
 
 	Vector Forward;
 	UTIL_MakeVectorsPrivate(pev->angles, Forward, 0, 0);
@@ -525,6 +518,11 @@ void CIchthyosaur :: Precache()
 	PRECACHE_SOUND_ARRAY( pPainSounds );
 }
 
+int CIchthyosaur :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType )
+{
+	return CBaseMonster::TakeDamage( pevInflictor, pevAttacker, flDamage, bitsDamageType );
+}
+
 //=========================================================
 // GetSchedule
 //=========================================================
@@ -542,7 +540,7 @@ Schedule_t* CIchthyosaur::GetSchedule()
 		return GetScheduleOfType( SCHED_IDLE_WALK );
 
 	case MONSTERSTATE_COMBAT:
-		m_flMaxSpeed = 400;
+		m_flMaxSpeed = 320;
 		// eat them
 		if ( HasConditions( bits_COND_CAN_MELEE_ATTACK1 ) )
 		{
@@ -730,14 +728,14 @@ void CIchthyosaur :: RunTask ( Task_t *pTask )
 
 	case TASK_ICHTHYOSAUR_FLOAT:
 		pev->angles.x = UTIL_ApproachAngle( 0, pev->angles.x, 20 );
-		pev->velocity = pev->velocity * 0.8;
+		//pev->velocity = pev->velocity * 0.8;
 		if (pev->waterlevel > 1 && pev->velocity.z < 64)
 		{
-			pev->velocity.z += 8;
+			pev->velocity.z += 18;
 		}
 		else 
 		{
-			pev->velocity.z -= 8;
+			pev->velocity.z -= 18;
 		}
 		// ALERT( at_console, "%f\n", pev->velocity.z );
 		break;
@@ -925,7 +923,16 @@ void CIchthyosaur::Swim( )
 		// ALERT( at_console, "run  %.2f\n", pev->framerate );
 	}
 
-
+/*
+	if (!m_pBeam)
+	{
+		m_pBeam = CBeam::BeamCreate( "sprites/laserbeam.spr", 80 );
+		m_pBeam->PointEntInit( pev->origin + m_SaveVelocity, entindex( ) );
+		m_pBeam->SetEndAttachment( 1 );
+		m_pBeam->SetColor( 255, 180, 96 );
+		m_pBeam->SetBrightness( 192 );
+	}
+*/
 #define PROBE_LENGTH 150
 	Angles = UTIL_VecToAngles( m_SaveVelocity );
 	Angles.x = -Angles.x;
@@ -953,7 +960,15 @@ void CIchthyosaur::Swim( )
 	else
 		pev->velocity = m_SaveVelocity = m_SaveVelocity * 80;
 
+	// ALERT( at_console, "%.0f %.0f\n", m_flightSpeed, pev->velocity.Length() );
 
+
+	// ALERT( at_console, "Steer %f %f %f\n", SteeringVector.x, SteeringVector.y, SteeringVector.z );
+
+/*
+	m_pBeam->SetStartPos( pev->origin + pev->velocity );
+	m_pBeam->RelinkBeam( );
+*/
 
 	// ALERT( at_console, "speed %f\n", m_flightSpeed );
 	
@@ -1091,5 +1106,3 @@ Vector CIchthyosaur::DoProbe(const Vector &Probe)
 }
 
 #endif
-
- */

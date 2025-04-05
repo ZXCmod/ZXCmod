@@ -136,6 +136,8 @@ void CHalfLifeTeamplay :: Think ( void )
 
 	last_frags = frags_remaining;
 	last_time  = time_remaining;
+
+	CHalfLifeMultiplay :: MSpawnUpdate( );
 }
 
 //=========================================================
@@ -443,7 +445,7 @@ int CHalfLifeTeamplay::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pT
 
 //=========================================================
 //=========================================================
-/* BOOL CHalfLifeTeamplay::ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target )
+BOOL CHalfLifeTeamplay::ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target )
 {
 	// always autoaim, unless target is a teammate
 	CBaseEntity *pTgt = CBaseEntity::Instance( target );
@@ -454,7 +456,7 @@ int CHalfLifeTeamplay::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pT
 	}
 
 	return CHalfLifeMultiplay::ShouldAutoAim( pPlayer, target );
-} */
+}
 
 //=========================================================
 //=========================================================

@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -12,7 +12,6 @@
 *   use or distribution of this code by or to any unlicensed person is illegal.
 *
 ****/
-/* 
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 
 //=========================================================
@@ -201,7 +200,7 @@ void CHAssassin :: Shoot ( void )
 
 	if (m_flLastShot + 2 < gpGlobals->time)
 	{
-		m_flDiviation = 0.10;
+		m_flDiviation = 0.98;
 	}
 	else
 	{
@@ -215,7 +214,7 @@ void CHAssassin :: Shoot ( void )
 
 	Vector	vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(40,90) + gpGlobals->v_up * RANDOM_FLOAT(75,200) + gpGlobals->v_forward * RANDOM_FLOAT(-40, 40);
 	EjectBrass ( pev->origin + gpGlobals->v_up * 32 + gpGlobals->v_forward * 12, vecShellVelocity, pev->angles.y, m_iShell, TE_BOUNCE_SHELL); 
-	FireBullets(1, vecShootOrigin, vecShootDir, Vector( m_flDiviation, m_flDiviation, m_flDiviation ), 2048, BULLET_MONSTER_9MM ); // shoot +-8 degrees
+	FireBullets(3, vecShootOrigin, vecShootDir, Vector( m_flDiviation, m_flDiviation, m_flDiviation ), 4092, BULLET_MONSTER_9MM, 4, 4, VARS(pev->owner) ); // shoot +-8 degrees
 
 	switch(RANDOM_LONG(0,1))
 	{
@@ -252,9 +251,9 @@ void CHAssassin :: HandleAnimEvent( MonsterEvent_t *pEvent )
 	case ASSASSIN_AE_TOSS1:
 		{
 			UTIL_MakeVectors( pev->angles );
-			CGrenade::ShootTimed( pev, pev->origin + gpGlobals->v_forward * 34 + Vector (0, 0, 32), m_vecTossVelocity, 2.0 );
+			CGrenade::ShootTimed2( pev, pev->origin + gpGlobals->v_forward * 34 + Vector (0, 0, 32), m_vecTossVelocity, 2.0 );
 
-			m_flNextGrenadeCheck = gpGlobals->time + 6;// wait six seconds before even looking again to see if a grenade can be thrown.
+			m_flNextGrenadeCheck = gpGlobals->time + 76;// wait six seconds before even looking again to see if a grenade can be thrown.
 			m_fThrowGrenade = FALSE;
 			// !!!LATER - when in a group, only try to throw grenade if ordered.
 		}
@@ -289,9 +288,9 @@ void CHAssassin :: Spawn()
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_RED;
 	pev->effects		= 0;
-	pev->health			= gSkillData.hassassinHealth;
+	pev->health			= 100;
 	m_flFieldOfView		= VIEW_FIELD_WIDE; // indicates the width of this monster's forward view cone ( as a dotproduct result )
-	m_MonsterState		= MONSTERSTATE_NONE;
+	m_MonsterState		= MONSTERSTATE_HUNT;
 	m_afCapability		= bits_CAP_MELEE_ATTACK1 | bits_CAP_DOORS_GROUP;
 	pev->friction		= 1;
 
@@ -656,7 +655,7 @@ BOOL CHAssassin :: CheckMeleeAttack1 ( float flDot, float flDist )
 //=========================================================
 BOOL CHAssassin :: CheckRangeAttack1 ( float flDot, float flDist )
 {
-	if ( !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist > 64 && flDist <= 2048 )
+	if ( !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist > 64 && flDist <= 2048 /* && flDot >= 0.5 */ /* && NoFriendlyFire() */ )
 	{
 		TraceResult	tr;
 
@@ -689,7 +688,7 @@ BOOL CHAssassin :: CheckRangeAttack2 ( float flDot, float flDist )
 	if ( m_iFrustration <= 2)
 		return FALSE;
 
-	if ( m_flNextGrenadeCheck < gpGlobals->time && !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist <= 512 )
+	if ( m_flNextGrenadeCheck < gpGlobals->time && !HasConditions( bits_COND_ENEMY_OCCLUDED ) && flDist <= 256 /* && flDot >= 0.5 */ /* && NoFriendlyFire() */ )
 	{
 		Vector vecToss = VecCheckThrow( pev, GetGunPosition( ), m_hEnemy->Center(), flDist, 0.5 ); // use dist as speed to get there in 1 second
 
@@ -717,10 +716,10 @@ void CHAssassin :: RunAI( void )
 
 	// always visible if moving
 	// always visible is not on hard
-	if (g_iSkillLevel != SKILL_HARD || m_hEnemy == NULL || pev->deadflag != DEAD_NO || m_Activity == ACT_RUN || m_Activity == ACT_WALK || !(pev->flags & FL_ONGROUND))
+	// if (g_iSkillLevel != SKILL_HARD || m_hEnemy == NULL || pev->deadflag != DEAD_NO || m_Activity == ACT_RUN || m_Activity == ACT_WALK || !(pev->flags & FL_ONGROUND))
 		m_iTargetRanderamt = 255;
-	else
-		m_iTargetRanderamt = 20;
+	// else
+	// 	m_iTargetRanderamt = 20;
 
 	if (pev->renderamt > m_iTargetRanderamt)
 	{
@@ -1014,4 +1013,3 @@ Schedule_t* CHAssassin :: GetScheduleOfType ( int Type )
 }
 
 #endif
- */

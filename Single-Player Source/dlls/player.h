@@ -60,7 +60,7 @@
 #define	SOUND_FLASHLIGHT_ON		"items/flashlight1.wav"
 #define	SOUND_FLASHLIGHT_OFF	"items/flashlight1.wav"
 
-#define TEAM_NAME_LENGTH	32
+#define TEAM_NAME_LENGTH	16
 
 typedef enum
 {
@@ -128,7 +128,7 @@ public:
 	float				m_flTimeWeaponIdle; // when to play another weapon idle animation.
 	float				m_flSwimTime;		// how long player has been underwater
 	float				m_flDuckTime;		// how long we've been ducking
-	float				m_flWallJumpTime;	// how long until next walljump
+	float				m_flWallJumParalyzeTime;	// how long until next walljump
 	
 
 	float				m_flSuitUpdate;					// when to play next suit update
@@ -185,10 +185,9 @@ public:
 	int	m_rgAmmo[MAX_AMMO_SLOTS];
 	int	m_rgAmmoLast[MAX_AMMO_SLOTS];
 	
-	// share for paralizing
-	CBaseEntity *cEntity;
+	
 
-	//Vector				m_vecAutoAim;
+	Vector				m_vecAutoAim;
 	BOOL				m_fOnTarget;
 	int					m_iDeaths;
 	float				m_iRespawnFrames;	// used in PlayerDeathThink() to make sure players can always respawn
@@ -220,7 +219,7 @@ public:
 	virtual void StartSneaking( void ) { m_tSneaking = gpGlobals->time - 1; }
 	virtual void StopSneaking( void ) { m_tSneaking = gpGlobals->time + 30; }
 	virtual BOOL IsSneaking( void ) { return m_tSneaking <= gpGlobals->time; }
-	virtual BOOL IsAlive( void ) { return (pev->deadflag == DEAD_NO) && pev->health > 0; }
+	virtual BOOL IsAlive( void ) { return (pev->deadflag == DEAD_NO) && pev->health > 0.0; }
 	virtual BOOL ShouldFadeOnDeath( void ) { return FALSE; }
 	virtual	BOOL IsPlayer( void ) { return TRUE; }			// Spectators should return FALSE for this, they aren't "players" as far as game logic is concerned
 
@@ -228,8 +227,8 @@ public:
 															// Spectators should return TRUE for this
 	virtual const char *TeamID( void );
 
-
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 	void RenewItems(void);
 	void PackDeadPlayerItems( void );
 	void RemoveAllItems( BOOL removeSuit );
@@ -247,12 +246,11 @@ public:
 	BOOL			FlashlightIsOn( void );
 	void			FlashlightTurnOn( void );
 	void			FlashlightTurnOff( void );
-	BOOL			Spect( void );
 	
 	void UpdatePlayerSound ( void );
 	void DeathSound ( void );
 
-	int Classify ( );
+	int Classify ( void );
 	void SetAnimation( PLAYER_ANIM playerAnim );
 	void SetWeaponAnimType( const char *szExtention );
 	char m_szAnimExtention[32];
@@ -261,8 +259,7 @@ public:
 	virtual void ImpulseCommands( void );
 	void CheatImpulseCommands( int iImpulse );
 
-	void StartDeathCam( void );
-	void StartObserver( Vector vecPosition, Vector vecViewAngle );
+	void StartObserver( void );
 
 	void AddPoints( int score, BOOL bAllowNegativeScore );
 	void AddPointsToTeam( int score, BOOL bAllowNegativeScore );
@@ -280,16 +277,17 @@ public:
 	void ItemPostFrame( void );
 	void GiveNamedItem( const char *szName );
 	void EnableControl(BOOL fControl);
+	virtual	BOOL	IsMonster( void ) { return FALSE; }
 
 	int  GiveAmmo( int iAmount, char *szName, int iMax );
 	void SendAmmoUpdate(void);
 
 	void WaterMove( void );
-	void EXPORT PlayerDeathThink( void );
+	void PlayerDeathThink( void );
 	void PlayerUse( void );
 
 	void CheckSuitUpdate();
-	void SetSuitUpdate(char *name, int fgroup, int iNoRepeat); // not used
+	void SetSuitUpdate(char *name, int fgroup, int iNoRepeat);
 	void UpdateGeigerCounter( void );
 	void CheckTimeBasedDamage( void );
 
@@ -343,7 +341,6 @@ public:
 	float m_flNextChatTime; //chat timer
 	float m_flNextCrystalTime; //crystal delay
 	
-	int m_flNextSatchelsLimit; //satchels limit
 	int m_flNextTripmineLimit; //tripmine limit
 	float m_flNextGravGrenadesTime; //GravGrenades delay
 	float m_flNextHornetgunGrensTime; //hornetgun grens reload delay
@@ -353,14 +350,19 @@ public:
 	
 	int m_flNextTurretsLimit; //turrets limit
 	int m_flNextHornetgunFreezebagLimit; //freeze bags limit
-	
 	int m_flNexTripleCrystalTime; //Damag crystal delay
+
+	// BOOL				m_HasTeleportPoint;
+
 	Vector	m_angle;
 	CBaseEntity *pevEntity;
 
 };
 
-
+#define AUTOAIM_2DEGREES  0.0348994967025
+#define AUTOAIM_5DEGREES  0.08715574274766
+#define AUTOAIM_8DEGREES  0.1391731009601
+#define AUTOAIM_10DEGREES 0.1736481776669
 
 
 extern int	gmsgHudText;

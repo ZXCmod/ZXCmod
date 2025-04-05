@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -29,12 +29,22 @@ class CAirtank : public CGrenade
 	int	 BloodColor( void ) { return DONT_BLEED; };
 	void Killed( entvars_t *pevAttacker, int iGib );
 
+	virtual int		Save( CSave &save ); 
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int	 m_state;
 };
 
 
 LINK_ENTITY_TO_CLASS( item_airtank, CAirtank );
+TYPEDESCRIPTION	CAirtank::m_SaveData[] = 
+{
+	DEFINE_FIELD( CAirtank, m_state, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CAirtank, CGrenade );
 
 
 void CAirtank :: Spawn( void )

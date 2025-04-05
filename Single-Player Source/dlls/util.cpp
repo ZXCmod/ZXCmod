@@ -319,19 +319,19 @@ TYPEDESCRIPTION	gEntvarsDescription[] =
 #define ENTVARS_COUNT		(sizeof(gEntvarsDescription)/sizeof(gEntvarsDescription[0]))
 
 
-#ifdef	DEBUG
-edict_t *DBG_EntOfVars( const entvars_t *pev )
-{
-	if (pev->pContainingEntity != NULL)
-		return pev->pContainingEntity;
-	ALERT(at_console, "entvars_t pContainingEntity is NULL, calling into engine");
-	edict_t* pent = (*g_engfuncs.pfnFindEntityByVars)((entvars_t*)pev);
-	if (pent == NULL)
-		ALERT(at_console, "DAMN!  Even the engine couldn't FindEntityByVars!");
-	((entvars_t *)pev)->pContainingEntity = pent;
-	return pent;
-}
-#endif //DEBUG
+// #ifdef	DEBUG
+// edict_t *DBG_EntOfVars( const entvars_t *pev )
+// {
+// 	if (pev->pContainingEntity != NULL)
+// 		return pev->pContainingEntity;
+// 	ALERT(at_console, "entvars_t pContainingEntity is NULL, calling into engine");
+// 	edict_t* pent = (*g_engfuncs.pfnFindEntityByVars)((entvars_t*)pev);
+// 	if (pent == NULL)
+// 		ALERT(at_console, "DAMN!  Even the engine couldn't FindEntityByVars!");
+// 	((entvars_t *)pev)->pContainingEntity = pent;
+// 	return pent;
+// }
+// #endif //DEBUG
 
 
 #ifdef	DEBUG
@@ -1194,7 +1194,7 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 		WRITE_SHORT( g_sModelIndexBloodSpray );				// initial sprite model
 		WRITE_SHORT( g_sModelIndexBloodDrop );				// droplet sprite models
 		WRITE_BYTE( color );								// color index into host_basepal
-		WRITE_BYTE( min( max( 3, amount / 10 ), 16 ) );		// size
+		WRITE_BYTE( min( max( 3, amount / 8 ), 255 ) );		// size
 	MESSAGE_END();
 }				
 
@@ -1523,7 +1523,7 @@ void UTIL_Bubbles( Vector mins, Vector maxs, int count )
 	MESSAGE_END();
 }
 
-void UTIL_BubbleTrail( Vector from, Vector to, int count ) // trails in watr
+void UTIL_BubbleTrail( Vector from, Vector to, int count )
 {
 	float flHeight = UTIL_WaterLevel( from,  from.z, from.z + 256 );
 	flHeight = flHeight - from.z;
@@ -1589,9 +1589,8 @@ void UTIL_Remove( CBaseEntity *pEntity )
 	if ( !pEntity )
 		return;
 
-	if ( pEntity->infected==1 ) // reset that for lag prevent
-			pEntity->infected=0;
-			
+	// if ( pEntity->infected==1 ) // reset that for lag prevent
+	// 		pEntity->infected=0;
 	pEntity->UpdateOnRemove();
 	pEntity->pev->flags |= FL_KILLME;
 	pEntity->pev->targetname = 0;

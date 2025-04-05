@@ -24,9 +24,9 @@ cvar_t	fragsleft	= {"mp_fragsleft","0", FCVAR_SERVER | FCVAR_UNLOGGED };	  // Do
 cvar_t	timeleft	= {"mp_timeleft","0" , FCVAR_SERVER | FCVAR_UNLOGGED };	  // "      "
 
 // multiplayer server rules
-cvar_t	teamplay	= {"mp_teamplay","1", FCVAR_SERVER };
-cvar_t	fraglimit	= {"mp_fraglimit","50", FCVAR_SERVER };
-cvar_t	timelimit	= {"mp_timelimit","30", FCVAR_SERVER };
+cvar_t	teamplay	= {"mp_teamplay","0", FCVAR_SERVER };
+cvar_t	fraglimit	= {"mp_fraglimit","0", FCVAR_SERVER };
+cvar_t	timelimit	= {"mp_timelimit","0", FCVAR_SERVER };
 cvar_t	friendlyfire= {"mp_friendlyfire","0", FCVAR_SERVER };
 cvar_t	falldamage	= {"mp_falldamage","0", FCVAR_SERVER };
 cvar_t	forcerespawn= {"mp_forcerespawn","1", FCVAR_SERVER };
@@ -37,12 +37,14 @@ cvar_t	teamlist = {"mp_teamlist","hgrunt;zombie", FCVAR_SERVER };
 cvar_t	teamoverride = {"mp_teamoverride","1" };
 cvar_t	defaultteam = {"mp_defaultteam","0" };
 cvar_t	allowmonsters={"mp_allowmonsters","1", FCVAR_SERVER };
-cvar_t	g_zxc_mp_fragmonsters={"mp_fragmonsters","0", FCVAR_SERVER };
-cvar_t	g_zxc_mp_dmode={"mp_dmode","0", FCVAR_SERVER }; //1.29, regeneration mod
-cvar_t	g_zxc_shotgun_flare_radius={"zxc_sfrad","1248", FCVAR_SERVER }; // sflare radius
+cvar_t	g_zxc_mp_fragmonsters={"mp_fragmonsters","1", FCVAR_SERVER };
+cvar_t	g_zxc_mp_dmode={"mp_dmode","1", FCVAR_SERVER }; //1.29, regeneration mod
+cvar_t	g_zxc_shotgun_flare_radius={"zxc_sfrad","1500", FCVAR_SERVER }; // sflare radius
 cvar_t	g_zxc_shotgun_flare_reload={"zxc_sfreload","120", FCVAR_SERVER }; // sflare reload in sec
 cvar_t	g_zxc_cheats={"zxc_cheats","1", FCVAR_SERVER }; // same, as sv_cheats
-
+cvar_t	g_zxc_mspawn={"zxc_mspawn","0", FCVAR_SERVER };
+cvar_t	g_zxc_promode={"zxc_promode","0", FCVAR_SERVER };
+cvar_t	g_zxc_hp={"zxc_hp","100.0", FCVAR_SERVER };
 
 	
 
@@ -85,15 +87,15 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&teamoverride);
 	CVAR_REGISTER (&defaultteam);
 	CVAR_REGISTER (&allowmonsters);
-	CVAR_REGISTER (&g_zxc_mp_fragmonsters); //1.27
-	CVAR_REGISTER (&g_zxc_mp_dmode); //1.29
-	CVAR_REGISTER (&g_zxc_shotgun_flare_radius); //
-	CVAR_REGISTER (&g_zxc_shotgun_flare_reload); //
-	CVAR_REGISTER (&g_zxc_cheats); //
-
+	CVAR_REGISTER (&g_zxc_mp_fragmonsters);
+	CVAR_REGISTER (&g_zxc_mp_dmode);
+	CVAR_REGISTER (&g_zxc_shotgun_flare_radius);
+	CVAR_REGISTER (&g_zxc_shotgun_flare_reload);
+	CVAR_REGISTER (&g_zxc_cheats);
 	CVAR_REGISTER (&mp_chattime);
-
-
+	CVAR_REGISTER (&g_zxc_mspawn);
+	CVAR_REGISTER (&g_zxc_promode);
+	CVAR_REGISTER (&g_zxc_hp);
 
 	// SERVER_COMMAND( "exec skill.cfg\n" );
 }

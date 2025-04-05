@@ -22,6 +22,7 @@
 #include	"schedule.h"
 #include	"weapons.h"
 
+
 //=========================================================
 // Monster's Anim Events Go Here
 //=========================================================
@@ -32,17 +33,19 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed( void );
-	int  Classify ( );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	int ISoundMask ( void );
 
-
+	int	Save( CSave &save ); 
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
 
 	void StartTask( Task_t *pTask );
 	void RunTask( Task_t *pTask );
 	int  TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 	void TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
-
+	void Killed(entvars_t *pevAttacker, int iGib);
 	void PlayScriptedSentence( const char *pszSentence, float duration, float volume, float attenuation, BOOL bConcurrent, CBaseEntity *pListener );
 
 	EHANDLE m_hPlayer;
@@ -52,13 +55,19 @@ public:
 LINK_ENTITY_TO_CLASS( monster_gman, CGMan );
 
 
+TYPEDESCRIPTION	CGMan::m_SaveData[] = 
+{
+	DEFINE_FIELD( CGMan, m_hTalkTarget, FIELD_EHANDLE ),
+	DEFINE_FIELD( CGMan, m_flTalkTime, FIELD_TIME ),
+};
+IMPLEMENT_SAVERESTORE( CGMan, CBaseMonster );
 
 
 //=========================================================
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CGMan :: Classify (    )
+int	CGMan :: Classify ( void )
 {
 	return	CLASS_NONE;
 }
@@ -116,10 +125,10 @@ void CGMan :: Spawn()
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
-	m_bloodColor		= DONT_BLEED;
-	pev->health			= 100;
+	pev->health			= 35.0;
+	Classify2 			= CLASS_HUMAN_MILITARY;
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
-	m_MonsterState		= MONSTERSTATE_NONE;
+	m_MonsterState		= MONSTERSTATE_IDLE;
 
 	MonsterInit();
 }
@@ -198,7 +207,7 @@ void CGMan :: RunTask( Task_t *pTask )
 //=========================================================
 int CGMan :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType )
 {
-	pev->health = pev->max_health / 2; // always trigger the 50% damage aitrigger
+	//pev->health = pev->max_health / 2; // always trigger the 50% damage aitrigger
 
 	if ( flDamage > 0 )
 	{
@@ -209,13 +218,13 @@ int CGMan :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float 
 	{
 		SetConditions(bits_COND_HEAVY_DAMAGE);
 	}
-	return TRUE;
+	return CBaseMonster::TakeDamage( pevInflictor, pevAttacker, flDamage, bitsDamageType );
 }
 
 
 void CGMan::TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType)
 {
-	UTIL_Ricochet( ptr->vecEndPos, 1.0 );
+	UTIL_Ricochet( ptr->vecEndPos, 0.9 );
 	AddMultiDamage( pevAttacker, this, flDamage, bitsDamageType );
 }
 
@@ -226,4 +235,57 @@ void CGMan::PlayScriptedSentence( const char *pszSentence, float duration, float
 
 	m_flTalkTime = gpGlobals->time + duration;
 	m_hTalkTarget = pListener;
+}
+
+void CGMan ::Killed(entvars_t *pevAttacker, int iGib)
+{
+	pev->model = iStringNull; // make invisible
+	SetThink(SUB_Remove);
+	SetTouch(NULL);
+	pev->nextthink = gpGlobals->time + 0.1;
+
+	// since squeak grenades never leave a body behind, clear out their takedamage now.
+	// Squeaks do a bit of radius damage when they pop, and that radius damage will
+	// continue to call this function unless we acknowledge the Squeak's death now. (sjb)
+	pev->takedamage = DAMAGE_NO;
+
+
+	UTIL_BloodDrips(pev->origin, g_vecZero, BloodColor(), 80);
+
+
+	// reset owner so death message happens
+	//pev->owner = pevAttacker->edict();
+	
+
+	// explode
+	MESSAGE_BEGIN(MSG_BROADCAST, SVC_TEMPENTITY, pev->origin);
+	WRITE_BYTE(TE_EXPLOSION); // This just makes a dynamic light now
+	WRITE_COORD(pev->origin.x);
+	WRITE_COORD(pev->origin.y);
+	WRITE_COORD(pev->origin.z);
+	WRITE_SHORT(g_sModelIndexFireball);
+	WRITE_BYTE(200); // scale * 10
+	WRITE_BYTE(16); // framerate
+	WRITE_BYTE(TE_EXPLFLAG_NONE);
+	MESSAGE_END();
+
+	// smoke
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+	WRITE_BYTE(TE_SMOKE);
+	WRITE_COORD(pev->origin.x);
+	WRITE_COORD(pev->origin.y);
+	WRITE_COORD(pev->origin.z);
+	WRITE_SHORT(g_sModelIndexSmoke);
+	WRITE_BYTE(128); // smoke scale * 10
+	WRITE_BYTE(8); // framerate
+	MESSAGE_END();
+
+	if (pev->owner != edict())
+		pevAttacker = VARS(pev->owner);
+
+	::RadiusDamage(pev->origin, pev, VARS(pevAttacker), 150, 608, CLASS_NONE, DMG_BULLET);
+
+	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "zxc/explode3.wav", 1.0, ATTN_NORM);
+
+	CBaseMonster ::Killed(pevAttacker, GIB_ALWAYS);
 }

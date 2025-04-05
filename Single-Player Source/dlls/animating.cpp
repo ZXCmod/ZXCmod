@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -25,6 +25,17 @@
 #include "cbase.h"
 #include "animation.h"
 #include "saverestore.h"
+
+TYPEDESCRIPTION	CBaseAnimating::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBaseMonster, m_flFrameRate, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseMonster, m_flGroundSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseMonster, m_flLastEventCheck, FIELD_TIME ),
+	DEFINE_FIELD( CBaseMonster, m_fSequenceFinished, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CBaseMonster, m_fSequenceLoops, FIELD_BOOLEAN ),
+};
+
+IMPLEMENT_SAVERESTORE( CBaseAnimating, CBaseDelay );
 
 
 //=========================================================

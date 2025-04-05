@@ -34,6 +34,9 @@ extern int gmsgDeathMsg;	// client dll messages
 extern int gmsgMOTD;
 
 int g_teamplay = 0;
+int CGameRules::EntCounter;
+int CGameRules::MonSpawnCounter;
+
 
 //=========================================================
 //=========================================================
@@ -125,6 +128,10 @@ CGameRules *InstallGameRules( void )
 	SERVER_COMMAND( "exec server.cfg\n" );
 	SERVER_EXECUTE( );
 
+	CGameRules::EntCounter=0;
+	CGameRules::MonSpawnCounter=0;
+
+	
 	if ( !gpGlobals->deathmatch )
 	{
 		// generic half-life
@@ -155,22 +162,5 @@ CGameRules *InstallGameRules( void )
 	}
 }
 
-/*Chip - We want a teamplay mod
-CGameRules *InstallGameRules( void )
-{
-    SERVER_COMMAND( "exec game.cfg\n" );
-    SERVER_EXECUTE( ); 
 
-    if ( !gpGlobals->deathmatch )
-    {
-        //No deathmatch defined but we want it anyways.
-        gpGlobals->deathmatch = TRUE;
-        return new CHalfLifeTeamplay;
-    }
-    else
-    {
-        //Deathmatch, so let's start Teamplay
-        return new CHalfLifeTeamplay;
-    }
-} 
-*/
+

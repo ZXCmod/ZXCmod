@@ -150,6 +150,9 @@ public:
 	virtual void	SetAnswerQuestion( CTalkMonster *pSpeaker );
 	virtual int		FriendNumber( int arrayNumber )	{ return arrayNumber; }
 
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	
 	static char *m_szFriends[TLK_CFRIENDS];		// array of friend names

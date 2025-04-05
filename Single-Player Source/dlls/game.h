@@ -36,13 +36,16 @@ extern cvar_t	teamlist;
 extern cvar_t	teamoverride;
 extern cvar_t	defaultteam;
 extern cvar_t	allowmonsters;
-extern cvar_t	g_zxc_mp_fragmonsters; //1.27
+extern cvar_t	g_zxc_mp_fragmonsters; 
 extern cvar_t	g_zxc_mp_dmode;
-extern cvar_t	g_zxc_shotgun_flare_radius; // SF radius
-extern cvar_t	g_zxc_shotgun_flare_reload; //
-extern cvar_t	g_zxc_cheats; //
+extern cvar_t	g_zxc_shotgun_flare_radius;
+extern cvar_t	g_zxc_shotgun_flare_reload;
+extern cvar_t	g_zxc_cheats; 
+extern cvar_t	g_zxc_mspawn; 
+extern cvar_t	g_zxc_promode; 
+extern cvar_t	g_zxc_hp; 
 
-// Engine Cvars
+// Engine Cvars g_zxc_hp
 extern cvar_t	*g_psv_gravity;
 extern cvar_t	*g_psv_aim;
 extern cvar_t	*g_footsteps;

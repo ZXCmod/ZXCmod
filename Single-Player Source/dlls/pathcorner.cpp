@@ -29,7 +29,10 @@ public:
 	void KeyValue( KeyValueData* pkvd );
 	float GetDelay( void ) { return m_flWait; }
 //	void Touch( CBaseEntity *pOther );
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	float	m_flWait;
@@ -37,6 +40,13 @@ private:
 
 LINK_ENTITY_TO_CLASS( path_corner, CPathCorner );
 
+// Global Savedata for Delay
+TYPEDESCRIPTION	CPathCorner::m_SaveData[] = 
+{
+	DEFINE_FIELD( CPathCorner, m_flWait, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CPathCorner, CPointEntity );
 
 //
 // Cache user-entity-field values until spawn is called.
@@ -108,6 +118,16 @@ void CPathCorner :: Touch( CBaseEntity *pOther )
 
 
 
+TYPEDESCRIPTION	CPathTrack::m_SaveData[] = 
+{
+	DEFINE_FIELD( CPathTrack, m_length, FIELD_FLOAT ),
+	DEFINE_FIELD( CPathTrack, m_pnext, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CPathTrack, m_paltpath, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CPathTrack, m_pprevious, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CPathTrack, m_altName, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CPathTrack, CBaseEntity );
 LINK_ENTITY_TO_CLASS( path_track, CPathTrack );
 
 //
@@ -200,10 +220,10 @@ void CPathTrack :: Spawn( void )
 	m_pnext = NULL;
 	m_pprevious = NULL;
 // DEBUGGING CODE
-#if PATH_SPARKLE_DEBUG
-	SetThink( Sparkle );
-	pev->nextthink = gpGlobals->time + 0.5;
-#endif
+// #if PATH_SPARKLE_DEBUG
+// 	SetThink( Sparkle );
+// 	pev->nextthink = gpGlobals->time + 0.5;
+// #endif
 }
 
 
@@ -394,15 +414,15 @@ CPathTrack *CPathTrack::Instance( edict_t *pent )
 
 
 	// DEBUGGING CODE
-#if PATH_SPARKLE_DEBUG
-void CPathTrack :: Sparkle( void )
-{
+// #if PATH_SPARKLE_DEBUG
+// void CPathTrack :: Sparkle( void )
+// {
 
-	pev->nextthink = gpGlobals->time + 0.2;
-	if ( FBitSet( pev->spawnflags, SF_PATH_DISABLED ) )
-		UTIL_ParticleEffect(pev->origin, Vector(0,0,100), 210, 10);
-	else
-		UTIL_ParticleEffect(pev->origin, Vector(0,0,100), 84, 10);
-}
-#endif
+// 	pev->nextthink = gpGlobals->time + 0.2;
+// 	if ( FBitSet( pev->spawnflags, SF_PATH_DISABLED ) )
+// 		UTIL_ParticleEffect(pev->origin, Vector(0,0,100), 210, 10);
+// 	else
+// 		UTIL_ParticleEffect(pev->origin, Vector(0,0,100), 84, 10);
+// }
+// #endif
 

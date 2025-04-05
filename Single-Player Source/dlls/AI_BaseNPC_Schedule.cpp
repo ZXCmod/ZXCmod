@@ -84,7 +84,7 @@ void CBaseMonster :: ChangeSchedule ( Schedule_t *pNewSchedule )
 	m_afConditions		= 0;// clear all of the conditions
 	m_failSchedule		= SCHED_NONE;
 
-/*	if ( m_pSchedule->iInterruptMask & bits_COND_HEAR_SOUND && !(m_pSchedule->iSoundMask) )
+if ( m_pSchedule->iInterruptMask & bits_COND_HEAR_SOUND && !(m_pSchedule->iSoundMask) )
 	{
 		ALERT ( at_aiconsole, "COND_HEAR_SOUND with no sound mask!\n" );
 	}
@@ -99,7 +99,7 @@ void CBaseMonster :: ChangeSchedule ( Schedule_t *pNewSchedule )
 		ALERT( at_console, "Schedule %s not in table!!!\n", pNewSchedule->pName );
 	}
 #endif
-	*/
+	
 // this is very useful code if you can isolate a test case in a level with a single monster. It will notify
 // you of every schedule selection the monster makes.
 #if 0

@@ -68,8 +68,6 @@ extern void DispatchThink( edict_t *pent );
 extern void DispatchBlocked( edict_t *pentBlocked, edict_t *pentOther );
 extern void DispatchSave( edict_t *pent, SAVERESTOREDATA *pSaveData );
 extern int  DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity );
-
-
 extern void	DispatchObjectCollsionBox( edict_t *pent );
 extern void SaveWriteFields( SAVERESTOREDATA *pSaveData, const char *pname, void *pBaseData, TYPEDESCRIPTION *pFields, int fieldCount );
 extern void SaveReadFields( SAVERESTOREDATA *pSaveData, const char *pname, void *pBaseData, TYPEDESCRIPTION *pFields, int fieldCount );
@@ -138,12 +136,11 @@ class CBaseEntity
 {
 public:
 	float				FreezeTime; // player freeze
-	int					PTime; // player paralize
+	int					ParalyzeTime; // player paralize
 	int 				m_flDie; // some stuff for timer
-	int					Charge; // lock dmg for players per one shot
-	int					TripleShot; // triple bool
-	int					TripleShotS; // actual triple X dmg for bullets
+	int					TripleShot; // triple dmg
 	int					Shield; // one damag passed for players from FCrystal
+	
 	Vector 				tmp;	// fix respawn for any item
 	
 	short m_LaserSprite2;
@@ -152,6 +149,8 @@ public:
 	
 	// set player owner for trigger hurt events 
 	CBaseEntity 			*bEntity;
+	// share for paralizing
+	entvars_t *cEntity;
 	
 	void	TeslaExplode( CBaseEntity *pEntity, Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType );
 	
@@ -174,7 +173,8 @@ public:
 	virtual void 	DrawHud(void) { return; }
 	virtual void	Precache( void ) { return; }
 	virtual void	KeyValue( KeyValueData* pkvd) { pkvd->fHandled = FALSE; }
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 	virtual int		ObjectCaps( void ) { return FCAP_ACROSS_TRANSITION; }
 	virtual void	Activate( void ) {}
 	
@@ -183,17 +183,16 @@ public:
 
 // Classify - returns the type of group (i.e, "houndeye", or "human military" so that monsters with different classnames
 // still realize that they are teammates. (overridden for monsters that form groups)
-	virtual int Classify ( ) { return CLASS_NONE; };
+	virtual int Classify ( void ) { return CLASS_NONE; };
+		virtual void DeathNotice ( entvars_t *pevChild ) {}// monster maker children use this to tell the monster maker that they have died.
 	int Classify2; // used for tripmine
-	
-	virtual void DeathNotice ( entvars_t *pevChild ) {}// monster maker children use this to tell the monster maker that they have died.
 
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual void	TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
 	virtual int		TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 	virtual int		TakeHealth( float flHealth, int bitsDamageType );
-	//virtual void	Spawn( CBaseEntity *pEntity );
-	virtual void	Killed( entvars_t *pevAttacker, int iGib );
+		virtual void	Killed( entvars_t *pevAttacker, int iGib );
 	virtual int		BloodColor( void ) { return DONT_BLEED; }
 	virtual void	TraceBleed( float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType );
 	virtual BOOL    IsTriggered( CBaseEntity *pActivator ) {return TRUE;}
@@ -221,6 +220,7 @@ public:
 	virtual BOOL	HasTarget( string_t targetname ) { return FStrEq(STRING(targetname), STRING(pev->targetname) ); }
 	virtual BOOL    IsInWorld( void );
 	virtual	BOOL	IsPlayer( void ) { return FALSE; }
+	virtual	BOOL	IsMonster( void ) { return FALSE; }
 	virtual BOOL	IsNetClient( void ) { return FALSE; }
 	virtual const char *TeamID( void ) { return ""; }
 	
@@ -491,6 +491,10 @@ public:
 	int	ObjectCaps( void ) { return (CPointEntity::ObjectCaps() | FCAP_MASTER); }
 	BOOL IsTriggered( CBaseEntity *pActivator );
 	void EXPORT Register( void );
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+
+	static	TYPEDESCRIPTION m_SaveData[];
 
 
 	EHANDLE		m_rgEntities[MS_MAX_TARGETS];
@@ -511,6 +515,10 @@ public:
 	int			m_iszKillTarget;
 
 	virtual void	KeyValue( KeyValueData* pkvd);
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	// common member functions
 	void SUB_UseTargets( CBaseEntity *pActivator, USE_TYPE useType, float value );
@@ -521,6 +529,8 @@ public:
 class CBaseAnimating : public CBaseDelay
 {
 public:
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
 
 	// Basic Monster Animation functions
@@ -543,6 +553,7 @@ public:
 	int GetBodygroup( int iGroup );
 	int ExtractBbox( int sequence, float *mins, float *maxs );
 	void SetSequenceBox( void );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	// animation needs
 	float				m_flFrameRate;		// computed FPS for current sequence
@@ -585,7 +596,10 @@ public:
 
 	int					m_bitsDamageInflict;	// DMG_ damage type that the door or tigger does
 
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual int		GetToggleState( void ) { return m_toggle_state; }
 	virtual float	GetDelay( void ) { return m_flWait; }
@@ -606,9 +620,7 @@ public:
 							// of the switches in the multisource have been triggered, then
 							// the button will be allowed to operate. Otherwise, it will be
 							// deactivated.
-							
-
-};
+							};
 #define SetMoveDone( a ) m_pfnCallWhenMoveDone = static_cast <void (CBaseToggle::*)(void)> (a)
 
 
@@ -671,7 +683,6 @@ public:
 #define DMG_SLOWFREEZE		(1 << 22)	// in a subzero freezer
 #define DMG_MORTAR			(1 << 23)	// Hit by air raid (done to distinguish grenade from mortar)
 
-
 // these are the damage types that are allowed to gib corpses
 #define DMG_GIB_CORPSE		( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB )
 
@@ -680,7 +691,7 @@ public:
 
 // NOTE: tweak these values based on gameplay feedback:
 
-#define PARALYZE_DURATION	2		// number of 2 second intervals to take damage
+#define PARALYZE_DURATION	3		// number of 2 second intervals to take damage
 #define PARALYZE_DAMAGE		1.0		// damage to take each 2 second interval
 
 #define NERVEGAS_DURATION	2
@@ -739,9 +750,7 @@ public:
 	void RotSpawn( void );
 	virtual void KeyValue( KeyValueData* pkvd);
 	
-
-
-	void ButtonActivate( void );
+void ButtonActivate( );
 	void SparkSoundCache( void );
 
 	void EXPORT ButtonShot( void );
@@ -752,14 +761,15 @@ public:
 	void EXPORT ButtonBackHome( void );
 	void EXPORT ButtonUse ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual int		TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
-	
 	CBaseEntity *pEntityZ;
 	
 	enum BUTTON_CODE { BUTTON_NOTHING, BUTTON_ACTIVATE, BUTTON_RETURN };
 	BUTTON_CODE	ButtonResponseToTouch( void );
 	
-
+static	TYPEDESCRIPTION m_SaveData[];
 	// Buttons that don't take damage can be IMPULSE used
 	virtual int	ObjectCaps( void ) { return (CBaseToggle:: ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | (pev->takedamage?0:FCAP_IMPULSE_USE); }
 

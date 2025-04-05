@@ -86,14 +86,14 @@ public:
 	void IdleSound( void );
 	void AlertSound( void );
 	void PrescheduleThink( void );
-	int  Classify (  );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	BOOL CheckRangeAttack1 ( float flDot, float flDist );
 	BOOL CheckRangeAttack2 ( float flDot, float flDist );
 	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
 
-	virtual float GetDamageAmount( void ) { return RANDOM_FLOAT(2, 17); }
-	virtual int GetVoicePitch( void ) { return RANDOM_FLOAT(80,110); }
+	virtual float GetDamageAmount( void ) { return 7; }
+	virtual int GetVoicePitch( void ) { return 100; }
 	virtual float GetSoundVolue( void ) { return 1.0; }
 	Schedule_t* GetScheduleOfType ( int Type );
 
@@ -154,7 +154,7 @@ const char *CHeadCrab::pBiteSounds[] =
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CHeadCrab :: Classify ( )
+int	CHeadCrab :: Classify ( void )
 {
 	return	CLASS_ALIEN_PREY;
 }
@@ -186,21 +186,21 @@ void CHeadCrab :: SetYawSpeed ( void )
 	switch ( m_Activity )
 	{
 	case ACT_IDLE:			
-		ys = 300;
+		ys = 30;
 		break;
 	case ACT_RUN:			
 	case ACT_WALK:			
-		ys = 200;
+		ys = 20;
 		break;
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		ys = 600;
+		ys = 60;
 		break;
 	case ACT_RANGE_ATTACK1:	
-		ys = 300;
+		ys = 30;
 		break;
 	default:
-		ys = 300;
+		ys = 30;
 		break;
 	}
 
@@ -246,15 +246,15 @@ void CHeadCrab :: HandleAnimEvent( MonsterEvent_t *pEvent )
 				// Don't jump too far/fast
 				float distance = vecJumpDir.Length();
 				
-				if (distance > 1250)
+				if (distance > 650)
 				{
-					vecJumpDir = vecJumpDir * ( 1250.0 / distance );
+					vecJumpDir = vecJumpDir * ( 650.0 / distance );
 				}
 			}
 			else
 			{
 				// jump hop, don't care where
-				vecJumpDir = Vector( gpGlobals->v_forward.x, gpGlobals->v_forward.y, gpGlobals->v_up.z ) * RANDOM_FLOAT(340,400);
+				vecJumpDir = Vector( gpGlobals->v_forward.x, gpGlobals->v_forward.y, gpGlobals->v_up.z ) * 350;
 			}
 
 			int iSound = RANDOM_LONG(0,2);
@@ -262,7 +262,7 @@ void CHeadCrab :: HandleAnimEvent( MonsterEvent_t *pEvent )
 				EMIT_SOUND_DYN( edict(), CHAN_VOICE, pAttackSounds[iSound], GetSoundVolue(), ATTN_IDLE, 0, GetVoicePitch() );
 
 			pev->velocity = vecJumpDir;
-			m_flNextAttack = gpGlobals->time + 0.001;
+			m_flNextAttack = gpGlobals->time + 2;
 		}
 		break;
 
@@ -280,15 +280,15 @@ void CHeadCrab :: Spawn()
 	Precache( );
 
 	SET_MODEL(ENT(pev), "models/headcrab.mdl");
-	UTIL_SetSize(pev, Vector(-12, -12, 0), Vector(12, 12, 17));
+	UTIL_SetSize(pev, Vector(-12, -12, 0), Vector(12, 12, 24));
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
-	m_bloodColor		= BLOOD_COLOR_RED;
+	m_bloodColor		= BLOOD_COLOR_GREEN;
 	pev->effects		= 0;
-	pev->health			= 100;
+	pev->health			= 10;
 	pev->view_ofs		= Vector ( 0, 0, 20 );// position of the eyes relative to monster's origin.
-	pev->yaw_speed		= 34;//!!! should we put this in the monster's changeanim function since turn rates may vary with state/anim?
+	pev->yaw_speed		= 95;//!!! should we put this in the monster's changeanim function since turn rates may vary with state/anim?
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
 
@@ -357,7 +357,7 @@ void CHeadCrab :: LeapTouch ( CBaseEntity *pOther )
 	{
 		EMIT_SOUND_DYN( edict(), CHAN_WEAPON, RANDOM_SOUND_ARRAY(pBiteSounds), GetSoundVolue(), ATTN_IDLE, 0, GetVoicePitch() );
 		
-		pOther->TakeDamage( pev, VARS( pev->owner ), GetDamageAmount(), DMG_SLASH );
+		pOther->TakeDamage( pev, pev, GetDamageAmount(), DMG_SLASH );
 	}
 
 	SetTouch( NULL );
@@ -428,7 +428,7 @@ int CHeadCrab :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 {
 	// Don't take any acid damage -- BigMomma's mortar is acid
 	if ( bitsDamageType & DMG_ACID )
-		flDamage = 12;
+		flDamage = 0;
 
 	return CBaseMonster::TakeDamage( pevInflictor, pevAttacker, flDamage, bitsDamageType );
 }
@@ -464,6 +464,24 @@ void CHeadCrab :: PainSound ( void )
 void CHeadCrab :: DeathSound ( void )
 {
 	EMIT_SOUND_DYN( edict(), CHAN_VOICE, RANDOM_SOUND_ARRAY(pDeathSounds), GetSoundVolue(), ATTN_IDLE, 0, GetVoicePitch() );
+	CBaseEntity *pBullGrena;
+		Vector vecSrc = pev->origin + Vector(0,0,15);
+
+		// vecSrc.x = RANDOM_LONG(0, 360);
+		// vecSrc.y = RANDOM_LONG(0, 360);
+		// vecSrc.z = 0;
+		for (size_t i = 0; i < 8; i++)
+		{
+			//if (CGameRules::EntCounter < 455) 
+			{
+				pBullGrena = Create("squidspit", vecSrc, pev->angles, pev->owner);
+				UTIL_SetSize(pBullGrena->pev, Vector(0, 0, 0), Vector(0, 0, 0));
+				pBullGrena->pev->velocity = (gpGlobals->v_forward * RANDOM_LONG(-360, 360) ) + (gpGlobals->v_right * RANDOM_LONG(-360, 360) ) + (gpGlobals->v_up * RANDOM_LONG(-0, 90));
+				pBullGrena->pev->velocity = pBullGrena->pev->velocity * 7;
+				pBullGrena->pev->framerate = 1.0; 
+				pBullGrena->pev->scale = 1.5;
+			}
+		}
 }
 
 Schedule_t* CHeadCrab :: GetScheduleOfType ( int Type )
@@ -480,14 +498,14 @@ Schedule_t* CHeadCrab :: GetScheduleOfType ( int Type )
 	return CBaseMonster::GetScheduleOfType( Type );
 }
 
-/* 
+
 class CBabyCrab : public CHeadCrab
 {
 public:
 	void Spawn( void );
 	void Precache( void );
 	void SetYawSpeed ( void );
-	float GetDamageAmount( void ) { return gSkillData.headcrabDmgBite * 0.3; }
+	float GetDamageAmount( void ) { return 3; }
 	BOOL CheckRangeAttack1 ( float flDot, float flDist );
 	Schedule_t* GetScheduleOfType ( int Type );
 	virtual int GetVoicePitch( void ) { return PITCH_NORM + RANDOM_LONG(40,50); }
@@ -503,7 +521,7 @@ void CBabyCrab :: Spawn( void )
 	pev->renderamt = 192;
 	UTIL_SetSize(pev, Vector(-12, -12, 0), Vector(12, 12, 24));
 	
-	pev->health	= gSkillData.headcrabHealth * 0.25;	// less health than full grown
+	pev->health	= 10;	// less health than full grown
 }
 
 void CBabyCrab :: Precache( void )
@@ -553,4 +571,3 @@ Schedule_t* CBabyCrab :: GetScheduleOfType ( int Type )
 
 	return CHeadCrab::GetScheduleOfType( Type );
 }
- */

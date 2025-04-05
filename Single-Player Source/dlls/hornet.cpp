@@ -32,6 +32,17 @@ int iHornetPuff;
 
 LINK_ENTITY_TO_CLASS( hornet, CHornet );
 
+//=========================================================
+// Save/Restore
+//=========================================================
+TYPEDESCRIPTION	CHornet::m_SaveData[] = 
+{
+	DEFINE_FIELD( CHornet, m_flStopAttack, FIELD_TIME ),
+	DEFINE_FIELD( CHornet, m_iHornetType, FIELD_INTEGER ),
+	DEFINE_FIELD( CHornet, m_flFlySpeed, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CHornet, CBaseMonster );
 
 //=========================================================
 // don't let hornets gib, ever.
@@ -54,20 +65,20 @@ void CHornet :: Spawn( void )
 	pev->solid		= SOLID_BBOX;
 	pev->flags		|= FL_MONSTER;
 
-	m_flFlySpeed = 1024;
+	m_flFlySpeed = 600;
 	
 	pev->velocity = gpGlobals->v_forward * m_flFlySpeed;
 
-	m_flFieldOfView = 0.4; // +- x degrees
+	m_flFieldOfView = 0.5; // +- x degrees
 
 	SET_MODEL(ENT( pev ), "models/hornet.mdl");
-	UTIL_SetSize( pev, Vector( -3, -3, -3 ), Vector( 3, 3, 3 ) );
+	UTIL_SetSize( pev, Vector( -1, -1, -1 ), Vector( 1, 1, 1 ) );
 	SetTouch( DieTouch );
 	SetThink( StartTrack );
 	edict_t *pSoundEnt = pev->owner;
 	if ( !pSoundEnt )
 		pSoundEnt = edict();
-	pev->dmg = 10;
+	pev->dmg = 17;
 	pev->nextthink = 0.5;
 	ResetSequenceInfo( );
 	
@@ -159,7 +170,7 @@ void CHornet::IgniteTrail( void )
 		WRITE_BYTE( 161 );   // r, g, b
 		WRITE_BYTE( 25 );   // r, g, b
 		WRITE_BYTE( 97 );   // r, g, b
-		WRITE_BYTE( 100 );	// brightness
+		WRITE_BYTE( 200 );	// brightness
 	MESSAGE_END();
 }
 
@@ -190,7 +201,7 @@ void CHornet :: TrackTarget ( void )
 			WRITE_BYTE( TE_EXPLFLAG_NONE );
 		MESSAGE_END();
 		
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 256, CLASS_NONE, DMG_CRUSH  );
+		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 100, CLASS_NONE, DMG_BULLET  );
 
 		SetTouch( NULL );
 		UTIL_Remove( this );
@@ -198,8 +209,8 @@ void CHornet :: TrackTarget ( void )
 	}
 
 	if ( m_hEnemy == NULL )
-	{
-		Look( 256 );
+	{// enemy is dead.
+		Look( 512 );
 		m_hEnemy = BestVisibleEnemy( );
 	}
 	
@@ -257,7 +268,7 @@ void CHornet :: TrackTouch ( CBaseEntity *pOther )
 		WRITE_BYTE( 16  ); // framerate
 		WRITE_BYTE( TE_EXPLFLAG_NONE );
 	MESSAGE_END();
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 128, CLASS_NONE, DMG_PARALYZE );
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, 128, CLASS_ALIEN_MILITARY, DMG_BLAST );
 	
 	UTIL_BloodDrips( pev->origin, g_vecZero, RANDOM_LONG(25,75), 60 );
 	DieTouch( pOther );

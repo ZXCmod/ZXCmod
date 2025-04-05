@@ -48,6 +48,100 @@ extern CGraph WorldGraph;// the world node graph
 
 
 
+// Global Savedata for monster
+// UNDONE: Save schedule data?  Can this be done?  We may
+// lose our enemy pointer or other data (goal ent, target, etc)
+// that make the current schedule invalid, perhaps it's best
+// to just pick a new one when we start up again.
+TYPEDESCRIPTION	CBaseMonster::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBaseMonster, m_hEnemy, FIELD_EHANDLE ),
+	DEFINE_FIELD( CBaseMonster, m_hTargetEnt, FIELD_EHANDLE ),
+	DEFINE_ARRAY( CBaseMonster, m_hOldEnemy, FIELD_EHANDLE, MAX_OLD_ENEMIES ),
+	DEFINE_ARRAY( CBaseMonster, m_vecOldEnemy, FIELD_POSITION_VECTOR, MAX_OLD_ENEMIES ),
+	DEFINE_FIELD( CBaseMonster, m_flFieldOfView, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseMonster, m_flWaitFinished, FIELD_TIME ),
+	DEFINE_FIELD( CBaseMonster, m_flMoveWaitFinished, FIELD_TIME ),
+
+	DEFINE_FIELD( CBaseMonster, m_Activity, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_IdealActivity, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_LastHitGroup, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_MonsterState, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_IdealMonsterState, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_iTaskStatus, FIELD_INTEGER ),
+
+	//Schedule_t			*m_pSchedule;
+
+	DEFINE_FIELD( CBaseMonster, m_iScheduleIndex, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_afConditions, FIELD_INTEGER ),
+	//WayPoint_t			m_Route[ ROUTE_SIZE ];
+//	DEFINE_FIELD( CBaseMonster, m_movementGoal, FIELD_INTEGER ),
+//	DEFINE_FIELD( CBaseMonster, m_iRouteIndex, FIELD_INTEGER ),
+//	DEFINE_FIELD( CBaseMonster, m_moveWaitTime, FIELD_FLOAT ),
+
+	DEFINE_FIELD( CBaseMonster, m_vecMoveGoal, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CBaseMonster, m_movementActivity, FIELD_INTEGER ),
+
+	//		int					m_iAudibleList; // first index of a linked list of sounds that the monster can hear.
+//	DEFINE_FIELD( CBaseMonster, m_afSoundTypes, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_vecLastPosition, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CBaseMonster, m_iHintNode, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_afMemory, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_iMaxHealth, FIELD_INTEGER ),
+
+	DEFINE_FIELD( CBaseMonster, m_vecEnemyLKP, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CBaseMonster, m_cAmmoLoaded, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_afCapability, FIELD_INTEGER ),
+
+	DEFINE_FIELD( CBaseMonster, m_flNextAttack, FIELD_TIME ),
+	DEFINE_FIELD( CBaseMonster, m_bitsDamageType, FIELD_INTEGER ),
+	DEFINE_ARRAY( CBaseMonster, m_rgbTimeBasedDamage, FIELD_CHARACTER, CDMG_TIMEBASED ),
+	DEFINE_FIELD( CBaseMonster, m_bloodColor, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_failSchedule, FIELD_INTEGER ),
+
+	DEFINE_FIELD( CBaseMonster, m_flHungryTime, FIELD_TIME ),
+	DEFINE_FIELD( CBaseMonster, m_flDistTooFar, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseMonster, m_flDistLook, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseMonster, m_iTriggerCondition, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_iszTriggerTarget, FIELD_STRING ),
+
+	DEFINE_FIELD( CBaseMonster, m_HackedGunPos, FIELD_VECTOR ),
+
+	DEFINE_FIELD( CBaseMonster, m_scriptState, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseMonster, m_pCine, FIELD_CLASSPTR ),
+};
+
+//IMPLEMENT_SAVERESTORE( CBaseMonster, CBaseToggle );
+int CBaseMonster::Save( CSave &save )
+{
+	if ( !CBaseToggle::Save(save) )
+		return 0;
+	return save.WriteFields( "CBaseMonster", this, m_SaveData, ARRAYSIZE(m_SaveData) );
+}
+
+int CBaseMonster::Restore( CRestore &restore )
+{
+	if ( !CBaseToggle::Restore(restore) )
+		return 0;
+	int status = restore.ReadFields( "CBaseMonster", this, m_SaveData, ARRAYSIZE(m_SaveData) );
+	
+	// We don't save/restore routes yet
+	RouteClear();
+
+	// We don't save/restore schedules yet
+	m_pSchedule = NULL;
+	m_iTaskStatus = TASKSTATUS_NEW;
+	
+	// Reset animation
+	m_Activity = ACT_RESET;
+
+	// If we don't have an enemy, clear conditions like see enemy, etc.
+	if ( m_hEnemy == NULL )
+		m_afConditions = 0;
+
+	return status;
+}
+
 
 //=========================================================
 // Eat - makes a monster full for a little while.
@@ -221,12 +315,12 @@ void CBaseMonster :: Look ( int iDistance )
 	CBaseEntity	*pSightEnt = NULL;// the current visible entity that we're dealing with
 	CBaseEntity *pPlayer1 = CBaseEntity::Instance(pev->owner);
 
-	CBaseEntity *pList[10];
+	CBaseEntity *pList[50];
 
 	Vector delta = Vector( iDistance, iDistance, iDistance );
 
 	// Find only monsters/clients in box, NOT limited to PVS
-	int count = UTIL_EntitiesInBox( pList, 10, pev->origin - delta, pev->origin + delta, FL_CLIENT|FL_MONSTER );
+	int count = UTIL_EntitiesInBox( pList, 50, pev->origin - delta, pev->origin + delta, FL_CLIENT|FL_MONSTER );
 	for ( int i = 0; i < count; i++ )
 	{
 		pSightEnt = pList[i];
@@ -254,19 +348,11 @@ void CBaseMonster :: Look ( int iDistance )
 				}
 		 */
 
-		// !!!temporarily only considering other monsters and clients, don't see prisoners
-		if   (pPlayer1 != NULL && pSightEnt != this &&  
-			 pSightEnt->pev->health > 0 && (pSightEnt->edict() != pPlayer1->edict() ) &&
-			 (g_pGameRules->PlayerRelationship( pPlayer1, pSightEnt ) != GR_TEAMMATE)			 
-			 
-			 ) // is fixed (v1.34), turrets ignore a allies and owner
+		if (pPlayer1 != NULL && pSightEnt != this && pSightEnt->pev->health > 0.0 && (pSightEnt->edict() != pPlayer1->edict() ) && (g_pGameRules->PlayerRelationship( pPlayer1, pSightEnt ) != GR_TEAMMATE)) // is fixed (v1.34), turrets ignore a allies and owner
 		{
-				
-			// the looker will want to consider this entity  && (edict() == pSightEnt->pev->owner)
-			// don't check anything else about an entity that can't be seen, or an entity that you don't care about.
 			if (  IRelationship( pSightEnt ) != R_NO  && FInViewCone( pSightEnt ) && !FBitSet( pSightEnt->pev->flags, FL_NOTARGET ) && FVisible( pSightEnt ) )
 			{
-				if ( pSightEnt->IsPlayer()  )
+				if ( pSightEnt->IsPlayer() )
 				{
 					if ( pev->spawnflags & SF_MONSTER_WAIT_TILL_SEEN )
 					{
@@ -290,24 +376,29 @@ void CBaseMonster :: Look ( int iDistance )
 					iSighted |= bits_COND_SEE_CLIENT;
 				}
 				
-				// classify check for mnstrs and turrets
 				if ( (this->Classify2 != CLASS_MACHINE) && (pSightEnt->pev->effects != EF_NODRAW))
 				{
 					pSightEnt->m_pLink = m_pLink;
 					m_pLink = pSightEnt;
+				}
+
+				if ( pSightEnt->Classify2 == CLASS_MACHINE)
+				{
+					if ( (VARS(pev->owner) == VARS(pSightEnt->pev->owner)) )
+						continue;
 				}
 				
 				if ( (this->Classify2 == CLASS_MACHINE) )
 				{
 					if ( (pSightEnt->pev->effects == EF_NODRAW) && this->pev->ltime >= 1)
 						continue;
-						
 					else
 					{
 						pSightEnt->m_pLink = m_pLink;
 						m_pLink = pSightEnt;
 					}
 				}
+
 
 				// 
 				if (  pSightEnt == m_hEnemy )
@@ -472,8 +563,17 @@ CSound* CBaseMonster :: PBestScent ( void )
 //=========================================================
 void CBaseMonster :: MonsterThink ( void )
 {
-	pev->nextthink = gpGlobals->time + 0.1;// keep monster thinking.
+	pev->nextthink = gpGlobals->time + 0.2;// keep monster thinking.
 
+	if (ParalyzeTime > 0) // monsters papalize timer, new in 1.35
+	{
+		pev->velocity.x = pev->velocity.x * 0.7;
+		pev->velocity.y = pev->velocity.y * 0.7;
+		float ParaDMG = (10 + ParalyzeTime) / 10;
+		ParalyzeTime--;
+		if (cEntity)
+			TakeDamage(pev, cEntity, ParaDMG, DMG_POISON);
+	}
 
 	RunAI();
 
@@ -695,67 +795,67 @@ BOOL CBaseMonster::MoveToNode( Activity movementAct, float waitTime, const Vecto
 #ifdef _DEBUG
 void DrawRoute( entvars_t *pev, WayPoint_t *m_Route, int m_iRouteIndex, int r, int g, int b )
 {
-	int			i;
+// 	int			i;
 
-	if ( m_Route[m_iRouteIndex].iType == 0 )
-	{
-		ALERT( at_aiconsole, "Can't draw route!\n" );
-		return;
-	}
+// 	if ( m_Route[m_iRouteIndex].iType == 0 )
+// 	{
+// 		ALERT( at_aiconsole, "Can't draw route!\n" );
+// 		return;
+// 	}
 
-//	UTIL_ParticleEffect ( m_Route[ m_iRouteIndex ].vecLocation, g_vecZero, 255, 25 );
+// //	UTIL_ParticleEffect ( m_Route[ m_iRouteIndex ].vecLocation, g_vecZero, 255, 25 );
 
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-		WRITE_BYTE( TE_BEAMPOINTS);
-		WRITE_COORD( pev->origin.x );
-		WRITE_COORD( pev->origin.y );
-		WRITE_COORD( pev->origin.z );
-		WRITE_COORD( m_Route[ m_iRouteIndex ].vecLocation.x );
-		WRITE_COORD( m_Route[ m_iRouteIndex ].vecLocation.y );
-		WRITE_COORD( m_Route[ m_iRouteIndex ].vecLocation.z );
+// 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+// 		WRITE_BYTE( TE_BEAMPOINTS);
+// 		WRITE_COORD( pev->origin.x );
+// 		WRITE_COORD( pev->origin.y );
+// 		WRITE_COORD( pev->origin.z );
+// 		WRITE_COORD( m_Route[ m_iRouteIndex ].vecLocation.x );
+// 		WRITE_COORD( m_Route[ m_iRouteIndex ].vecLocation.y );
+// 		WRITE_COORD( m_Route[ m_iRouteIndex ].vecLocation.z );
 
-		WRITE_SHORT( g_sModelIndexLaser );
-		WRITE_BYTE( 0 ); // frame start
-		WRITE_BYTE( 10 ); // framerate
-		WRITE_BYTE( 1 ); // life
-		WRITE_BYTE( 16 );  // width
-		WRITE_BYTE( 0 );   // noise
-		WRITE_BYTE( r );   // r, g, b
-		WRITE_BYTE( g );   // r, g, b
-		WRITE_BYTE( b );   // r, g, b
-		WRITE_BYTE( 255 );	// brightness
-		WRITE_BYTE( 10 );		// speed
-	MESSAGE_END();
+// 		WRITE_SHORT( g_sModelIndexLaser );
+// 		WRITE_BYTE( 0 ); // frame start
+// 		WRITE_BYTE( 10 ); // framerate
+// 		WRITE_BYTE( 1 ); // life
+// 		WRITE_BYTE( 16 );  // width
+// 		WRITE_BYTE( 0 );   // noise
+// 		WRITE_BYTE( r );   // r, g, b
+// 		WRITE_BYTE( g );   // r, g, b
+// 		WRITE_BYTE( b );   // r, g, b
+// 		WRITE_BYTE( 255 );	// brightness
+// 		WRITE_BYTE( 10 );		// speed
+// 	MESSAGE_END();
 
-	for ( i = m_iRouteIndex ; i < ROUTE_SIZE - 1; i++ )
-	{
-		if ( (m_Route[ i ].iType & bits_MF_IS_GOAL) || (m_Route[ i+1 ].iType == 0) )
-			break;
+// 	for ( i = m_iRouteIndex ; i < ROUTE_SIZE - 1; i++ )
+// 	{
+// 		if ( (m_Route[ i ].iType & bits_MF_IS_GOAL) || (m_Route[ i+1 ].iType == 0) )
+// 			break;
 
 		
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_BEAMPOINTS );
-			WRITE_COORD( m_Route[ i ].vecLocation.x );
-			WRITE_COORD( m_Route[ i ].vecLocation.y );
-			WRITE_COORD( m_Route[ i ].vecLocation.z );
-			WRITE_COORD( m_Route[ i + 1 ].vecLocation.x );
-			WRITE_COORD( m_Route[ i + 1 ].vecLocation.y );
-			WRITE_COORD( m_Route[ i + 1 ].vecLocation.z );
-			WRITE_SHORT( g_sModelIndexLaser );
-			WRITE_BYTE( 0 ); // frame start
-			WRITE_BYTE( 10 ); // framerate
-			WRITE_BYTE( 1 ); // life
-			WRITE_BYTE( 8 );  // width
-			WRITE_BYTE( 0 );   // noise
-			WRITE_BYTE( r );   // r, g, b
-			WRITE_BYTE( g );   // r, g, b
-			WRITE_BYTE( b );   // r, g, b
-			WRITE_BYTE( 255 );	// brightness
-			WRITE_BYTE( 10 );		// speed
-		MESSAGE_END();
+// 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+// 			WRITE_BYTE( TE_BEAMPOINTS );
+// 			WRITE_COORD( m_Route[ i ].vecLocation.x );
+// 			WRITE_COORD( m_Route[ i ].vecLocation.y );
+// 			WRITE_COORD( m_Route[ i ].vecLocation.z );
+// 			WRITE_COORD( m_Route[ i + 1 ].vecLocation.x );
+// 			WRITE_COORD( m_Route[ i + 1 ].vecLocation.y );
+// 			WRITE_COORD( m_Route[ i + 1 ].vecLocation.z );
+// 			WRITE_SHORT( g_sModelIndexLaser );
+// 			WRITE_BYTE( 0 ); // frame start
+// 			WRITE_BYTE( 10 ); // framerate
+// 			WRITE_BYTE( 1 ); // life
+// 			WRITE_BYTE( 8 );  // width
+// 			WRITE_BYTE( 0 );   // noise
+// 			WRITE_BYTE( r );   // r, g, b
+// 			WRITE_BYTE( g );   // r, g, b
+// 			WRITE_BYTE( b );   // r, g, b
+// 			WRITE_BYTE( 255 );	// brightness
+// 			WRITE_BYTE( 10 );		// speed
+// 		MESSAGE_END();
 
-//		UTIL_ParticleEffect ( m_Route[ i ].vecLocation, g_vecZero, 255, 25 );
-	}
+// //		UTIL_ParticleEffect ( m_Route[ i ].vecLocation, g_vecZero, 255, 25 );
+// 	}
 }
 #endif
 
@@ -870,10 +970,10 @@ void CBaseMonster :: RouteSimplify( CBaseEntity *pTargetEnt )
 
 // Debug, test movement code
 #if 0
-//	if ( CVAR_GET_FLOAT( "simplify" ) != 0 )
-		DrawRoute( pev, outRoute, 0, 255, 0, 0 );
-//	else
-		DrawRoute( pev, m_Route, m_iRouteIndex, 0, 255, 0 );
+// //	if ( CVAR_GET_FLOAT( "simplify" ) != 0 )
+// 		DrawRoute( pev, outRoute, 0, 255, 0, 0 );
+// //	else
+// 		DrawRoute( pev, m_Route, m_iRouteIndex, 0, 255, 0 );
 #endif
 }
 
@@ -898,7 +998,7 @@ BOOL CBaseMonster :: FBecomeProne ( void )
 //=========================================================
 BOOL CBaseMonster :: CheckRangeAttack1 ( float flDot, float flDist )
 {
-	if ( flDist > 64 && flDist <= 784 && flDot >= 0.5 )
+	if ( flDist > 64 && flDist <= 2784 && flDot >= 0.5 )
 	{
 		return TRUE;
 	}
@@ -910,7 +1010,7 @@ BOOL CBaseMonster :: CheckRangeAttack1 ( float flDot, float flDist )
 //=========================================================
 BOOL CBaseMonster :: CheckRangeAttack2 ( float flDot, float flDist )
 {
-	if ( flDist > 64 && flDist <= 512 && flDot >= 0.5 )
+	if ( flDist > 64 && flDist <= 2512 && flDot >= 0.5 )
 	{
 		return TRUE;
 	}
@@ -1626,52 +1726,52 @@ BOOL CBaseMonster :: FTriangulate ( const Vector &vecStart , const Vector &vecEn
 	for ( i = 0 ; i < 8; i++ )
 	{
 // Debug, Draw the triangulation
-#if 0
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_SHOWLINE);
-			WRITE_COORD( pev->origin.x );
-			WRITE_COORD( pev->origin.y );
-			WRITE_COORD( pev->origin.z );
-			WRITE_COORD( vecRight.x );
-			WRITE_COORD( vecRight.y );
-			WRITE_COORD( vecRight.z );
-		MESSAGE_END();
+// #if 0
+// 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+// 			WRITE_BYTE( TE_SHOWLINE);
+// 			WRITE_COORD( pev->origin.x );
+// 			WRITE_COORD( pev->origin.y );
+// 			WRITE_COORD( pev->origin.z );
+// 			WRITE_COORD( vecRight.x );
+// 			WRITE_COORD( vecRight.y );
+// 			WRITE_COORD( vecRight.z );
+// 		MESSAGE_END();
 
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_SHOWLINE );
-			WRITE_COORD( pev->origin.x );
-			WRITE_COORD( pev->origin.y );
-			WRITE_COORD( pev->origin.z );
-			WRITE_COORD( vecLeft.x );
-			WRITE_COORD( vecLeft.y );
-			WRITE_COORD( vecLeft.z );
-		MESSAGE_END();
-#endif
+// 		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+// 			WRITE_BYTE( TE_SHOWLINE );
+// 			WRITE_COORD( pev->origin.x );
+// 			WRITE_COORD( pev->origin.y );
+// 			WRITE_COORD( pev->origin.z );
+// 			WRITE_COORD( vecLeft.x );
+// 			WRITE_COORD( vecLeft.y );
+// 			WRITE_COORD( vecLeft.z );
+// 		MESSAGE_END();
+// #endif
 
-#if 0
-		if (pev->movetype == MOVETYPE_FLY)
-		{
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-				WRITE_BYTE( TE_SHOWLINE );
-				WRITE_COORD( pev->origin.x );
-				WRITE_COORD( pev->origin.y );
-				WRITE_COORD( pev->origin.z );
-				WRITE_COORD( vecTop.x );
-				WRITE_COORD( vecTop.y );
-				WRITE_COORD( vecTop.z );
-			MESSAGE_END();
+// #if 0
+// 		if (pev->movetype == MOVETYPE_FLY)
+// 		{
+// 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+// 				WRITE_BYTE( TE_SHOWLINE );
+// 				WRITE_COORD( pev->origin.x );
+// 				WRITE_COORD( pev->origin.y );
+// 				WRITE_COORD( pev->origin.z );
+// 				WRITE_COORD( vecTop.x );
+// 				WRITE_COORD( vecTop.y );
+// 				WRITE_COORD( vecTop.z );
+// 			MESSAGE_END();
 
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-				WRITE_BYTE( TE_SHOWLINE );
-				WRITE_COORD( pev->origin.x );
-				WRITE_COORD( pev->origin.y );
-				WRITE_COORD( pev->origin.z );
-				WRITE_COORD( vecBottom.x );
-				WRITE_COORD( vecBottom.y );
-				WRITE_COORD( vecBottom.z );
-			MESSAGE_END();
-		}
-#endif
+// 			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+// 				WRITE_BYTE( TE_SHOWLINE );
+// 				WRITE_COORD( pev->origin.x );
+// 				WRITE_COORD( pev->origin.y );
+// 				WRITE_COORD( pev->origin.z );
+// 				WRITE_COORD( vecBottom.x );
+// 				WRITE_COORD( vecBottom.y );
+// 				WRITE_COORD( vecBottom.z );
+// 			MESSAGE_END();
+// 		}
+// #endif
 
 		if ( CheckLocalMove( pev->origin, vecRight, pTargetEnt, NULL ) == LOCALMOVE_VALID )
 		{
@@ -1745,7 +1845,7 @@ BOOL CBaseMonster :: FTriangulate ( const Vector &vecStart , const Vector &vecEn
 //=========================================================
 // Move - take a single step towards the next ROUTE location
 //=========================================================
-#define DIST_TO_CHECK	200
+#define DIST_TO_CHECK	400
 
 void CBaseMonster :: Move ( float flInterval ) 
 {
@@ -1797,7 +1897,7 @@ void CBaseMonster :: Move ( float flInterval )
 	flWaypointDist = ( m_Route[ m_iRouteIndex ].vecLocation - pev->origin ).Length2D();
 	
 	MakeIdealYaw ( m_Route[ m_iRouteIndex ].vecLocation );
-	ChangeYaw ( pev->yaw_speed );
+	ChangeYaw ( pev->yaw_speed*10 );
 
 	// if the waypoint is closer than CheckDist, CheckDist is the dist to waypoint
 	if ( flWaypointDist < DIST_TO_CHECK )
@@ -1972,11 +2072,8 @@ void CBaseMonster :: MonsterInit ( void )
 	pev->ideal_yaw		= pev->angles.y;
 	pev->max_health		= pev->health;
 	pev->armorvalue		= 0;
-	//pev->fuser1			= 30;
-	
-	// Charge = 0; // 0 or 1 bool
-	// TripleShot = 0; // 0 or 1 bool change it for multiple dmg (new in 1.35 for Red Crystal)
-	// TripleShotS = 1;
+	infected = 0;
+	TripleShot = 1; // 0 or 1 bool change it for multiple dmg (new in 1.35 for Red Crystal) todo
 	
 	pev->deadflag		= DEAD_NO;
 	m_IdealMonsterState	= MONSTERSTATE_IDLE;// Assume monster will be idle, until proven otherwise
@@ -2007,8 +2104,8 @@ void CBaseMonster :: MonsterInit ( void )
 
 	m_hEnemy			= NULL;
 
-	m_flDistTooFar		= 1024.0;
-	m_flDistLook		= 2048.0;
+	m_flDistTooFar		= 1024.0*2;
+	m_flDistLook		= 2048.0*2;
 
 	// set eye position
 	SetEyePosition();
@@ -2059,8 +2156,8 @@ void CBaseMonster :: StartMonster ( void )
 		// Try to move the monster to make sure it's not stuck in a brush.
 		// if (!WALK_MOVE ( ENT(pev), 0, 0, WALKMOVE_NORMAL ) )
 		// {
-			// ALERT(at_error, "Monster %s stuck in wall--level design error", STRING(pev->classname));
-			// pev->effects = EF_BRIGHTFIELD;
+		// 	ALERT(at_error, "Monster %s stuck in wall--level design error", STRING(pev->classname));
+		// 	pev->effects = EF_BRIGHTFIELD;
 		// }
 	}
 	else 
@@ -2170,19 +2267,19 @@ int CBaseMonster::IRelationship ( CBaseEntity *pTarget )
 	static int iEnemy[14][14] =
 	{			 //   NONE	 MACH	 PLYR	 HPASS	 HMIL	 AMIL	 APASS	 AMONST	APREY	 APRED	 INSECT	PLRALY	PBWPN	ABWPN
 	/*NONE*/		{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO	},
-	/*MACHINE*/		{ R_NO	,R_NO	,R_DL	,R_DL	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_FR,	R_DL,	R_DL	},
-	/*PLAYER*/		{ R_NO	,R_DL	,R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_DL,	R_DL	},
-	/*HUMANPASSIVE*/{ R_NO	,R_NO	,R_AL	,R_AL	,R_HT	,R_FR	,R_NO	,R_HT	,R_DL	,R_FR	,R_NO	,R_AL,	R_NO,	R_NO	},
-	/*HUMANMILITAR*/{ R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_HT	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_HT,	R_NO,	R_NO	},
-	/*ALIENMILITAR*/{ R_NO	,R_DL	,R_HT	,R_DL	,R_HT	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_DL,	R_NO,	R_NO	},
-	/*ALIENPASSIVE*/{ R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO,	R_NO,	R_NO	},
-	/*ALIENMONSTER*/{ R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_DL,	R_NO,	R_NO	},
-	/*ALIENPREY   */{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_NO	,R_FR	,R_NO	,R_DL,	R_NO,	R_NO	},
-	/*ALIENPREDATO*/{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO	,R_NO	,R_HT	,R_DL	,R_NO	,R_DL,	R_NO,	R_NO	},
-	/*INSECT*/		{ R_FR	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR	,R_FR	,R_FR	,R_FR	,R_NO	,R_FR,	R_NO,	R_NO	},
-	/*PLAYERALLY*/	{ R_NO	,R_FR	,R_AL	,R_AL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_NO,	R_NO,	R_NO	},
-	/*PBIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_DL	,R_NO	,R_DL,	R_NO,	R_DL	},
-	/*ABIOWEAPON*/	{ R_NO	,R_NO	,R_DL	,R_DL	,R_DL	,R_AL	,R_NO	,R_DL	,R_DL	,R_NO	,R_NO	,R_DL,	R_DL,	R_NO	}
+	/*MACHINE*/		{ R_NO	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_NO	,R_AL,	R_HT,	R_FR	},
+	/*PLAYER*/		{ R_NO	,R_HT	,R_NO	,R_NO	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_NO	,R_AL,	R_HT,	R_HT	},
+	/*HUMANPASSIVE*/{ R_NO	,R_NO	,R_AL	,R_AL	,R_AL	,R_AL	,R_NO	,R_AL	,R_AL	,R_AL	,R_NO	,R_HT,	R_NO,	R_NO	},
+	/*HUMANMILITAR*/{ R_NO	,R_HT	,R_HT	,R_AL	,R_AL	,R_AL	,R_NO	,R_AL	,R_AL	,R_AL	,R_HT	,R_HT,	R_NO,	R_NO	},
+	/*ALIENMILITAR*/{ R_NO	,R_HT	,R_HT	,R_HT	,R_HT	,R_AL	,R_NO	,R_AL	,R_AL	,R_AL	,R_HT	,R_HT,	R_NO,	R_NO	},
+	/*ALIENPASSIVE*/{ R_NO	,R_NO	,R_HT	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_NO	,R_HT,	R_NO,	R_NO	},
+	/*ALIENMONSTER*/{ R_NO	,R_HT	,R_HT	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_NO	,R_HT,	R_NO,	R_NO	},
+	/*ALIENPREY   */{ R_NO	,R_NO	,R_HT	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_NO	,R_HT,	R_NO,	R_NO	},
+	/*ALIENPREDATO*/{ R_NO	,R_NO	,R_HT	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_AL	,R_NO	,R_HT,	R_NO,	R_NO	},
+	/*INSECT*/		{ R_FR	,R_NO	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_NO	,R_FR,	R_NO,	R_NO	},
+	/*PLAYERALLY*/	{ R_NO	,R_AL	,R_AL	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_NO	,R_AL,	R_NO,	R_NO	},
+	/*PBIOWEAPON*/	{ R_NO	,R_NO	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_HT	,R_NO	,R_HT,	R_NO,	R_HT	},
+	/*ABIOWEAPON*/	{ R_NO	,R_FR	,R_HT	,R_HT	,R_HT	,R_AL	,R_NO	,R_HT	,R_HT	,R_NO	,R_NO	,R_HT,	R_HT,	R_NO	}
 	};
 
 	return iEnemy[ Classify2 /* self */ ][ pTarget->Classify2 /* anothers */ ];
@@ -2407,9 +2504,6 @@ CBaseEntity *CBaseMonster :: BestVisibleEnemy ( void )
 	pReturn = NULL;
 	iBestRelationship = R_NO;
 	
-	// if (edict() == pev->owner)
-		// return pReturn;
-
 	while ( pNextEnt != NULL )
 	{
 		if ( pNextEnt->IsAlive() )
@@ -2423,7 +2517,7 @@ CBaseEntity *CBaseMonster :: BestVisibleEnemy ( void )
 				iNearest = ( pNextEnt->pev->origin - pev->origin ).Length();
 				pReturn = pNextEnt;
 			}
-			else if ( IRelationship( pNextEnt) == iBestRelationship  )
+			else if ( IRelationship( pNextEnt) == iBestRelationship )
 			{
 				// this entity is disliked just as much as the entity that
 				// we currently think is the best visible enemy, so we only
@@ -2509,7 +2603,7 @@ float CBaseMonster::ChangeYaw ( int yawSpeed )
 	ideal = pev->ideal_yaw;
 	if (current != ideal)
 	{
-		speed = (float)yawSpeed * gpGlobals->frametime * 10;
+		speed = (float)yawSpeed * gpGlobals->frametime * 100;
 		move = ideal - current;
 
 		if (ideal > current)
@@ -3100,8 +3194,8 @@ int CBaseMonster :: CanPlaySequence( BOOL fDisregardMonsterState, int interruptL
 // directly to the left or right of the caller that will
 // conceal them from view of pSightEnt
 //=========================================================
-#define	COVER_CHECKS	5// how many checks are made
-#define COVER_DELTA		48// distance between checks
+#define	COVER_CHECKS	5*2// how many checks are made
+#define COVER_DELTA		48*2// distance between checks
 
 BOOL CBaseMonster :: FindLateralCover ( const Vector &vecThreat, const Vector &vecViewOffset )
 {
@@ -3268,9 +3362,7 @@ void CBaseMonster :: MonsterInitDead( void )
 	BecomeDead();
 	SetThink( CorpseFallThink );
 	pev->nextthink = gpGlobals->time + 0.5;
-	
-
-}
+	}
 
 //=========================================================
 // BBoxIsFlat - check to see if the monster's bounding box

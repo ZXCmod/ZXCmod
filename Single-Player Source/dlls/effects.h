@@ -87,7 +87,9 @@ public:
 
 	void EXPORT AnimateUntilDead( void );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 	static CSprite *SpriteCreate( const char *pSpriteName, const Vector &origin, BOOL animate );
 
 private:
@@ -195,7 +197,9 @@ public:
 
 	void	EXPORT StrikeThink( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	CSprite	*m_pSprite;
 	int		m_iszSpriteName;

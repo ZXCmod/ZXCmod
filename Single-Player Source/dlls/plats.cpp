@@ -40,13 +40,23 @@ public:
 	// This is done to fix spawn flag collisions between this class and a derived class
 	virtual BOOL IsTogglePlat( void ) { return (pev->spawnflags & SF_PLAT_TOGGLE) ? TRUE : FALSE; }
 
-
+	virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	BYTE	m_bMoveSnd;			// sound a plat makes while moving
 	BYTE	m_bStopSnd;			// sound a plat makes when it stops
 	float	m_volume;			// Sound volume
 };
 
+TYPEDESCRIPTION	CBasePlatTrain::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBasePlatTrain, m_bMoveSnd, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBasePlatTrain, m_bStopSnd, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBasePlatTrain, m_volume, FIELD_FLOAT ),
+};
+
+IMPLEMENT_SAVERESTORE( CBasePlatTrain, CBaseToggle );
 
 void CBasePlatTrain :: KeyValue( KeyValueData *pkvd )
 {
@@ -514,11 +524,20 @@ public:
 	virtual void	HitBottom( void );
 	
 	void			RotMove( Vector &destAngle, float time );
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	Vector	m_end, m_start;
 };
 LINK_ENTITY_TO_CLASS( func_platrot, CFuncPlatRot );
+TYPEDESCRIPTION	CFuncPlatRot::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncPlatRot, m_end, FIELD_VECTOR ),
+	DEFINE_FIELD( CFuncPlatRot, m_start, FIELD_VECTOR ),
+};
+
+IMPLEMENT_SAVERESTORE( CFuncPlatRot, CFuncPlat );
 
 
 void CFuncPlatRot :: SetupRotation( void )
@@ -621,7 +640,9 @@ public:
 
 	void EXPORT Wait( void );
 	void EXPORT Next( void );
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	entvars_t	*m_pevCurrentTarget;
 	int			m_sounds;
@@ -629,6 +650,14 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( func_train, CFuncTrain );
+TYPEDESCRIPTION	CFuncTrain::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncTrain, m_sounds, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTrain, m_pevCurrentTarget, FIELD_EVARS ),
+	DEFINE_FIELD( CFuncTrain, m_activated, FIELD_BOOLEAN ),
+};
+
+IMPLEMENT_SAVERESTORE( CFuncTrain, CBasePlatTrain );
 
 
 void CFuncTrain :: KeyValue( KeyValueData *pkvd )
@@ -906,7 +935,23 @@ void CFuncTrain::OverrideReset( void )
 //
 // ---------------------------------------------------------------------
 
+TYPEDESCRIPTION	CFuncTrackTrain::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFuncTrackTrain, m_ppath, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CFuncTrackTrain, m_length, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_height, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_speed, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_dir, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_startSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_controlMins, FIELD_VECTOR ),
+	DEFINE_FIELD( CFuncTrackTrain, m_controlMaxs, FIELD_VECTOR ),
+	DEFINE_FIELD( CFuncTrackTrain, m_sounds, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTrackTrain, m_flVolume, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_flBank, FIELD_FLOAT ),
+	DEFINE_FIELD( CFuncTrackTrain, m_oldSpeed, FIELD_FLOAT ),
+};
 
+IMPLEMENT_SAVERESTORE( CFuncTrackTrain, CBaseEntity );
 LINK_ENTITY_TO_CLASS( func_tracktrain, CFuncTrackTrain );
 
 void CFuncTrackTrain :: KeyValue( KeyValueData *pkvd )
@@ -1595,7 +1640,9 @@ public:
 	void			EnableUse( void ) { m_use = 1; }
 	int				UseEnabled( void ) { return m_use; }
 
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual void	OverrideReset( void );
 
@@ -1613,6 +1660,21 @@ public:
 	int				m_use;
 };
 LINK_ENTITY_TO_CLASS( func_trackchange, CFuncTrackChange );
+
+TYPEDESCRIPTION	CFuncTrackChange::m_SaveData[] = 
+{
+	DEFINE_GLOBAL_FIELD( CFuncTrackChange, m_trackTop, FIELD_CLASSPTR ),
+	DEFINE_GLOBAL_FIELD( CFuncTrackChange, m_trackBottom, FIELD_CLASSPTR ),
+	DEFINE_GLOBAL_FIELD( CFuncTrackChange, m_train, FIELD_CLASSPTR ),
+	DEFINE_GLOBAL_FIELD( CFuncTrackChange, m_trackTopName, FIELD_STRING ),
+	DEFINE_GLOBAL_FIELD( CFuncTrackChange, m_trackBottomName, FIELD_STRING ),
+	DEFINE_GLOBAL_FIELD( CFuncTrackChange, m_trainName, FIELD_STRING ),
+	DEFINE_FIELD( CFuncTrackChange, m_code, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTrackChange, m_targetState, FIELD_INTEGER ),
+	DEFINE_FIELD( CFuncTrackChange, m_use, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CFuncTrackChange, CFuncPlatRot );
 
 void CFuncTrackChange :: Spawn( void )
 {
@@ -2052,13 +2114,16 @@ public:
 	void			Stop( void );
 
 	int				BloodColor( void ) { return DONT_BLEED; }
-	int				Classify( ) { return CLASS_MACHINE; }
+	int				Classify( void ) { return CLASS_MACHINE; }
 	int				TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
 	void			Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	Vector			BodyTarget( const Vector &posSrc ) { return pev->origin; }
 
 	virtual int	ObjectCaps( void ) { return CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+	static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	BOOL			m_on;
@@ -2067,6 +2132,12 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_guntarget, CGunTarget );
 
+TYPEDESCRIPTION	CGunTarget::m_SaveData[] = 
+{
+	DEFINE_FIELD( CGunTarget, m_on, FIELD_BOOLEAN ),
+};
+
+IMPLEMENT_SAVERESTORE( CGunTarget, CBaseMonster );
 
 
 void CGunTarget::Spawn( void )

@@ -40,61 +40,7 @@ enum shotgun_e
 	SHOTGUN_IDLE_DEEP
 };
 
-// new weapon when reload attack
-class CPhase : public CBaseEntity
-{
-public:
-	void Spawn();
-	void Count(void);
-	void Precache();
-	void Motion();
-	void EXPORT Update();
-	void EXPORT Touch(CBaseEntity *pOther);
-	CBaseEntity *pEntity2;
-	CBasePlayer *m_pPlayer;
 
-private:
-	int m_flDie;
-	int m_flDie2;
-	int m_iBalls;
-	unsigned short m_Sprite;
-};
-// result of recharge flare
-class CPhase2 : public CBaseEntity
-{
-public:
-	void Spawn();
-	void Motion();
-	void EXPORT IgniteThink(void);
-
-private:
-	unsigned short m_LaserSprite;
-	int m_flDie;
-	int value;
-	unsigned short m_Sprite_2;
-	unsigned short m_Sprite_3;
-	int m_value;
-	int m_loop;
-	BOOL m_flare_on;
-};
-
-class CSCannon : public CGrenade
-{
-public:
-	void Spawn(void);
-	void EXPORT MoveThink(void);
-	void EXPORT MoveTouch(CBaseEntity *pOther);
-
-private:
-	unsigned short m_Sprite;
-	unsigned short m_SpriteExp;
-	unsigned short m_iSpriteTexture;
-	int m_timer;
-	int m_iBodyGibs;
-};
-
-LINK_ENTITY_TO_CLASS(weapon_tacgun, CSCannon);
-LINK_ENTITY_TO_CLASS(weapon_shotgun, CShotgun);
 
 void CShotgun::Spawn()
 {
@@ -184,14 +130,13 @@ int CShotgun::GetItemInfo(ItemInfo *p)
 
 BOOL CShotgun::Deploy()
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 320);
+	m_flTimeWeaponIdle2 = UTIL_WeaponTimeBase() + 0.1;
 
 	return DefaultDeploy("models/v_shotgun.mdl", "models/p_shotgun.mdl", SHOTGUN_DRAW, "shotgun");
 }
 
 void CShotgun::PrimaryAttack()
 {
-
 
 	if (m_iClip <= 0)
 	{
@@ -213,7 +158,7 @@ void CShotgun::PrimaryAttack()
 
 	Vector vecDir;
 
-	vecDir = m_pPlayer->FireBulletsPlayer(30, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed);
+	vecDir = m_pPlayer->FireBulletsPlayer(20, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 4096, BULLET_PLAYER_BUCKSHOT, 1, 0, m_pPlayer->pev, m_pPlayer->random_seed);
 
 	PLAYBACK_EVENT_FULL(FEV_GLOBAL, m_pPlayer->edict(), m_usSingleFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0);
 
@@ -224,16 +169,14 @@ void CShotgun::PrimaryAttack()
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
 
 	if (m_iClip != 0)
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 5.0;
-	else
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
+	else
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	m_fInSpecialReload = 0;
 }
 
 void CShotgun::SecondaryAttack(void)
 {
-
-
 
 	if (m_iClip <= 1)
 	{
@@ -254,10 +197,24 @@ void CShotgun::SecondaryAttack(void)
 
 	Vector vecSrc = m_pPlayer->GetGunPosition();
 	Vector vecAiming = gpGlobals->v_forward;
-
 	Vector vecDir;
+	TraceResult tr;
+	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 4096, dont_ignore_monsters, m_pPlayer->edict(), &tr);
 
-	vecDir = m_pPlayer->FireBulletsPlayer(30, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed);
+	vecDir = m_pPlayer->FireBulletsPlayer(20, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 4096, BULLET_PLAYER_BUCKSHOT, 1, 0, m_pPlayer->pev, m_pPlayer->random_seed);
+
+	MESSAGE_BEGIN(MSG_BROADCAST, SVC_TEMPENTITY, tr.vecEndPos);
+	WRITE_BYTE(TE_EXPLOSION);	 // This just makes a dynamic light now
+	WRITE_COORD(tr.vecEndPos.x); // X
+	WRITE_COORD(tr.vecEndPos.y); // Y
+	WRITE_COORD(tr.vecEndPos.z); // Z
+	WRITE_SHORT(g_sModelIndexFireball);
+	WRITE_BYTE(30); // * 0.75
+	WRITE_BYTE(20); // framerate
+	WRITE_BYTE(TE_EXPLFLAG_NONE);
+	MESSAGE_END();
+
+	::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), 50.0, 150.0, CLASS_NONE, DMG_BLAST);
 
 	PLAYBACK_EVENT_FULL(FEV_GLOBAL, m_pPlayer->edict(), m_usDoubleFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0);
 
@@ -267,9 +224,9 @@ void CShotgun::SecondaryAttack(void)
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
 	if (m_iClip != 0)
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 6.0;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 	else
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 2.0;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
 
 	m_fInSpecialReload = 0;
 }
@@ -374,9 +331,22 @@ void CShotgun::FourthAttack(void)
 		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
 
 		Vector vecThrow = gpGlobals->v_forward * 1600; // 800
+		CBaseEntity *pSCannon;
 
-		CBaseEntity *pSCannon = Create("weapon_tacgun", m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict());
-		pSCannon->pev->velocity = vecThrow;
+		
+
+		// if (m_pPlayer->pev->fuser1 < 100)
+		// {
+			pSCannon = Create("weapon_tacgun", m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 4 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict());
+			pSCannon->pev->velocity = vecThrow;
+		// }
+		// else 
+		// {
+		// 	pSCannon = Create("weapon_tacgun", m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 9 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict());
+		// 	pSCannon->pev->velocity = vecThrow + (gpGlobals->v_right * 300);
+		// 	pSCannon = Create("weapon_tacgun", m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * -3 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict());
+		// 	pSCannon->pev->velocity = vecThrow + (gpGlobals->v_right * -300);
+		// }
 		m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 		SendWeaponAnim(1);
 		m_iClip -= 2;
@@ -435,7 +405,7 @@ void CShotgun::Reload(void)
 
 void CShotgun::WeaponIdle(void)
 {
-	ResetEmptySound();
+	
 
 	if (m_flPumpTime && m_flPumpTime < gpGlobals->time)
 	{
@@ -460,15 +430,21 @@ void CShotgun::WeaponIdle(void)
 				SendWeaponAnim(SHOTGUN_PUMP);
 				EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/scock1.wav", 1, ATTN_NORM, 0, 95 + RANDOM_LONG(0, 0x1f));
 				m_fInSpecialReload = 0;
-				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 			}
 		}
+		
 	}
 
-	char szText[24];
+	if (m_flTimeWeaponIdle2 > gpGlobals->time)
+		return;
+	
+	ResetEmptySound();
+
+	char szText[16];
 	hudtextparms_t hText;
-	sprintf(szText, "Flare: %d", INT(max(0, m_pPlayer->m_flNextShotgunFlareTime - gpGlobals->time)));
-	hText.channel = 16;
+	sprintf(szText, "Flare: %d", (max(0, m_pPlayer->m_flNextShotgunFlareTime - INT(gpGlobals->time) )));
+	hText.channel = 2;
 	hText.x = 0.90;
 	hText.y = 0.86;
 	hText.effect = 0; // Fade in/out
@@ -481,6 +457,9 @@ void CShotgun::WeaponIdle(void)
 	hText.fxTime = 2.0;
 	if (m_pPlayer->pevEntity != NULL)
 		UTIL_HudMessage(m_pPlayer->pevEntity, hText, szText);
+
+	m_flTimeWeaponIdle2 = gpGlobals->time + 0.5;
+
 }
 
 class CShotgunAmmo : public CBasePlayerAmmo
@@ -507,10 +486,68 @@ class CShotgunAmmo : public CBasePlayerAmmo
 	}
 };
 
-LINK_ENTITY_TO_CLASS(ammo_buckshot, CShotgunAmmo);
+
 // new
+
+
+
+class CPhase : public CBaseEntity
+{
+public:
+	void Spawn();
+	void Precache();
+	void EXPORT MoveThink();
+	void EXPORT MoveTouch(CBaseEntity *pOther);
+	CBaseEntity *pEntity2;
+	CBasePlayer *m_pPlayer;
+
+private:
+	int m_flDie;
+	int m_flDie2;
+	int m_iBalls;
+	unsigned short m_Sprite;
+};
+
+class CPhase2 : public CBaseEntity
+{
+public:
+	void Spawn();
+	void Motion();
+	void EXPORT IgniteThink(void);
+
+private:
+	unsigned short m_LaserSprite;
+	int m_flDie;
+	int value;
+	unsigned short m_Sprite_2;
+	unsigned short m_Sprite_3;
+	int m_value;
+	int m_loop;
+	BOOL m_flare_on;
+};
+
+class CSCannon : public CGrenade
+{
+public:
+	void Spawn(void);
+	void EXPORT MoveThink(void);
+	void EXPORT MoveTouch(CBaseEntity *pOther);
+
+private:
+	unsigned short m_Sprite;
+	unsigned short m_SpriteExp;
+	unsigned short m_iSpriteTexture;
+	int m_timer;
+	int m_iBodyGibs;
+};
+
+
+LINK_ENTITY_TO_CLASS(weapon_shotgun, CShotgun);
+LINK_ENTITY_TO_CLASS(ammo_buckshot, CShotgunAmmo);
 LINK_ENTITY_TO_CLASS(phase_pulse, CPhase);
 LINK_ENTITY_TO_CLASS(item_artifact_super_damage, CPhase2);
+LINK_ENTITY_TO_CLASS(weapon_tacgun, CSCannon);
+
 
 ////////////////////
 ////SHOTGUN CLUSTERS
@@ -535,21 +572,19 @@ void CPhase::Spawn()
 	pev->rendercolor.y = 100; // green
 	pev->rendercolor.z = 255; // blue
 	pev->renderamt = 200;
-	//
 
 	pev->takedamage = DAMAGE_YES;
 	m_flDie = gpGlobals->time + 15;
 	pev->ltime = 80;
 	m_pPlayer = (CBasePlayer *)CBasePlayer::Instance(pev->owner);
-	SetThink(Update);
-	SetTouch(Touch);
+	
 
 	// ololo happy nice mines
 	// destroy new clusters, if not in radius
 
 	CBaseEntity *pEntity = NULL;
 
-	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 30)) != NULL)
+	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 25)) != NULL)
 	{
 
 		if (FClassnameIs(pEntity->pev, "weapon_shotgun") && (pEntity->edict() != edict()))
@@ -563,36 +598,6 @@ void CPhase::Spawn()
 			m_flDie = gpGlobals->time + 0.1;
 	}
 
-	pev->nextthink = gpGlobals->time + 0.1;
-}
-
-void CPhase::Touch(CBaseEntity *pOther)
-{
-
-	/*
-		if ((pOther->edict() != edict())  && (pOther->pev->takedamage) && (pOther->pev->deadflag != DEAD_DYING) ) // explode
-		{
-			m_flDie = gpGlobals->time + 0.1;
-		}
-		 */
-	// reset for parent to walls
-	if (pev->movetype == MOVETYPE_TOSS)
-		pev->movetype = MOVETYPE_NONE;
-
-	SetTouch(NULL);
-}
-
-void CPhase::Precache(void)
-{
-
-	m_Sprite = PRECACHE_MODEL("sprites/flare6.spr");
-	m_iBalls = PRECACHE_MODEL("sprites/cnt1.spr");
-	Count();
-}
-
-void CPhase::Count(void)
-{
-	TraceResult tr, beam_tr;
 	// balls
 	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
 	WRITE_BYTE(TE_SPRITETRAIL); // TE_RAILTRAIL);
@@ -609,15 +614,31 @@ void CPhase::Count(void)
 	WRITE_BYTE(90);		   // amplitude * 0.1
 	WRITE_BYTE(2);		   // speed * 100
 	MESSAGE_END();
+
+	
+
+	pev->nextthink = gpGlobals->time + 0.1;
+	SetThink(MoveThink);
+	SetTouch(MoveTouch);
 }
 
-void CPhase::Motion(void)
+void CPhase::MoveTouch(CBaseEntity *pOther)
 {
+	if (pev->movetype == MOVETYPE_TOSS)
+		pev->movetype = MOVETYPE_NONE;
+
+	SetTouch(NULL);
 }
 
-void CPhase::Update()
+void CPhase::Precache(void)
 {
+	m_Sprite = PRECACHE_MODEL("sprites/flare6.spr");
+	m_iBalls = PRECACHE_MODEL("sprites/cnt1.spr");
+}
 
+
+void CPhase::MoveThink()
+{
 	// smart sensor mines
 	CBaseEntity *pEntity = NULL;
 	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 128)) != NULL)
@@ -725,8 +746,8 @@ void CPhase2::Spawn()
 	m_value = 0;
 	m_loop = 17;
 	m_flare_on = TRUE;
-	value = g_zxc_shotgun_flare_radius.value; // delta radius
-	m_flDie = gpGlobals->time + 14;			  // destroy timer. 0-7 sucking,
+	value = g_zxc_shotgun_flare_radius.value; // radius
+	m_flDie = gpGlobals->time + 17;			  // destroy timer. 0-10 sucking,
 	SetThink(IgniteThink);
 }
 
@@ -756,11 +777,13 @@ void CPhase2::IgniteThink(void)
 			vecDirToEnemy = vecMidEnemy - vecMid;			  // calculate dir and dist to enemy
 			// float flDistToEnemy = vecDirToEnemy.Length();
 
-			if (pEntity->IsPlayer())
+			if (pEntity->IsAlive() && (pEntity->IsPlayer() || pEntity->IsMonster())) //pEntity->IsPlayer() pEntity->pev->deadflag == 0 && 
 			{
-				vecDir = (pEntity->Center() - Vector(0, 0, 40) - Center()).Normalize();
-				pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -((pev->dmg * 2) + value / vecDirToEnemy.Length() * 60);
-				::RadiusDamage(pev->origin, pev, VARS(pev->owner), 40, 40, CLASS_NONE, DMG_BULLET);
+				if (pEntity->Classify() != CLASS_MACHINE)
+				{
+					vecDir = (pEntity->Center() - Vector(0, 0, 40) - Center()).Normalize();
+					pEntity->pev->velocity = pEntity->pev->velocity + vecDir * -((pev->dmg * 0.9) + value / vecDirToEnemy.Length() * 60);
+				}
 			}
 		}
 		if (m_value == 0)
@@ -789,6 +812,7 @@ void CPhase2::IgniteThink(void)
 
 			m_value = 1;
 		}
+		::RadiusDamage(pev->origin, pev, VARS(pev->owner), 100.0, 60.0, CLASS_NONE, DMG_BULLET);
 	}
 	else if (m_flare_on == TRUE)
 	{
@@ -799,7 +823,7 @@ void CPhase2::IgniteThink(void)
 
 	if (m_flare_on == FALSE)
 	{
-		for (size_t i = 0; i < 5; i++)
+		for (size_t i = 0; i < 12; i++)
 		{
 			vecEnd.x = RANDOM_FLOAT(-128, 128);
 			vecEnd.y = RANDOM_FLOAT(-128, 128);
@@ -825,7 +849,7 @@ void CPhase2::IgniteThink(void)
 			}
 
 			UTIL_Sparks(tr.vecEndPos);
-			::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), 100, 200, CLASS_NONE, DMG_ENERGYBEAM); // end blast
+			::RadiusDamage(tr.vecEndPos, pev, VARS(pev->owner), 33.0, 250.0, CLASS_NONE, DMG_ENERGYBEAM); // end blast
 			UTIL_DecalTrace(&tr, DECAL_SMALLSCORCH1);
 
 			// lights
@@ -900,7 +924,7 @@ void CSCannon::Spawn(void)
 	pev->solid = SOLID_BBOX;
 	UTIL_SetSize(pev, Vector(-4, -4, -4), Vector(4, 4, 4));
 	UTIL_SetOrigin(pev, pev->origin);
-	pev->dmg = 150;
+	pev->dmg = 150.0;
 	pev->gravity = 0.75;
 	m_timer = 0;
 
@@ -971,7 +995,10 @@ void CSCannon::MoveTouch(CBaseEntity *pOther)
 	}
 
 	if (TResult.fAllSolid)
+	{
+		UTIL_Remove(this);
 		return;
+	}
 
 	// animated sprite
 	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
@@ -1050,7 +1077,7 @@ void CSCannon::MoveTouch(CBaseEntity *pOther)
 
 	UTIL_DecalTrace(&TResult, DECAL_SMALLSCORCH1 + RANDOM_LONG(0, 2));
 
-	::RadiusDamage(pev->origin, pev, VARS(pev->owner), pev->dmg, 150, CLASS_NONE, DMG_CRUSH);
+	::RadiusDamage(pev->origin, pev, VARS(pev->owner), pev->dmg, 50.0+pev->dmg, CLASS_NONE, DMG_CRUSH);
 
 	SetTouch(NULL);
 	UTIL_Remove(this);

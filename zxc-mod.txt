@@ -1,11 +1,13 @@
-ZXC MOD third update v 1.37 with source. 2008-2023.
+ZXC MOD third update v 1.38 with source. 2008-2024.
 
 
 Get last version zxc-mod here: https://www.moddb.com/mods/zxc-mod-133
 Official hl game server - FFK [RUSSIA] +Guns (zxc-mod):   185.40.76.56:27015
 
+Compiled with Microsoft Visual C++ 6.0
+
 Whats new. 
-v1.26 - v1.37
+v1.26 - v1.38
 +New weapons and changes. See changes.txt.
 
 

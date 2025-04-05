@@ -70,36 +70,56 @@ public:
 	virtual int ObjectCaps(void) { return CTalkMonster ::ObjectCaps() | FCAP_IMPULSE_USE; }
 	int TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType);
 	BOOL CheckRangeAttack1(float flDot, float flDist);
+
 	void DeclineFollowing(void);
+
 	// Override these to set behavior
 	Schedule_t *GetScheduleOfType(int Type);
 	Schedule_t *GetSchedule(void);
 	MONSTERSTATE GetIdealState(void);
+
 	void DeathSound(void);
 	void PainSound(void);
+
 	void TalkInit(void);
+
 	void TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
 	void Killed(entvars_t *pevAttacker, int iGib);
+
+	virtual int Save(CSave &save);
+	virtual int Restore(CRestore &restore);
+	static TYPEDESCRIPTION m_SaveData[];
 
 	BOOL m_fGunDrawn;
 	float m_painTime;
 	float m_checkAttackTime;
 	BOOL m_lastAttackCheck;
 
-	CUSTOM_SCHEDULES;
-
-private:
+	// UNDONE: What is this for?  It isn't used?
 	float m_flPlayerDamage; // how much pain has the player inflicted on me?
+
+	CUSTOM_SCHEDULES;
 };
 
 LINK_ENTITY_TO_CLASS(monster_barney, CBarney);
+
+TYPEDESCRIPTION CBarney::m_SaveData[] =
+	{
+		DEFINE_FIELD(CBarney, m_fGunDrawn, FIELD_BOOLEAN),
+		DEFINE_FIELD(CBarney, m_painTime, FIELD_TIME),
+		DEFINE_FIELD(CBarney, m_checkAttackTime, FIELD_TIME),
+		DEFINE_FIELD(CBarney, m_lastAttackCheck, FIELD_BOOLEAN),
+		DEFINE_FIELD(CBarney, m_flPlayerDamage, FIELD_FLOAT),
+};
+
+IMPLEMENT_SAVERESTORE(CBarney, CTalkMonster);
 
 //=========================================================
 // AI Schedules Specific to this monster
 //=========================================================
 Task_t tlBaFollow[] =
 	{
-		{TASK_MOVE_TO_TARGET_RANGE, (float)64}, // Move within 128 of target ent (client)
+		{TASK_MOVE_TO_TARGET_RANGE, (float)128}, // Move within 128 of target ent (client)
 		{TASK_SET_SCHEDULE, (float)SCHED_TARGET_FACE},
 };
 
@@ -177,8 +197,8 @@ Schedule_t slIdleBaStand[] =
 			 bits_COND_PROVOKED,
 
 		 bits_SOUND_COMBAT | // sound flags - change these, and you'll break the talking code.
-			 // bits_SOUND_PLAYER		|
-			 // bits_SOUND_WORLD		|
+							 // bits_SOUND_PLAYER		|
+							 // bits_SOUND_WORLD		|
 
 			 bits_SOUND_DANGER |
 			 bits_SOUND_MEAT | // scents
@@ -208,7 +228,7 @@ void CBarney ::RunTask(Task_t *pTask)
 	case TASK_RANGE_ATTACK1:
 		if (m_hEnemy != NULL && (m_hEnemy->IsPlayer()))
 		{
-			pev->framerate = 1.5;
+			pev->framerate = 3.0;
 		}
 		CTalkMonster::RunTask(pTask);
 		break;
@@ -268,16 +288,16 @@ void CBarney ::SetYawSpeed(void)
 	switch (m_Activity)
 	{
 	case ACT_IDLE:
-		ys = 70;
+		ys = 270;
 		break;
 	case ACT_WALK:
-		ys = 70;
+		ys = 120;
 		break;
 	case ACT_RUN:
-		ys = 90;
+		ys = 170;
 		break;
 	default:
-		ys = 70;
+		ys = 270;
 		break;
 	}
 
@@ -289,7 +309,7 @@ void CBarney ::SetYawSpeed(void)
 //=========================================================
 BOOL CBarney ::CheckRangeAttack1(float flDot, float flDist)
 {
-	if (flDist <= 2024 && flDot >= 0.5)
+	if (flDist <= 4000 && flDot >= 0.5)
 	{
 		if (gpGlobals->time > m_checkAttackTime)
 		{
@@ -299,12 +319,12 @@ BOOL CBarney ::CheckRangeAttack1(float flDot, float flDist)
 			CBaseEntity *pEnemy = m_hEnemy;
 			Vector shootTarget = ((pEnemy->BodyTarget(shootOrigin) - pEnemy->pev->origin) + m_vecEnemyLKP);
 			UTIL_TraceLine(shootOrigin, shootTarget, dont_ignore_monsters, ENT(pev), &tr);
-			m_checkAttackTime = gpGlobals->time + 1;
+			m_checkAttackTime = gpGlobals->time + 1.0;
 			if (tr.flFraction == 1.0 || (tr.pHit != NULL && CBaseEntity::Instance(tr.pHit) == pEnemy))
 				m_lastAttackCheck = TRUE;
 			else
 				m_lastAttackCheck = FALSE;
-			m_checkAttackTime = gpGlobals->time + 2.0;
+			m_checkAttackTime = gpGlobals->time + 1.0;
 		}
 		return m_lastAttackCheck;
 	}
@@ -328,39 +348,41 @@ void CBarney ::BarneyFirePistol(void)
 	SetBlending(0, angDir.x);
 	pev->effects = EF_MUZZLEFLASH;
 
+	if (m_hEnemy == NULL)
+		return;
+
 	vecShootDir = ((m_hEnemy->pev->origin + m_hEnemy->pev->view_ofs) - vecShootOrigin).Normalize();
 
 	vecShootDir.x += RANDOM_FLOAT(-0.1, 0.1);
 	vecShootDir.y += RANDOM_FLOAT(-0.01, 0.01);
 	vecShootDir.z += RANDOM_FLOAT(-0.05, 0);
 
-	switch (RANDOM_LONG(0, 5)) // spawn rockets
+	switch (RANDOM_LONG(0, 3)) // spawn rockets
 	{
 	// case 0: FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_20DEGREES, 1024,  pev->dmg, 1, 1, VARS( pev->owner ) ); break;
 	case 0:
-		FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_1DEGREES, 6000, 40, 1, 5, VARS(pev->owner));
+		FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_1DEGREES, 6000, 0, 1, 10.0, VARS(pev->owner));
 		break;
 	case 1:
-		FireBullets(3, vecShootOrigin, vecShootDir, VECTOR_CONE_2DEGREES, 6000, 30, 1, 5, VARS(pev->owner));
+		FireBullets(2, vecShootOrigin, vecShootDir, VECTOR_CONE_2DEGREES, 6000, 1, 2, 7.0, VARS(pev->owner));
 		break;
 	case 2:
-		FireBullets(4, vecShootOrigin, vecShootDir, VECTOR_CONE_3DEGREES, 6000, 25, 1, 5, VARS(pev->owner));
+		FireBullets(4, vecShootOrigin, vecShootDir, VECTOR_CONE_3DEGREES, 6000, 2, 3, 5.0, VARS(pev->owner));
 		break;
 	case 3:
-		FireBullets(8, vecShootOrigin, vecShootDir, VECTOR_CONE_4DEGREES, 6000, 15, 1, 5, VARS(pev->owner));
+		FireBullets(8, vecShootOrigin, vecShootDir, VECTOR_CONE_4DEGREES, 6000, 3, 4, 3.0, VARS(pev->owner));
 		break;
 	case 4:
 	{
-		CBaseEntity *pGlockCore1 = Create("weapon_tacgun", vecShootOrigin, vecShootDir, pev->owner);
-		pGlockCore1->pev->velocity = vecThrow / 2;
-		pGlockCore1->pev->owner = pev->owner;
-		pGlockCore1->pev->dmg = 95;
-		break;
+		CBaseEntity *pSGCann = Create("weapon_tacgun", vecShootOrigin, vecShootDir, pev->owner);
+		pSGCann->pev->velocity = vecThrow / 2;
+		pSGCann->pev->owner = pev->owner;
 		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "ambience/biggun2.wav", 0.5, ATTN_NORM);
+		break;
 	}
 	case 5:
 	{
-		CBaseEntity *pGlockCore2 = Create("weapon_stoner", vecShootOrigin, vecShootDir, pev->owner);
+		CBaseEntity *pGlockCore2 = Create("weapon_rocketlinear", vecShootOrigin, vecShootDir, pev->owner);
 		pGlockCore2->pev->velocity = vecThrow / 2;
 		pGlockCore2->pev->owner = pev->owner;
 		pGlockCore2->pev->dmg = 45;
@@ -428,11 +450,11 @@ void CBarney ::Spawn()
 	SET_MODEL(ENT(pev), "models/barney.mdl");
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
-	// Classify2 			= CLASS_PLAYER_ALLY;
+	Classify2 			= CLASS_PLAYER_ALLY;
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;
-	pev->health = 175;
+	pev->health = 100;
 	pev->armorvalue = 100;
 	pev->view_ofs = Vector(0, 0, 50);  // position of the eyes relative to monster's origin.
 	m_flFieldOfView = VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so npc will notice player and say hello
@@ -445,7 +467,6 @@ void CBarney ::Spawn()
 	CBasePlayer *pl = (CBasePlayer *)CBasePlayer::Instance(pev->owner);
 	if (pl != NULL && (pl->edict() == pev->owner))
 		pevCreateFact = pl->edict();
-	// 	CBaseEntity::Instance(pev->owner)->pevCreateFact = pl->edict();
 
 	m_afCapability = bits_CAP_HEAR | bits_CAP_TURN_HEAD | bits_CAP_DOORS_GROUP;
 
@@ -462,7 +483,7 @@ void CBarney ::Precache()
 {
 	PRECACHE_MODEL("models/barney.mdl");
 
-	UTIL_PrecacheOther("weapon_stoner");
+	UTIL_PrecacheOther("weapon_rocketlinear");
 	UTIL_PrecacheOther("monster_scientist");
 	UTIL_PrecacheOther("monster_alien_slave");
 	UTIL_PrecacheOther("monster_headcrab");
@@ -541,6 +562,8 @@ static BOOL IsFacing(entvars_t *pevTest, const Vector &reference)
 
 int CBarney ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType)
 {
+	if ( pevAttacker == NULL )
+		pevAttacker = pev;  // the default attacker is ourselves
 
 	// make sure friends talk about it if player hurts talkmonsters...
 	int ret = CTalkMonster::TakeDamage(pevInflictor, pevAttacker, flDamage, bitsDamageType);
@@ -563,6 +586,12 @@ int CBarney ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float 
 
 				Remember(bits_MEMORY_PROVOKED);
 				StopFollowing(TRUE);
+			}
+			else
+			{
+				// Hey, be careful with that
+				PlaySentence("BA_SHOT", 4, VOL_NORM, ATTN_NORM);
+				Remember(bits_MEMORY_SUSPICIOUS);
 			}
 		}
 		else if (!(m_hEnemy->IsPlayer()) && pev->deadflag == DEAD_NO)
@@ -623,7 +652,7 @@ void CBarney::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDir,
 	{
 	case HITGROUP_CHEST:
 	case HITGROUP_STOMACH:
-		if (bitsDamageType & (DMG_POISON | DMG_SLASH | DMG_BLAST))
+		if (bitsDamageType & (DMG_BULLET | DMG_SLASH | DMG_BLAST))
 		{
 			flDamage = flDamage / 2;
 		}
@@ -657,12 +686,9 @@ void CBarney::Killed(entvars_t *pevAttacker, int iGib)
 		pev->body = BARNEY_BODY_GUNGONE;
 
 		GetAttachment(0, vecGunPos, vecGunAngles);
-	}
 
-	CBasePlayer *pl = (CBasePlayer *)CBasePlayer::Instance(pevCreateFact);
-	// if (pl != NULL && (pl->edict() == pev->owner))
-	if (pevCreateFact != NULL)
-		pl->m_flNextTurretsLimit -= 1;
+		//CBaseEntity *pGun = DropItem("weapon_9mmhandgun", vecGunPos, vecGunAngles);
+	}
 
 	SetUse(NULL);
 	CTalkMonster::Killed(pevAttacker, iGib);
@@ -858,7 +884,7 @@ void CDeadBarney ::Spawn()
 	SET_MODEL(ENT(pev), "models/barney.mdl");
 
 	pev->effects = 0;
-	pev->yaw_speed = 8;
+	pev->yaw_speed = 16;
 	pev->sequence = 0;
 	m_bloodColor = BLOOD_COLOR_RED;
 

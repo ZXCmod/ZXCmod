@@ -65,18 +65,26 @@ public:
 	void Touch( CBaseEntity *pOther );
 	void EXPORT Animate( void );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int  m_maxFrame;
 };
 
 LINK_ENTITY_TO_CLASS( squidspit, CSquidSpit );
 
+TYPEDESCRIPTION	CSquidSpit::m_SaveData[] = 
+{
+	DEFINE_FIELD( CSquidSpit, m_maxFrame, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CSquidSpit, CBaseEntity );
 
 void CSquidSpit:: Spawn( void )
 {
-	pev->movetype = MOVETYPE_FLY;
-	pev->classname = MAKE_STRING( "squidspit" );
+	pev->movetype = MOVETYPE_BOUNCEMISSILE;
+	pev->classname = MAKE_STRING( "weapon_gauss" );
 	
 	pev->solid = SOLID_BBOX;
 	pev->rendermode = kRenderTransAlpha;
@@ -84,7 +92,11 @@ void CSquidSpit:: Spawn( void )
 
 	SET_MODEL(ENT(pev), "sprites/bigspit.spr");
 	pev->frame = 0;
-	pev->scale = 1.25;
+	pev->scale = 1.3;
+	pev->gravity = 0.0;
+	pev->friction = 0.0;
+	pev->framerate = 0.03;
+	m_flDie = gpGlobals->time + 5.0;
 
 	UTIL_SetSize(pev, Vector(-4, -4, -4), Vector(4, 4, 4));
 
@@ -95,12 +107,12 @@ void CSquidSpit:: Spawn( void )
 	
 
 	SetThink ( Animate );
-	pev->nextthink = gpGlobals->time + 0.03;
+	pev->nextthink = gpGlobals->time + pev->framerate;
 }
 
 void CSquidSpit::Animate( void )
 {
-	pev->nextthink = gpGlobals->time + 0.03;
+	pev->nextthink = gpGlobals->time + pev->framerate;
 
 	if ( pev->frame++ )
 	{
@@ -109,6 +121,9 @@ void CSquidSpit::Animate( void )
 			pev->frame = 0;
 		}
 	}
+
+	if (gpGlobals->time >= m_flDie)
+		SetThink ( SUB_Remove );
 }
 
 void CSquidSpit::Shoot( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity )
@@ -121,7 +136,7 @@ void CSquidSpit::Shoot( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity
 	pSpit->pev->owner = ENT(pevOwner);
 
 	pSpit->SetThink ( Animate );
-	pSpit->pev->nextthink = gpGlobals->time + 0.03;
+	pSpit->pev->nextthink = gpGlobals->time + 0.1;
 }
 
 void CSquidSpit :: Touch ( CBaseEntity *pOther )
@@ -170,11 +185,17 @@ void CSquidSpit :: Touch ( CBaseEntity *pOther )
 	{
 		pOther->TakeDamage ( pev, VARS( pev->owner ), 18.5, DMG_RADIATION );
 		pOther->pev->friction=0.0;
+		SetThink ( SUB_Remove );
 	}
 
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 18.5, 96, CLASS_NONE, DMG_RADIATION  );
-	SetThink ( SUB_Remove );
+	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), 18.5, 128, CLASS_NONE, DMG_RADIATION  );
+	pev->scale -= 0.1;
 	pev->nextthink = gpGlobals->time;
+
+	if (pev->scale<=1.0)
+	{
+		SetThink ( SUB_Remove );
+	}
 }
 
 //=========================================================
@@ -194,7 +215,7 @@ public:
 	void Precache( void );
 	void SetYawSpeed( void );
 	int  ISoundMask( void );
-	int  Classify (   );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void IdleSound( void );
 	void PainSound( void );
@@ -215,9 +236,11 @@ public:
 	int IgnoreConditions ( void );
 	MONSTERSTATE GetIdealState ( void );
 
+int	Save( CSave &save ); 
+	int Restore( CRestore &restore );
 
 	CUSTOM_SCHEDULES;
-
+static TYPEDESCRIPTION m_SaveData[];
 
 	BOOL m_fCanThreatDisplay;// this is so the squid only does the "I see a headcrab!" dance one time. 
 
@@ -226,6 +249,14 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_bullchicken, CBullsquid );
 
+TYPEDESCRIPTION	CBullsquid::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBullsquid, m_fCanThreatDisplay, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CBullsquid, m_flLastHurtTime, FIELD_TIME ),
+	DEFINE_FIELD( CBullsquid, m_flNextSpitTime, FIELD_TIME ),
+};
+
+IMPLEMENT_SAVERESTORE( CBullsquid, CBaseMonster );
 
 //=========================================================
 // IgnoreConditions 
@@ -414,7 +445,7 @@ int CBullsquid :: ISoundMask ( void )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CBullsquid :: Classify (  )
+int	CBullsquid :: Classify ( void )
 {
 	return	CLASS_ALIEN_PREDATOR;
 }
@@ -517,6 +548,9 @@ void CBullsquid :: SetYawSpeed ( void )
 //=========================================================
 void CBullsquid :: HandleAnimEvent( MonsterEvent_t *pEvent )
 {
+	if ( m_hEnemy == NULL)
+		return;
+		
 	switch( pEvent->event )
 	{
 		case BSQUID_AE_SPIT:
@@ -662,15 +696,15 @@ void CBullsquid :: Spawn()
 	Precache( );
 
 	SET_MODEL(ENT(pev), "models/bullsquid.mdl");
-	UTIL_SetSize( pev, Vector( -32, -32, 0 ), Vector( 32, 32, 64 ) );
+	UTIL_SetSize( pev, Vector( -16, -16, 0 ), Vector( 16, 16, 32 ) );
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_GREEN;
-	pev->effects		= 0;
-	pev->health			= RANDOM_LONG(25,137);
-	m_flFieldOfView		= 0.2;// indicates the width of this monster's forward view cone ( as a dotproduct result )
-	m_MonsterState		= MONSTERSTATE_NONE;
+	pev->effects		= 0; 
+	pev->health			= 100.0;
+	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
+	m_MonsterState		= MONSTERSTATE_IDLE;
 
 	m_fCanThreatDisplay	= TRUE;
 	m_flNextSpitTime = gpGlobals->time;

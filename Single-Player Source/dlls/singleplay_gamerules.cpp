@@ -23,6 +23,7 @@
 #include	"gamerules.h"
 #include	"skill.h"
 #include	"items.h"
+#include "shake.h"
 
 extern DLL_GLOBAL CGameRules	*g_pGameRules;
 extern DLL_GLOBAL BOOL	g_fGameOver;
@@ -34,6 +35,7 @@ extern int gmsgMOTD;
 //=========================================================
 CHalfLifeRules::CHalfLifeRules( void )
 {
+	UTIL_PrecacheOther("monster_bullchicken"); 
 	RefreshSkillData();
 }
 
@@ -121,6 +123,70 @@ float CHalfLifeRules::FlPlayerFallDamage( CBasePlayer *pPlayer )
 //=========================================================
 void CHalfLifeRules :: PlayerSpawn( CBasePlayer *pPlayer )
 {
+	BOOL		addDefault;
+	CBaseEntity	*pWeaponEntity = NULL;
+	
+	pPlayer->pev->weapons |= (1<<WEAPON_SUIT);
+	
+	
+	addDefault = TRUE;
+
+	while ( pWeaponEntity = UTIL_FindEntityByClassname( pWeaponEntity, "game_player_equip" ))
+	{
+		pWeaponEntity->Touch( pPlayer );
+		addDefault = FALSE;
+	}
+
+	if (g_zxc_cheats.value != 0)
+	{
+		pPlayer->GiveNamedItem( "weapon_gauss" );
+		pPlayer->GiveNamedItem( "weapon_9mmhandgun" );
+		pPlayer->GiveNamedItem( "item_longjump" );
+		pPlayer->GiveNamedItem( "weapon_egon" );
+		pPlayer->GiveNamedItem( "weapon_shotgun" );
+		pPlayer->GiveNamedItem( "weapon_357" );
+		pPlayer->GiveNamedItem( "weapon_9mmAR" );
+		pPlayer->GiveNamedItem( "weapon_crossbow" );
+		pPlayer->GiveNamedItem( "weapon_rpg" );
+		pPlayer->GiveNamedItem( "weapon_hornetgun" );
+		pPlayer->GiveNamedItem( "weapon_snark" );
+		pPlayer->GiveNamedItem( "weapon_satchel" );
+		pPlayer->GiveNamedItem( "weapon_tripmine" );
+		pPlayer->GiveNamedItem( "weapon_tripmine" );
+		pPlayer->GiveNamedItem( "weapon_handgrenade" );
+		pPlayer->GiveNamedItem( "weapon_crowbar" );
+		
+		
+
+		pPlayer->GiveAmmo( 60, "9mm", _9MM_MAX_CARRY );// 4 full reloads
+		
+		// ammo
+		pPlayer->GiveAmmo( 100, "9mm", _9MM_MAX_CARRY );
+		pPlayer->GiveAmmo( 60, "357", _357_MAX_CARRY );
+		pPlayer->GiveAmmo( 30, "buckshot", BUCKSHOT_MAX_CARRY );
+		pPlayer->GiveAmmo( 20, "bolts", BOLT_MAX_CARRY );
+		pPlayer->GiveAmmo( 9, "rockets", ROCKET_MAX_CARRY );
+		pPlayer->GiveAmmo( 10, "Satchel Charge", SATCHEL_MAX_CARRY );
+		pPlayer->GiveAmmo( 12, "Snarks", SNARK_MAX_CARRY );
+		pPlayer->GiveAmmo( 20, "ARgrenades", M203_GRENADE_MAX_CARRY );
+		pPlayer->GiveAmmo( 150, "uranium", URANIUM_MAX_CARRY );
+		// pPlayer->GiveAmmo( 20, "Hand Grenade", HANDGRENADE_MAX_CARRY );
+	
+	}
+	else if ( addDefault )
+	{
+		
+		pPlayer->GiveNamedItem( "weapon_9mmhandgun" );
+		pPlayer->GiveNamedItem( "weapon_crowbar" );
+		pPlayer->GiveAmmo( 60, "9mm", _9MM_MAX_CARRY );// 4 full reloads
+	}
+	
+	
+	// pPlayer->m_flNextNukeTime = gpGlobals->time + 180;
+	// pPlayer->m_flNextEgonStormTime = gpGlobals->time + 180;
+	// pPlayer->m_flNextShotgunFlareTime = gpGlobals->time + 120;
+	
+	UTIL_ScreenFade( pPlayer, Vector(RANDOM_LONG(0,255),RANDOM_LONG(0,255),RANDOM_LONG(0,255)), 1.95, 0.9, 128, FFADE_IN );
 }
 
 //=========================================================
@@ -236,7 +302,7 @@ void CHalfLifeRules::PlayerGotItem( CBasePlayer *pPlayer, CItem *pItem )
 //=========================================================
 int CHalfLifeRules::ItemShouldRespawn( CItem *pItem )
 {
-	return GR_ITEM_RESPAWN_YES;
+	return GR_ITEM_RESPAWN_NO;
 }
 
 
@@ -245,7 +311,7 @@ int CHalfLifeRules::ItemShouldRespawn( CItem *pItem )
 //=========================================================
 float CHalfLifeRules::FlItemRespawnTime( CItem *pItem )
 {
-	return 60;
+	return -1;
 }
 
 //=========================================================

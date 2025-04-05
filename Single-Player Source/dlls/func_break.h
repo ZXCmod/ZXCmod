@@ -30,8 +30,7 @@ public:
 	void EXPORT BreakTouch( CBaseEntity *pOther );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void DamageSound( void );
-	// virtual int Update( void ) { return pev->health; };
-
+	
 	// breakables use an overridden takedamage
 	virtual int TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 	// To spark when hit
@@ -44,7 +43,8 @@ public:
 
 	void EXPORT		Die( void );
 	virtual int		ObjectCaps( void ) { return (CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
 	inline BOOL		Explodable( void ) { return ExplosionMagnitude() > 0; }
 	inline int		ExplosionMagnitude( void ) { return pev->impulse; }
@@ -61,7 +61,7 @@ public:
 	static const char *pSoundsConcrete[];
 	static const char *pSpawnObjects[];
 
-
+static	TYPEDESCRIPTION m_SaveData[];
 
 	Materials	m_Material;
 	Explosions	m_Explosion;

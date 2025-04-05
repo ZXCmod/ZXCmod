@@ -28,7 +28,7 @@
 #include "gamerules.h"
 #include "game.h"
 
-#define Charge  30
+#define Charge  600
 
 class CRecharge : public CBaseToggle
 {
@@ -40,7 +40,10 @@ public:
 	void KeyValue( KeyValueData *pkvd );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual int	ObjectCaps( void ) { return (CBaseToggle :: ObjectCaps() | FCAP_CONTINUOUS_USE) & ~FCAP_ACROSS_TRANSITION; }
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 	private:
 	float   m_flNextCharge; 
@@ -51,8 +54,18 @@ public:
 	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
 	float   m_flSoundTime;
 	float	multiple;
+	};
+
+TYPEDESCRIPTION CRecharge::m_SaveData[] =
+{
+	DEFINE_FIELD( CRecharge, m_flNextCharge, FIELD_TIME ),
+	DEFINE_FIELD( CRecharge, m_iReactivate, FIELD_INTEGER),
+	DEFINE_FIELD( CRecharge, m_iJuice, FIELD_INTEGER),
+	DEFINE_FIELD( CRecharge, m_iOn, FIELD_INTEGER),
+	DEFINE_FIELD( CRecharge, m_flSoundTime, FIELD_TIME ),
 };
 
+IMPLEMENT_SAVERESTORE( CRecharge, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS(func_recharge, CRecharge);
 
@@ -89,7 +102,6 @@ void CRecharge::Spawn()
 	m_iJuice = Charge;
 	m_iJuice = Charge;
 	m_iJuice2 = Charge;
-	m_iJuice3 = Charge;
 	pev->frame = 0;			
 	multiple = 0.0;
 
@@ -112,7 +124,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		return;
 
 	// if there is no juice left, turn it off
-	if (m_iJuice <= 0 || m_iJuice2 <= 0 || m_iJuice3 <= 0)
+	if (m_iJuice <= 0 || m_iJuice2 <= 0)
 	{
 		pev->frame = 1;			
 		Off();
@@ -150,11 +162,11 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	}
 
 	// if no juice left
-	if ((m_iJuice <= 0) || (m_iJuice2 <= 0) || (m_iJuice3 <= 0) )
+	if ((m_iJuice <= 0) || (m_iJuice2 <= 0)) 
 	{
 		if (m_flSoundTime <= gpGlobals->time)
 		{
-			m_flSoundTime = gpGlobals->time + 0.62;
+			m_flSoundTime = gpGlobals->time + 1.0;
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/suitchargeno1.wav", 0.85, ATTN_NORM );
 		}
 		return;
@@ -168,7 +180,16 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	if (m_flNextCharge >= gpGlobals->time)
 		return;
 
+// Make sure that we have a caller
+	if (!pActivator)
+		return;
 
+	m_hActivator = pActivator;
+
+	//only recharge the player
+
+	if (!m_hActivator->IsPlayer() )
+		return;
 	
 	// Play the on sound or the looping charging sound
 	if (!m_iOn)
@@ -184,30 +205,30 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	}
 
 
-	if ((m_hActivator->pev->armorvalue<100)) // 1
+	if ((m_hActivator->pev->armorvalue<100.0)) // 1
 	{
 		m_iJuice--;
-		m_hActivator->pev->armorvalue += 2;
+		m_hActivator->pev->armorvalue += 2.0;
 		
 		if (multiple <= 0.5)
 			multiple += 0.0045;
 
-		if (m_hActivator->pev->armorvalue>100)
+		if (m_hActivator->pev->armorvalue>100.0)
 		{
-			m_hActivator->pev->armorvalue = 100;
+			m_hActivator->pev->armorvalue = 100.0;
 		}
 	}
-	if ((m_hActivator->pev->fuser1<100)) // 2
+	if ((m_hActivator->pev->fuser1<100.0)) // 2
 	{
 		m_iJuice2--;
-		m_hActivator->pev->fuser1 += 1;
+		m_hActivator->pev->fuser1 += 1.0;
 		
 		if (multiple <= 0.5)
 			multiple += 0.0045;
 
-		if (m_hActivator->pev->fuser1>100)
+		if (m_hActivator->pev->fuser1>100.0)
 		{
-			m_hActivator->pev->fuser1 = 100;
+			m_hActivator->pev->fuser1 = 100.0;
 		}
 	}
 
@@ -221,7 +242,6 @@ void CRecharge::Recharge(void)
 
 	m_iJuice = Charge;
 	m_iJuice2 = Charge;
-	m_iJuice3 = Charge;
 
 	pev->frame = 0;			
 	SetThink( SUB_DoNothing );
@@ -236,7 +256,7 @@ void CRecharge::Off(void)
 	m_iOn = 0;
 	multiple = 0.0;
 
-	if ((!m_iJuice || !m_iJuice2 || !m_iJuice3) &&  ( ( m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
+	if ((!m_iJuice || !m_iJuice2) &&  ( ( m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
 	{
 		pev->nextthink = pev->ltime + m_iReactivate;
 		SetThink(Recharge);

@@ -66,7 +66,7 @@ private:
 	{ 
 	pev->targetname=75;
 	pev->takedamage = DAMAGE_NO;
-	return;
+	//return;
 	}
 
 
@@ -86,7 +86,7 @@ private:
 	
 	pev->targetname=500;
 	pev->takedamage = DAMAGE_NO;
-	return;
+	//return;
 	}
 };
 
@@ -117,8 +117,7 @@ BOOL CBaseDMStart::IsTriggered( CBaseEntity *pEntity )
 // This updates global tables that need to know about entities being removed
 void CBaseEntity::UpdateOnRemove( void )
 {
-
-/* 	int	i;
+int	i;
 
 	if ( FBitSet( pev->flags, FL_GRAPHED ) )
 	{
@@ -129,13 +128,16 @@ void CBaseEntity::UpdateOnRemove( void )
 			if ( WorldGraph.m_pLinkPool [ i ].m_pLinkEnt == pev )
 			{
 				// if this link has a link ent which is the same ent that is removing itself, remove it!
+				
 				WorldGraph.m_pLinkPool [ i ].m_pLinkEnt = NULL;
 			}
 		}
 	}
-	 */
 	if ( pev->globalname )
+	{
 		gGlobalState.EntitySetState( pev->globalname, GLOBAL_DEAD );
+		
+	}
 }
 
 // Convenient way to delay removing oneself
@@ -148,7 +150,7 @@ void CBaseEntity :: SUB_Remove( void )
 		pev->health = 0;
 		// ALERT( at_aiconsole, "SUB_Remove called on entity with health > 0\n");
 	}
-
+	
 	REMOVE_ENTITY(ENT(pev));
 }
 
@@ -156,9 +158,17 @@ void CBaseEntity :: SUB_Remove( void )
 // Convenient way to explicitly do nothing (passed to functions that require a method)
 void CBaseEntity :: SUB_DoNothing( void )
 {
-
 }
 
+
+// Global Savedata for Delay
+TYPEDESCRIPTION	CBaseDelay::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBaseDelay, m_flDelay, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseDelay, m_iszKillTarget, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CBaseDelay, CBaseEntity );
 
 void CBaseDelay :: KeyValue( KeyValueData *pkvd )
 {
@@ -199,8 +209,7 @@ void CBaseEntity :: SUB_UseTargets( CBaseEntity *pActivator, USE_TYPE useType, f
 	//
 	// fire targets
 	//
-	
-	if (!FStringNull(pev->target))
+		if (!FStringNull(pev->target))
 	{
 		FireTargets( STRING(pev->target), pActivator, this, useType, value );
 	}
@@ -235,7 +244,6 @@ LINK_ENTITY_TO_CLASS( DelayedUse, CBaseDelay );
 
 void CBaseDelay :: SUB_UseTargets( CBaseEntity *pActivator, USE_TYPE useType, float value )
 {
-
 	//
 	// exit immediatly if we don't have a target or kill target
 	//
@@ -352,6 +360,31 @@ void CBaseDelay::DelayThink( void )
 	REMOVE_ENTITY(ENT(pev));
 }
 
+
+// Global Savedata for Toggle
+TYPEDESCRIPTION	CBaseToggle::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBaseToggle, m_toggle_state, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseToggle, m_flActivateFinished, FIELD_TIME ),
+	DEFINE_FIELD( CBaseToggle, m_flMoveDistance, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseToggle, m_flWait, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseToggle, m_flLip, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseToggle, m_flTWidth, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseToggle, m_flTLength, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseToggle, m_vecPosition1, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CBaseToggle, m_vecPosition2, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CBaseToggle, m_vecAngle1, FIELD_VECTOR ),		// UNDONE: Position could go through transition, but also angle?
+	DEFINE_FIELD( CBaseToggle, m_vecAngle2, FIELD_VECTOR ),		// UNDONE: Position could go through transition, but also angle?
+	DEFINE_FIELD( CBaseToggle, m_cTriggersLeft, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseToggle, m_flHeight, FIELD_FLOAT ),
+	DEFINE_FIELD( CBaseToggle, m_hActivator, FIELD_EHANDLE ),
+	DEFINE_FIELD( CBaseToggle, m_pfnCallWhenMoveDone, FIELD_FUNCTION ),
+	DEFINE_FIELD( CBaseToggle, m_vecFinalDest, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CBaseToggle, m_vecFinalAngle, FIELD_VECTOR ),
+	DEFINE_FIELD( CBaseToggle, m_sMaster, FIELD_STRING),
+	DEFINE_FIELD( CBaseToggle, m_bitsDamageInflict, FIELD_INTEGER ),	// damage type inflicted
+};
+IMPLEMENT_SAVERESTORE( CBaseToggle, CBaseAnimating );
 
 
 void CBaseToggle::KeyValue( KeyValueData *pkvd )

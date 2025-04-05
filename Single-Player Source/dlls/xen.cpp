@@ -31,12 +31,20 @@ public:
 
 	virtual int	ObjectCaps( void ) { return CBaseAnimating :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
-
+	virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	Activity	m_Activity;
 };
 
+TYPEDESCRIPTION	CActAnimating::m_SaveData[] = 
+{
+	DEFINE_FIELD( CActAnimating, m_Activity, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CActAnimating, CBaseAnimating );
 
 void CActAnimating :: SetActivity( Activity act ) 
 { 
@@ -64,7 +72,9 @@ public:
 	void		LightOn( void );
 	void		LightOff( void );
 
-
+	virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	CSprite		*m_pGlow;
@@ -72,6 +82,12 @@ private:
 
 LINK_ENTITY_TO_CLASS( xen_plantlight, CXenPLight );
 
+TYPEDESCRIPTION	CXenPLight::m_SaveData[] = 
+{
+	DEFINE_FIELD( CXenPLight, m_pGlow, FIELD_CLASSPTR ),
+};
+
+IMPLEMENT_SAVERESTORE( CXenPLight, CActAnimating );
 
 void CXenPLight :: Spawn( void )
 {
@@ -252,9 +268,11 @@ public:
 	int			TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType ) { Attack(); return 0; }
 	void		HandleAnimEvent( MonsterEvent_t *pEvent );
 	void		Attack( void );	
-	int			Classify( ) { return CLASS_BARNACLE; }
+	int			Classify( void ) { return CLASS_BARNACLE; }
 
-
+	virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	static const char *pAttackHitSounds[];
 	static const char *pAttackMissSounds[];
@@ -265,6 +283,12 @@ private:
 
 LINK_ENTITY_TO_CLASS( xen_tree, CXenTree );
 
+TYPEDESCRIPTION	CXenTree::m_SaveData[] = 
+{
+	DEFINE_FIELD( CXenTree, m_pTrigger, FIELD_CLASSPTR ),
+};
+
+IMPLEMENT_SAVERESTORE( CXenTree, CActAnimating );
 
 void CXenTree :: Spawn( void )
 {
@@ -437,7 +461,7 @@ class CXenHull : public CPointEntity
 {
 public:
 	static CXenHull	*CreateHull( CBaseEntity *source, const Vector &mins, const Vector &maxs, const Vector &offset );
-	int			Classify( ) { return CLASS_BARNACLE; }
+	int			Classify( void ) { return CLASS_BARNACLE; }
 };
 
 CXenHull *CXenHull :: CreateHull( CBaseEntity *source, const Vector &mins, const Vector &maxs, const Vector &offset )

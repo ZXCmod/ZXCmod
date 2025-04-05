@@ -70,13 +70,7 @@ void set_suicide_frame(entvars_t* pev)
 	pev->movetype	= MOVETYPE_TOSS;
 	pev->deadflag	= DEAD_DEAD;
 	pev->nextthink	= -1;
-	
-	// kill the player,  remove a death,  and let them start on the new team
-
-
-	//m_DisableDeathMessages = FALSE;
-	//m_DisableDeathPenalty = FALSE;
-}
+	}
 
 
 /*
@@ -106,13 +100,15 @@ void ClientDisconnect( edict_t *pEntity )
 {
 	if (g_fGameOver)
 		return;
-/* 
 	char text[256];
-	sprintf( text, "", STRING(pEntity->v.netname) );
-	MESSAGE_BEGIN( MSG_ALL, gmsgSayText, NULL );
-		WRITE_BYTE( ENTINDEX(pEntity) );
-		WRITE_STRING( text );
-	MESSAGE_END(); */
+	sprintf( text, "- %s c'e6a/l\n", STRING(pEntity->v.netname) );
+	if (pEntity)
+	{
+		MESSAGE_BEGIN( MSG_ALL, gmsgSayText, NULL );
+			WRITE_BYTE( ENTINDEX(pEntity) );
+			WRITE_STRING( text );
+		MESSAGE_END();
+	}
 
 	CSound *pSound;
 	pSound = CSoundEnt::SoundPointerForIndex( CSoundEnt::ClientSoundIndex( pEntity ) );
@@ -153,9 +149,7 @@ void ClientDisconnect( edict_t *pEntity )
 // called by ClientKill and DeadThink
 void respawn(entvars_t* pev, BOOL fCopyCorpse)
 {
-	if (gpGlobals->deathmatch)
-	{
-		if ( fCopyCorpse )
+if ( fCopyCorpse )
 		{
 			// make a copy of the dead body for appearances sake
 			CopyToBodyQue(pev);
@@ -163,11 +157,7 @@ void respawn(entvars_t* pev, BOOL fCopyCorpse)
 
 		// respawn player
 		GetClassPtr( (CBasePlayer *)pev)->Spawn( );
-	}
-	else
-	{       // restart the entire server
-		SERVER_COMMAND("reload\n");
-	}
+		
 }
 
 /*
@@ -181,10 +171,7 @@ GLOBALS ASSUMED SET:  g_ulModelIndexPlayer
 */
 void ClientKill( edict_t *pEntity )
 {
-	if (g_zxc_cheats.value == 3)
-		return; 
-		
-	entvars_t *pev = &pEntity->v;
+		entvars_t *pev = &pEntity->v;
 
 	CBasePlayer *pl = (CBasePlayer*) CBasePlayer::Instance( pev );
 
@@ -219,7 +206,8 @@ void ClientPutInServer( edict_t *pEntity )
 	pPlayer->SetCustomDecalFrames(-1); // Assume none;
 
 	pPlayer->Spawn() ;
-	pPlayer->StartObserver(pev->origin,pev->angles);
+	if (gpGlobals->deathmatch)
+		pPlayer->StartObserver();
 	
 	pPlayer->m_flNextNukeTime = gpGlobals->time + 240;
 	pPlayer->m_flNextEgonStormTime = gpGlobals->time + 180;
@@ -301,8 +289,6 @@ void Host_Say( edict_t *pEntity, int teamonly )
 			break;
 		}
 	}
-	if ( pc != NULL )
-		return;  // no character found, so say nothing
 
 	sprintf( text, "%c%s: ", 2, STRING( pEntity->v.netname ) );
 
@@ -353,9 +339,24 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	g_engfuncs.pfnServerPrint( text );
 
 	char * temp;
+	if ( teamonly )
+		temp = "say_team";
+	else
 	temp = "say";
 	
-
+// team match?
+	if ( g_teamplay )
+	{
+		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" %s \"%s\"\n", 
+			STRING( pEntity->v.netname ), 
+			GETPLAYERUSERID( pEntity ),
+			GETPLAYERAUTHID( pEntity ),
+			g_engfuncs.pfnInfoKeyValue( g_engfuncs.pfnGetInfoKeyBuffer( pEntity ), "model" ),
+			temp,
+			p );
+	}
+	else
+	{
 	UTIL_LogPrintf( "\"%s<%i><%s><%i>\" %s \"%s\"\n", 
 		STRING( pEntity->v.netname ), 
 		GETPLAYERUSERID( pEntity ),
@@ -363,7 +364,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 		GETPLAYERUSERID( pEntity ),
 		temp,
 		p );
-
+}
 }
 
 
@@ -395,16 +396,17 @@ void ClientCommand( edict_t *pEntity )
 	{
 		Host_Say( pEntity, 1 );
 	}
-
-	// disabled in 1.34 as bug.
-	// else if ( FStrEq(pcmd, "give" ) )
+	// else if ( FStrEq(pcmd, "fullupdate" ) )
 	// {
-		// if ( g_zxc_cheats != 0.0)
-		// {
-			// int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
-			// GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
-		// }
+	// 	GetClassPtr((CBasePlayer *)pev)->ForceClientDllUpdate(); 
 	// }
+	else if ( FStrEq(pcmd, "give" ) )
+	{
+
+			int iszItem = ALLOC_STRING( CMD_ARGV(1) );	// Make a copy of the classname
+			GetClassPtr((CBasePlayer *)pev)->GiveNamedItem( STRING(iszItem) );
+		
+	}
 
 	else if ( FStrEq(pcmd, "drop" ) )
 	{
@@ -413,7 +415,7 @@ void ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq(pcmd, "fov" ) )
 	{
-		if ( g_zxc_cheats.value && CMD_ARGC() > 1)
+		if ( CMD_ARGC() > 1)
 		{
 			GetClassPtr((CBasePlayer *)pev)->m_iFOV = atoi( CMD_ARGV(1) );
 		}
@@ -439,7 +441,7 @@ void ClientCommand( edict_t *pEntity )
 		CBasePlayer * pPlayer = GetClassPtr((CBasePlayer *)pev);
 
 		edict_t *pentSpawnSpot = g_pGameRules->GetPlayerSpawnSpot( pPlayer );
-		pPlayer->StartObserver( pev->origin, VARS(pentSpawnSpot)->angles);
+		pPlayer->StartObserver();
 	}
 	else if ( g_pGameRules->ClientCommand( GetClassPtr((CBasePlayer *)pev), pcmd ) )
 	{
@@ -472,21 +474,10 @@ it gets sent into the rest of the engine.
 */
 void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 {
-
 	// Is the client spawned yet?
 	if ( !pEntity->pvPrivateData )
 		return;
-		
-		
-	/* 		
-		// team match?
-		if ( g_teamplay )
-		{
-				CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
-				pPlayer->pev->frags = 0;
-		}
-	*/
-	
+			
 	// msg everyone if someone changes their name,  and it isn't the first time (changing no name to current name)
 	if ( pEntity->v.netname && STRING(pEntity->v.netname)[0] != 0 && !FStrEq( STRING(pEntity->v.netname), g_engfuncs.pfnInfoKeyValue( infobuffer, "name" )) )
 	{
@@ -499,29 +490,19 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 		for ( char *pApersand = sName; pApersand != NULL && *pApersand != 0; pApersand++ )
 		{
 			// Replace it with a space
-			//if ( *pApersand == '%' )
-			//	*pApersand = '';
+			if ( *pApersand == '%' )
+				*pApersand = ' ';
 		}
 
 		// Set the name
 		g_engfuncs.pfnSetClientKeyValue( ENTINDEX(pEntity), infobuffer, "name", sName );
-		
-		//if (STRING( infobuffer ) == STRING("Player"))
-		//	{
-		//	g_engfuncs.pfnSetClientKeyValue( ENTINDEX(pEntity), infobuffer, "name", "zzzzzzzz" );
-		//	}
-		
-		
-		
+				
 		char text[256];
-	
-	//sprintf( text, "* %s changed name to %s\n", STRING(pEntity->v.netname), g_engfuncs.pfnInfoKeyValue( infobuffer, "name" ) );
+		sprintf( text, "* %s changed name to %s\n", STRING(pEntity->v.netname), g_engfuncs.pfnInfoKeyValue( infobuffer, "name" ) );
 		MESSAGE_BEGIN( MSG_ALL, gmsgSayText, NULL );
 			WRITE_BYTE( ENTINDEX(pEntity) );
 			WRITE_STRING( text );
 		MESSAGE_END();
-
-
 		
 		// team match?
 		if ( g_teamplay )
@@ -544,10 +525,8 @@ void ClientUserInfoChanged( edict_t *pEntity, char *infobuffer )
 		}
 	}
 				
-
 	g_pGameRules->ClientUserInfoChanged( GetClassPtr((CBasePlayer *)&pEntity->v), infobuffer );
-	 
-}
+	 }
 
 static int g_serveractive = 0;
 
@@ -603,15 +582,14 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 PlayerPreThink, weapon hud updater
 
 Called every frame before physics are run
-
-Need fixing this
 ================
 */
 void PlayerPreThink( edict_t *pEntity )
 {
+	entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
-	if (pPlayer!=NULL)
+	if (pPlayer)
 		pPlayer->PreThink( );
 }
 
@@ -624,9 +602,10 @@ Called every frame after physics are run
 */
 void PlayerPostThink( edict_t *pEntity )
 {
+	entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
-	if (pPlayer!=NULL)
+	if (pPlayer)
 		pPlayer->PostThink( );
 }
 
@@ -776,8 +755,6 @@ void ClientPrecache( void )
 	PRECACHE_SOUND("player/geiger2.wav");
 	PRECACHE_SOUND("player/geiger1.wav");
 
-	if (giPrecacheGrunt)
-		UTIL_PrecacheOther("monster_human_grunt");
 }
 
 /*
@@ -792,7 +769,7 @@ const char *GetGameDescription()
 	if ( g_pGameRules ) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life zxc mod 1.37";
+		return "zxc-mod 1.38";
 }
 
 /*
@@ -821,7 +798,17 @@ void PlayerCustomization( edict_t *pEntity, customization_t *pCust )
 	entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = (CBasePlayer *)GET_PRIVATE(pEntity);
 
+	if (!pPlayer)
+		{
+			ALERT(at_console, "PlayerCustomization:  Couldn't get player!\n");
+			return;
+		}
 
+	if (!pCust)
+		{
+			ALERT(at_console, "PlayerCustomization:  NULL customization!\n");
+			return;
+		}
 
 	switch (pCust->resource.type)
 	{
@@ -1438,7 +1425,6 @@ void RegisterEncoders( void )
 	DELTA_ADDENCODER( "Player_Encode", Player_Encode );
 }
 
-//debugger found it as reason of crash, maybe close code?
 int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 {
 #if defined( CLIENT_WEAPONS )
@@ -1463,7 +1449,7 @@ int GetWeaponData( struct edict_s *player, struct weapon_data_s *info )
 			// there's a weapon here. Should I pack it?
 			CBasePlayerItem *pPlayerItem = pl->m_rgpPlayerItems[ i ];
 
-			while ( pPlayerItem != NULL)
+			while ( pPlayerItem )
 			{
 				gun = (CBasePlayerWeapon *)pPlayerItem->GetWeaponPtr();
 				if ( gun && gun->UseDecrement() )

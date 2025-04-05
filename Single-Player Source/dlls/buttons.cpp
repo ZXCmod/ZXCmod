@@ -42,12 +42,24 @@ public:
 	void	KeyValue( KeyValueData *pkvd );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	string_t	m_globalstate;
 	int			m_triggermode;
 	int			m_initialstate;
 };
 
+TYPEDESCRIPTION CEnvGlobal::m_SaveData[] =
+{
+	DEFINE_FIELD( CEnvGlobal, m_globalstate, FIELD_STRING ),
+	DEFINE_FIELD( CEnvGlobal, m_triggermode, FIELD_INTEGER ),
+	DEFINE_FIELD( CEnvGlobal, m_initialstate, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CEnvGlobal, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS( env_global, CEnvGlobal );
 
@@ -117,6 +129,16 @@ void CEnvGlobal::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE us
 
 
 
+TYPEDESCRIPTION CMultiSource::m_SaveData[] =
+{
+	//!!!BUGBUG FIX
+	DEFINE_ARRAY( CMultiSource, m_rgEntities, FIELD_EHANDLE, MS_MAX_TARGETS ),
+	DEFINE_ARRAY( CMultiSource, m_rgTriggered, FIELD_INTEGER, MS_MAX_TARGETS ),
+	DEFINE_FIELD( CMultiSource, m_iTotal, FIELD_INTEGER ),
+	DEFINE_FIELD( CMultiSource, m_globalstate, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CMultiSource, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS( multisource, CMultiSource );
 //
@@ -246,6 +268,23 @@ void CMultiSource::Register(void)
 	pev->spawnflags &= ~SF_MULTI_INIT;
 }
 
+// CBaseButton
+TYPEDESCRIPTION CBaseButton::m_SaveData[] =
+{
+	DEFINE_FIELD( CBaseButton, m_fStayPushed, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CBaseButton, m_fRotating, FIELD_BOOLEAN ),
+
+	DEFINE_FIELD( CBaseButton, m_sounds, FIELD_INTEGER ),
+	DEFINE_FIELD( CBaseButton, m_bLockedSound, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseButton, m_bLockedSentence, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseButton, m_bUnlockedSound, FIELD_CHARACTER ),	
+	DEFINE_FIELD( CBaseButton, m_bUnlockedSentence, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseButton, m_strChangeTarget, FIELD_STRING ),
+//	DEFINE_FIELD( CBaseButton, m_ls, FIELD_??? ),   // This is restored in Precache()
+};
+	
+
+IMPLEMENT_SAVERESTORE( CBaseButton, CBaseToggle );
 
 void CBaseButton::Precache( void )
 {
@@ -463,8 +502,7 @@ void CBaseButton::Spawn( )
 		SetTouch ( NULL );
 		SetUse	 ( ButtonUse );
 	}
-	// bEntity = NULL;
-}
+	}
 
 
 // Button sound table. 
@@ -561,6 +599,7 @@ void CBaseButton::ButtonUse ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 		if (!m_fStayPushed && FBitSet(pev->spawnflags, SF_BUTTON_TOGGLE))
 		{
 			EMIT_SOUND(ENT(pev), CHAN_VOICE, (char*)STRING(pev->noise), 1, ATTN_NORM);
+
 			//SUB_UseTargets( m_eoActivator );
 			ButtonReturn();
 		}
@@ -605,14 +644,7 @@ void CBaseButton:: ButtonTouch( CBaseEntity *pOther )
 		return;
 
 	m_hActivator = pOther;
-/* 	
-	CBaseEntity *pEntity = NULL;
-	while ((pEntity = UTIL_FindEntityByClassname( pEntity, "trigger_hurt" )) != NULL)
-		{
-			if (m_hActivator != NULL)
-				pEntity->bEntity = m_hActivator;
-		}
- */
+
 	BUTTON_CODE code = ButtonResponseToTouch();
 
 	if ( code == BUTTON_NOTHING )
@@ -886,7 +918,10 @@ public:
 	void	UpdateTarget( float value );
 
 	static CMomentaryRotButton *Instance( edict_t *pent ) { return (CMomentaryRotButton *)GET_PRIVATE(pent);};
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 	int		m_lastUsed;
 	int		m_direction;
@@ -895,6 +930,17 @@ public:
 	vec3_t	m_end;
 	int		m_sounds;
 };
+TYPEDESCRIPTION CMomentaryRotButton::m_SaveData[] =
+{
+	DEFINE_FIELD( CMomentaryRotButton, m_lastUsed, FIELD_INTEGER ),
+	DEFINE_FIELD( CMomentaryRotButton, m_direction, FIELD_INTEGER ),
+	DEFINE_FIELD( CMomentaryRotButton, m_returnSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CMomentaryRotButton, m_start, FIELD_VECTOR ),
+	DEFINE_FIELD( CMomentaryRotButton, m_end, FIELD_VECTOR ),
+	DEFINE_FIELD( CMomentaryRotButton, m_sounds, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CMomentaryRotButton, CBaseToggle );
 
 LINK_ENTITY_TO_CLASS( momentary_rot_button, CMomentaryRotButton );
 
@@ -1103,12 +1149,21 @@ public:
 	void	EXPORT SparkStop(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void	KeyValue(KeyValueData *pkvd);
 	
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 	float	m_flDelay;
 };
 
 
+TYPEDESCRIPTION CEnvSpark::m_SaveData[] =
+{
+	DEFINE_FIELD( CEnvSpark, m_flDelay, FIELD_FLOAT),
+};
+
+IMPLEMENT_SAVERESTORE( CEnvSpark, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS(env_spark, CEnvSpark);
 LINK_ENTITY_TO_CLASS(env_debris, CEnvSpark);

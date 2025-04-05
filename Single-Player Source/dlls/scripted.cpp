@@ -98,6 +98,28 @@ void CCineMonster :: KeyValue( KeyValueData *pkvd )
 	}
 }
 
+TYPEDESCRIPTION	CCineMonster::m_SaveData[] = 
+{
+	DEFINE_FIELD( CCineMonster, m_iszIdle, FIELD_STRING ),
+	DEFINE_FIELD( CCineMonster, m_iszPlay, FIELD_STRING ),
+	DEFINE_FIELD( CCineMonster, m_iszEntity, FIELD_STRING ),
+	DEFINE_FIELD( CCineMonster, m_fMoveTo, FIELD_INTEGER ),
+	DEFINE_FIELD( CCineMonster, m_flRepeat, FIELD_FLOAT ),
+	DEFINE_FIELD( CCineMonster, m_flRadius, FIELD_FLOAT ),
+
+	DEFINE_FIELD( CCineMonster, m_iDelay, FIELD_INTEGER ),
+	DEFINE_FIELD( CCineMonster, m_startTime, FIELD_TIME ),
+
+	DEFINE_FIELD( CCineMonster,	m_saved_movetype, FIELD_INTEGER ),
+	DEFINE_FIELD( CCineMonster,	m_saved_solid, FIELD_INTEGER ),
+	DEFINE_FIELD( CCineMonster, m_saved_effects, FIELD_INTEGER ),
+	DEFINE_FIELD( CCineMonster, m_iFinishSchedule, FIELD_INTEGER ),
+	DEFINE_FIELD( CCineMonster, m_interruptable, FIELD_BOOLEAN ),
+};
+
+
+IMPLEMENT_SAVERESTORE( CCineMonster, CBaseMonster );
+
 LINK_ENTITY_TO_CLASS( scripted_sequence, CCineMonster );
 #define CLASSNAME "scripted_sequence"
 
@@ -907,7 +929,10 @@ public:
 	void EXPORT DelayThink( void );
 	int	 ObjectCaps( void ) { return (CBaseToggle :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	CBaseMonster *FindEntity( void );
 	BOOL AcceptableSpeaker( CBaseMonster *pMonster );
@@ -930,6 +955,22 @@ private:
 #define SF_SENTENCE_FOLLOWERS	0x0002	// only say if following player
 #define SF_SENTENCE_INTERRUPT	0x0004	// force talking except when dead
 #define SF_SENTENCE_CONCURRENT	0x0008	// allow other people to keep talking
+
+TYPEDESCRIPTION	CScriptedSentence::m_SaveData[] = 
+{
+	DEFINE_FIELD( CScriptedSentence, m_iszSentence, FIELD_STRING ),
+	DEFINE_FIELD( CScriptedSentence, m_iszEntity, FIELD_STRING ),
+	DEFINE_FIELD( CScriptedSentence, m_flRadius, FIELD_FLOAT ),
+	DEFINE_FIELD( CScriptedSentence, m_flDuration, FIELD_FLOAT ),
+	DEFINE_FIELD( CScriptedSentence, m_flRepeat, FIELD_FLOAT ),
+	DEFINE_FIELD( CScriptedSentence, m_flAttenuation, FIELD_FLOAT ),
+	DEFINE_FIELD( CScriptedSentence, m_flVolume, FIELD_FLOAT ),
+	DEFINE_FIELD( CScriptedSentence, m_active, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CScriptedSentence, m_iszListener, FIELD_STRING ),
+};
+
+
+IMPLEMENT_SAVERESTORE( CScriptedSentence, CBaseToggle );
 
 LINK_ENTITY_TO_CLASS( scripted_sentence, CScriptedSentence );
 

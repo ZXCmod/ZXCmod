@@ -26,9 +26,8 @@
 #include	"scripted.h"
 #include	"animation.h"
 #include	"soundent.h"
-#define ZOMBIE_CRAB "monster_bullchicken"
-#define ZOMBIE_CRAB2 "monster_zombie"
-#define ZOMBIE_CRAB3 "monster_alien_slave"
+
+
 #define		NUM_SCIENTIST_HEADS		4 // four heads available for scientist model
 enum { HEAD_GLASSES = 0, HEAD_EINSTEIN = 1, HEAD_LUTHER = 2, HEAD_SLICK = 3 };
 
@@ -36,7 +35,7 @@ enum
 {
 	SCHED_HIDE = LAST_TALKMONSTER_SCHEDULE + 1,
 	SCHED_FEAR,
-	//SCHED_PANIC,
+	SCHED_PANIC,
 	SCHED_STARTLE,
 	SCHED_TARGET_CHASE_SCARED,
 	SCHED_TARGET_FACE_SCARED,
@@ -71,7 +70,7 @@ public:
 	void Precache( void );
 
 	void SetYawSpeed( void );
-	int  Classify ( );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void RunTask( Task_t *pTask );
 	void StartTask( Task_t *pTask );
@@ -102,7 +101,9 @@ public:
 
 	void			Killed( entvars_t *pevAttacker, int iGib );
 	
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	CUSTOM_SCHEDULES;
 
@@ -114,13 +115,21 @@ private:
 
 LINK_ENTITY_TO_CLASS( monster_scientist, CScientist );
 
+TYPEDESCRIPTION	CScientist::m_SaveData[] = 
+{
+	DEFINE_FIELD( CScientist, m_painTime, FIELD_TIME ),
+	DEFINE_FIELD( CScientist, m_healTime, FIELD_TIME ),
+	DEFINE_FIELD( CScientist, m_fearTime, FIELD_TIME ),
+};
+
+IMPLEMENT_SAVERESTORE( CScientist, CTalkMonster );
 
 //=========================================================
 // AI Schedules Specific to this monster
 //=========================================================
 Task_t	tlFollow[] =
 {
-//	{ TASK_SET_FAIL_SCHEDULE,	(float)SCHED_CANT_FOLLOW },	// If you fail, bail out of follow
+{ TASK_SET_FAIL_SCHEDULE,	(float)SCHED_CANT_FOLLOW },	// If you fail, bail out of follow
 	{ TASK_MOVE_TO_TARGET_RANGE,(float)128		},	// Move within 128 of target ent (client)
 //	{ TASK_SET_SCHEDULE,		(float)SCHED_TARGET_FACE },
 };
@@ -144,7 +153,7 @@ Task_t	tlFollowScared[] =
 {
 	{ TASK_SET_FAIL_SCHEDULE,	(float)SCHED_TARGET_CHASE },// If you fail, follow normally
 	{ TASK_MOVE_TO_TARGET_RANGE_SCARED,(float)256		},	// Move within 128 of target ent (client)
-	{ TASK_SET_SCHEDULE,		(float)SCHED_TARGET_FACE_SCARED },
+	//	{ TASK_SET_SCHEDULE,		(float)SCHED_TARGET_FACE_SCARED },
 };
 
 Schedule_t	slFollowScared[] =
@@ -245,22 +254,22 @@ Schedule_t	slFaceTarget[] =
 
 Task_t	tlSciPanic[] =
 {
-	//{ TASK_STOP_MOVING,			(float)0		},
+	{ TASK_STOP_MOVING,			(float)0		},
 	{ TASK_FACE_ENEMY,			(float)0		},
-	//{ TASK_SCREAM,				(float)0		},
+	{ TASK_SCREAM,				(float)0		},
 	{ TASK_PLAY_SEQUENCE_FACE_ENEMY,		(float)ACT_EXCITED	},	// This is really fear-stricken excitement
-	//{ TASK_SET_ACTIVITY,		(float)ACT_IDLE	},
+	{ TASK_SET_ACTIVITY,		(float)ACT_IDLE	},
 };
 
 Schedule_t	slSciPanic[] =
 {
-	//{
-		//tlSciPanic,
-		//ARRAYSIZE ( tlSciPanic ),
+	{
+		tlSciPanic,
+		ARRAYSIZE ( tlSciPanic ),
 		0,
-		//0,
-		//"SciPanic"
-	//},
+		0,
+		"SciPanic"
+	},
 };
 
 
@@ -300,7 +309,7 @@ Schedule_t	slIdleSciStand[] =
 
 Task_t	tlScientistCover[] =
 {
-	//{ TASK_SET_FAIL_SCHEDULE,		(float)SCHED_PANIC },		// If you fail, just panic!
+	{ TASK_SET_FAIL_SCHEDULE,		(float)SCHED_PANIC },		// If you fail, just panic!
 	{ TASK_STOP_MOVING,				(float)0					},
 	{ TASK_FIND_COVER_FROM_ENEMY,	(float)0					},
 	{ TASK_RUN_PATH_SCARED,			(float)0					},
@@ -323,7 +332,7 @@ Schedule_t	slScientistCover[] =
 
 Task_t	tlScientistHide[] =
 {
-	//{ TASK_SET_FAIL_SCHEDULE,		(float)SCHED_PANIC },		// If you fail, just panic!
+	{ TASK_SET_FAIL_SCHEDULE,		(float)SCHED_PANIC },		// If you fail, just panic!
 	{ TASK_STOP_MOVING,				(float)0					},
 	{ TASK_PLAY_SEQUENCE,			(float)ACT_CROUCH			},
 	{ TASK_SET_ACTIVITY,			(float)ACT_CROUCHIDLE		},	// FIXME: This looks lame
@@ -349,7 +358,7 @@ Schedule_t	slScientistHide[] =
 
 Task_t	tlScientistStartle[] =
 {
-	//{ TASK_SET_FAIL_SCHEDULE,		(float)SCHED_PANIC },		// If you fail, just panic!
+	{ TASK_SET_FAIL_SCHEDULE,		(float)SCHED_PANIC },		// If you fail, just panic!
 	{ TASK_RANDOM_SCREAM,			(float)0.3 },				// Scream 30% of the time
 	{ TASK_STOP_MOVING,				(float)0					},
 	{ TASK_PLAY_SEQUENCE_FACE_ENEMY,			(float)ACT_CROUCH			},
@@ -406,7 +415,7 @@ DEFINE_CUSTOM_SCHEDULES( CScientist )
 	slScientistStartle,
 	slHeal,
 	slStopFollowing,
-	//slSciPanic,
+	slSciPanic,
 	slFollowScared,
 	slFaceTargetScared,
 };
@@ -471,9 +480,9 @@ void CScientist :: StartTask( Task_t *pTask )
 		{
 			Talk( 2 );
 			m_hTalkTarget = m_hEnemy;
-			//if ( m_hEnemy->IsPlayer() )
-			//	PlaySentence( "SC_PLFEAR", 5, VOL_NORM, ATTN_NORM );
-			//else
+			if ( m_hTalkTarget != NULL && m_hEnemy->IsPlayer() )
+				PlaySentence( "SC_PLFEAR", 5, VOL_NORM, ATTN_NORM );
+			else
 				PlaySentence( "SC_FEAR", 5, VOL_NORM, ATTN_NORM );
 		}
 		TaskComplete();
@@ -577,9 +586,9 @@ void CScientist :: RunTask( Task_t *pTask )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CScientist :: Classify ( )
+int	CScientist :: Classify ( void )
 {
-	return	CLASS_HUMAN_PASSIVE;
+	return	CLASS_PLAYER_ALLY;
 }
 
 
@@ -655,13 +664,11 @@ void CScientist :: Spawn( void )
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_RED;
-	pev->health			= RANDOM_LONG(30,350);
+	pev->health			= 100;
 	pev->view_ofs		= Vector ( 0, 0, 50 );// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so scientists will notice player and say hello
 	m_MonsterState		= MONSTERSTATE_NONE;
-	UTIL_PrecacheOther( ZOMBIE_CRAB );
-	UTIL_PrecacheOther( ZOMBIE_CRAB2 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB3 );
+	
 //	m_flDistTooFar		= 256.0;
 
 	m_afCapability		= bits_CAP_HEAR | bits_CAP_TURN_HEAD | bits_CAP_OPEN_DOORS | bits_CAP_AUTO_DOORS | bits_CAP_USE;
@@ -697,9 +704,7 @@ void CScientist :: Precache( void )
 	// every new scientist must call this, otherwise
 	// when a level is loaded, nobody will talk (time is reset to 0)
 	TalkInit();
-	UTIL_PrecacheOther( ZOMBIE_CRAB );
-	UTIL_PrecacheOther( ZOMBIE_CRAB2 );
-	UTIL_PrecacheOther( ZOMBIE_CRAB3 );
+	
 	CTalkMonster::Precache();
 }	
 
@@ -808,21 +813,9 @@ void CScientist :: DeathSound ( void )
 
 void CScientist::Killed( entvars_t *pevAttacker, int iGib )
 {
-//CBasePlayer *pVictim;
 	SetUse( NULL );	
 	CTalkMonster::Killed( pevAttacker, iGib );
-
-
-	switch (RANDOM_LONG(0,3))
-	{
-	case 0: CBaseEntity::Create( ZOMBIE_CRAB, pev->origin, pev->angles, edict() ); break;
-	case 1: CBaseEntity::Create( ZOMBIE_CRAB2, pev->origin, pev->angles, edict() ); break;
-	case 2: CBaseEntity::Create( ZOMBIE_CRAB3, pev->origin, pev->angles, edict() ); break;
-	case 3: CBaseEntity::Create( ZOMBIE_CRAB2, pev->origin, pev->angles, edict() ); break;
-	}
-
 }
-
 
 
 void CScientist :: SetActivity ( Activity newActivity )
@@ -861,8 +854,8 @@ Schedule_t* CScientist :: GetScheduleOfType ( int Type )
 	case SCHED_CANT_FOLLOW:
 		return slStopFollowing;
 
-	//case SCHED_PANIC:
-	//	return slSciPanic;
+	case SCHED_PANIC:
+	return slSciPanic;
 
 	case SCHED_TARGET_CHASE_SCARED:
 		return slFollowScared;
@@ -998,8 +991,8 @@ Schedule_t *CScientist :: GetSchedule ( void )
 		if ( HasConditions( bits_COND_SEE_ENEMY ) )
 			return slScientistCover;		// Take Cover
 		
-		//if ( HasConditions( bits_COND_HEAR_SOUND ) )
-		//	return slTakeCoverFromBestSound;	// Cower and panic from the scary sound!
+		if ( HasConditions( bits_COND_HEAR_SOUND ) )
+		return slTakeCoverFromBestSound;	// Cower and panic from the scary sound!
 
 		return slScientistCover;			// Run & Cower
 		break;
@@ -1018,14 +1011,17 @@ MONSTERSTATE CScientist :: GetIdealState ( void )
 		{
 			if ( IsFollowing() )
 			{
-				int relationship = IRelationship( m_hEnemy );
-				if ( relationship != R_FR || relationship != R_HT && !HasConditions( bits_COND_LIGHT_DAMAGE | bits_COND_HEAVY_DAMAGE ) )
+				if (m_hEnemy != NULL)
 				{
-					// Don't go to combat if you're following the player
-					m_IdealMonsterState = MONSTERSTATE_ALERT;
-					return m_IdealMonsterState;
+					int relationship = IRelationship( m_hEnemy );
+					if ( relationship != R_FR || relationship != R_HT && !HasConditions( bits_COND_LIGHT_DAMAGE | bits_COND_HEAVY_DAMAGE ) )
+					{
+						// Don't go to combat if you're following the player
+						m_IdealMonsterState = MONSTERSTATE_ALERT;
+						return m_IdealMonsterState;
+					}
+					StopFollowing( TRUE );
 				}
-				StopFollowing( TRUE );
 			}
 		}
 		else if ( HasConditions( bits_COND_LIGHT_DAMAGE | bits_COND_HEAVY_DAMAGE ) )
@@ -1112,7 +1108,7 @@ class CDeadScientist : public CBaseMonster
 {
 public:
 	void Spawn( void );
-	int	Classify ( ) { return	CLASS_HUMAN_PASSIVE; }
+	int	Classify ( void ) { return	CLASS_HUMAN_PASSIVE; }
 
 	void KeyValue( KeyValueData *pkvd );
 	int	m_iPose;// which sequence to display
@@ -1164,11 +1160,8 @@ void CDeadScientist :: Spawn( )
 	}
 
 	//	pev->skin += 2; // use bloody skin -- UNDONE: Turn this back on when we have a bloody skin again!
-	
-	MonsterInitDead();
-	
-	
-}
+		MonsterInitDead();
+	}
 
 
 //=========================================================
@@ -1182,8 +1175,10 @@ public:
 	void  Precache( void );
 
 	void EXPORT SittingThink( void );
-	int	Classify ( );
-
+	int	Classify ( void );
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual void SetAnswerQuestion( CTalkMonster *pSpeaker );
 	int FriendNumber( int arrayNumber );
@@ -1195,7 +1190,14 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( monster_sitting_scientist, CSittingScientist );
+TYPEDESCRIPTION	CSittingScientist::m_SaveData[] = 
+{
+	// Don't need to save/restore m_baseSequence (recalced)
+	DEFINE_FIELD( CSittingScientist, m_headTurn, FIELD_INTEGER ),
+	DEFINE_FIELD( CSittingScientist, m_flResponseDelay, FIELD_FLOAT ),
+};
 
+IMPLEMENT_SAVERESTORE( CSittingScientist, CScientist );
 
 // animation sequence aliases 
 typedef enum
@@ -1223,7 +1225,7 @@ void CSittingScientist :: Spawn( )
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
 	pev->effects		= 0;
-	pev->health			= RANDOM_LONG(75,1000);
+	pev->health			= 150;
 	
 	m_bloodColor = BLOOD_COLOR_RED;
 	m_flFieldOfView		= VIEW_FIELD_WIDE; // indicates the width of this monster's forward view cone ( as a dotproduct result )
@@ -1259,7 +1261,7 @@ void CSittingScientist :: Precache( void )
 //=========================================================
 // ID as a passive human
 //=========================================================
-int	CSittingScientist :: Classify (  )
+int	CSittingScientist :: Classify ( void )
 {
 	return	CLASS_HUMAN_PASSIVE;
 }

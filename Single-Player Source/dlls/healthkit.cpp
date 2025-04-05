@@ -31,6 +31,12 @@ class CHealthKit : public CItem
 	void Precache( void );
 	BOOL MyTouch( CBasePlayer *pPlayer );
 
+/*
+	virtual int		Save( CSave &save ); 
+	virtual int		Restore( CRestore &restore );
+	
+	static	TYPEDESCRIPTION m_SaveData[];
+*/
 
 };
 
@@ -40,10 +46,7 @@ LINK_ENTITY_TO_CLASS( item_healthkit, CHealthKit );
 
 void CHealthKit :: Spawn( void )
 {
-	if (g_zxc_mp_dmode.value != 0)
-		return;
-
-	Precache( );
+		Precache( );
 	SET_MODEL(ENT(pev), "models/w_medkit.mdl");
 
 	CItem::Spawn();
@@ -62,13 +65,34 @@ BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 		return FALSE;
 	}
 
-	if ( pPlayer->TakeHealth( 25, DMG_SHOCK ) ) //RANDOM_LONG(10,30)
+	//if ( pPlayer->TakeHealth( 25.0, DMG_SHOCK ) || (pPlayer->ParalyzeTime > 0) )
 	{
 		MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
 			WRITE_STRING( STRING(pev->classname) );
 		MESSAGE_END();
 
+		
+
+		if (pPlayer->pev->health >= pPlayer->pev->max_health)
+		{
+			if (pPlayer->pev->max_health < 200.0)
+			{
+				pPlayer->pev->max_health += 25.0;
+			}
+			else // if (pPlayer->pev->health < 400.0)
+			{
+				pPlayer->pev->health += 15.0;
+			}
+			
+			//
+		}
+		
+		pPlayer->TakeHealth( 25.0, DMG_SHOCK );
+
 		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/smallmedkit1.wav", 1, ATTN_NORM);
+
+		//if (pPlayer->ParalyzeTime > 0) // reset paralize
+		pPlayer->ParalyzeTime = 0;
 
 		if ( g_pGameRules->ItemShouldRespawn( this ) )
 		{
@@ -100,7 +124,10 @@ public:
 	void KeyValue( KeyValueData *pkvd );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual int	ObjectCaps( void ) { return (CBaseToggle :: ObjectCaps() | FCAP_CONTINUOUS_USE) & ~FCAP_ACROSS_TRANSITION; }
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 	private:
 	float   m_flNextCharge; 
@@ -109,8 +136,18 @@ public:
 	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
 	float   m_flSoundTime;
 	float	multiple;
+	};
+
+TYPEDESCRIPTION CWallHealth::m_SaveData[] =
+{
+	DEFINE_FIELD( CWallHealth, m_flNextCharge, FIELD_TIME),
+	DEFINE_FIELD( CWallHealth, m_iReactivate, FIELD_INTEGER),
+	DEFINE_FIELD( CWallHealth, m_iJuice, FIELD_INTEGER),
+	DEFINE_FIELD( CWallHealth, m_iOn, FIELD_INTEGER),
+	DEFINE_FIELD( CWallHealth, m_flSoundTime, FIELD_TIME),
 };
 
+IMPLEMENT_SAVERESTORE( CWallHealth, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS(func_healthcharger, CWallHealth);
 
@@ -144,7 +181,7 @@ void CWallHealth::Spawn()
 	UTIL_SetOrigin(pev, pev->origin);		// set size and link into world
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
 	SET_MODEL(ENT(pev), STRING(pev->model) );
-	m_iJuice = 100;
+	m_iJuice = 1400;
 	pev->frame = 0;			
 	multiple = 0.0;
 	
@@ -213,11 +250,12 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 
 	
 	// charge the player, multiple added in v1.33
-	if ( pActivator->TakeHealth( 1, DMG_GENERIC ) )
+	if ( pActivator->TakeHealth( 1.0, DMG_GENERIC ) )
 	{
 		m_iJuice--;
 		if (multiple <= 0.5)
 			multiple += 0.0075;
+		pActivator->ParalyzeTime = 0;
 	}
 
 	// govern the rate of charge *

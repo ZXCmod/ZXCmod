@@ -16,7 +16,7 @@
 // teamplay_gamerules.h
 //
 
-#define MAX_TEAMNAME_LENGTH	32
+#define MAX_TEAMNAME_LENGTH	16
 #define MAX_TEAMS			32
 
 #define TEAMPLAY_TEAMLISTLENGTH		MAX_TEAMS*MAX_TEAMNAME_LENGTH
@@ -32,11 +32,11 @@ public:
 	virtual BOOL FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker );
 	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );
 	virtual const char *GetTeamID( CBaseEntity *pEntity );
-	//virtual BOOL ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target );
+	virtual BOOL ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target );
 	virtual int IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled );
 	virtual void InitHUD( CBasePlayer *pl );
 	virtual void DeathNotice( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pevInflictor );
-	virtual const char *GetGameDescription( void ) { return "HL Teamplay zxc 1.36"; }  // this is the game name that gets seen in the server browser
+	virtual const char *GetGameDescription( void ) { return "zxc-mod 1.38 Teamplay"; }  // this is the game name that gets seen in the server browser
 	virtual void UpdateGameMode( CBasePlayer *pPlayer );  // the client needs to be informed of the current game mode
 	virtual void PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor );
 	virtual void Think ( void );

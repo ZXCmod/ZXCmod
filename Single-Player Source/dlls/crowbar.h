@@ -17,16 +17,16 @@
 extern int g_zxc_cheats3; //teamplay mode
 
 
-class   CRC : public CGrenade
+class   CRocketlinear : public CGrenade
 {
         public:
 
         void    Spawn           ( );
         void    Precache        ( );
-        void    MoveThink       ( );
+        void    EXPORT MoveThink       ( );
         void 	EXPORT Hit      ( CBaseEntity* );
         void    Explode         ( TraceResult*, int);
-        static  CRC* Create( Vector, Vector, CBaseEntity* );
+        static  CRocketlinear* Create( Vector, Vector, CBaseEntity* );
 		
 		private:
 		
@@ -39,16 +39,15 @@ class   CRC : public CGrenade
 };
 
 
-class   CRc2 : public CGrenade
+class   Crowbar_rocket_chaos : public CGrenade
 {
         public:
         void    Spawn           		 ( );
         void    Precache       			 ( );
         void    EXPORT MoveThink		 ( );
-		void    MoveThink2      		 ( );
         void 	EXPORT Hit        		 ( CBaseEntity* );
         void    Explode         		 ( TraceResult*, int);
-        static 	CRc2* Create( Vector, Vector, CBaseEntity* );
+        static 	Crowbar_rocket_chaos* Create( Vector, Vector, CBaseEntity* );
 		
 		private:
         int     BeamSprite;
@@ -58,7 +57,7 @@ class   CRc2 : public CGrenade
 		int		m_moving;
 };
 
-LINK_ENTITY_TO_CLASS( weapon_rocketlauncher, CRc2 );
-LINK_ENTITY_TO_CLASS( weapon_stoner, CRC );
+LINK_ENTITY_TO_CLASS( rocket_chaos, Crowbar_rocket_chaos );
+LINK_ENTITY_TO_CLASS( weapon_rocketlinear, CRocketlinear );
 LINK_ENTITY_TO_CLASS( weapon_crowbar, CCrowbar );
 							

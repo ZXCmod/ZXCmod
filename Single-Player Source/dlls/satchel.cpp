@@ -1,18 +1,18 @@
 /***
-*
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
-#if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
+ *
+ *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+ *
+ *	This product contains software technology licensed from Id
+ *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
+ *	All Rights Reserved.
+ *
+ *   Use, distribution, and modification of this source code and/or resulting
+ *   object code is restricted to non-commercial enhancements to products from
+ *   Valve LLC.  All other use, distribution, or modification is prohibited
+ *   without written permission from Valve LLC.
+ *
+ ****/
+#if !defined(OEM_BUILD) && !defined(HLDEMO_BUILD)
 
 #include "extdll.h"
 #include "util.h"
@@ -27,67 +27,61 @@
 
 ////INIT CRYSTAL
 
-#define BLASTER_BEAM_SPRITE     "sprites/smoke.spr"
-
+#define BLASTER_BEAM_SPRITE "sprites/smoke.spr"
 
 /// class crystal
-class   Heal_Crystal : public CGrenade
+class CHealCrystal : public CGrenade
 {
-        public:
+public:
+	void Spawn();
+	void Precache();
+	void EXPORT MoveThink();
+	void EXPORT Hit(CBaseEntity *);
+	static CHealCrystal *Create(Vector, Vector, CBaseEntity *);
 
-        void    Spawn           ( );
-        void    Precache        ( );
-        void    MoveThink       ( );
-        void    EXPORT Hit         ( CBaseEntity* );
-        void    Explode         (int);
-        static  Heal_Crystal* Create( Vector, Vector, CBaseEntity* );
-		
-		private:
-        int     BeamSprite;
-		int 	m_iSpriteTexture;
-		float 	m_flDie;
-		float 	m_flDie2;
-
+private:
+	int BeamSprite;
+	int m_iSpriteTexture;
+	float m_flDie;
+	float m_flDie2;
 };
 
-class   TriipleDamage_Crystal : public CBaseEntity
+class TriipleDamage_Crystal : public CBaseEntity
 {
-        public:
+public:
+	void Spawn(void);
+	void EXPORT MoveThink(void);
 
-        void    	Spawn           	   ( void );
-        void    	MoveThink       	   ( void );
-		
-		private:
-        short	m_LaserSprite;
-		int 	m_iSpriteTexture;
-		int 	m_flDie;
+private:
+	short m_LaserSprite;
+	int m_iSpriteTexture;
+	int m_flDie;
 };
-LINK_ENTITY_TO_CLASS( weapon_bola, TriipleDamage_Crystal );
 
 /// class Tripmine Rocket
-class   TRocket : public CBaseEntity
+class TRocket : public CBaseEntity
 {
-        public:
+public:
+	void Spawn(void);
+	void EXPORT MoveThink(void);
+	void EXPORT MoveTouch(CBaseEntity *pOther);
 
-        void    	Spawn           	   ( void );
-        void    	MoveThink       	   ( void );
-		void 		EXPORT MoveTouch	   ( CBaseEntity *pOther );
-		
-		private:
-        short	m_LaserSprite;
-		int 	m_iSpriteTexture;
-		int 	m_flDie;
+private:
+	short m_LaserSprite;
+	int m_iSpriteTexture;
+	int m_flDie;
 };
-LINK_ENTITY_TO_CLASS( info_airstrike_node, TRocket );
 
-enum satchel_e {
+enum satchel_e
+{
 	SATCHEL_IDLE1 = 0,
 	SATCHEL_FIDGET1,
 	SATCHEL_DRAW,
 	SATCHEL_DROP
 };
 
-enum satchel_radio_e {
+enum satchel_radio_e
+{
 	SATCHEL_RADIO_IDLE1 = 0,
 	SATCHEL_RADIO_FIDGET1,
 	SATCHEL_RADIO_DRAW,
@@ -95,122 +89,113 @@ enum satchel_radio_e {
 	SATCHEL_RADIO_HOLSTER
 };
 
-
-
 class CSatchelCharge : public CGrenade
 {
-	void Spawn( void );
-	void Precache( void );
-	void BounceSound( void );
-
-	void EXPORT SatchelSlide( CBaseEntity *pOther );
-	void EXPORT SatchelThink( void );
-
-public:
-	void Deactivate( void );
+	public:
+		void Spawn(void);
+		void Precache(void);
+		void BounceSound(void);
+		void EXPORT SatchelSlide(CBaseEntity *pOther);
+		void EXPORT SatchelThink(void);
+		void Deactivate(void);
 };
-LINK_ENTITY_TO_CLASS( monster_satchel, CSatchelCharge );
 
 // 1.31 new wp
 class Jumping_Satchel : public CGrenade
 {
-	void Spawn( void );
-	void EXPORT SatchelSlide( CBaseEntity *pOther );
-	void EXPORT SatchelThink( void );
-
-public:
-	void Deactivate( void );
+	public:
+		void Spawn(void);
+		void EXPORT SatchelSlide(CBaseEntity *pOther);
+		void EXPORT SatchelThink(void);
+		void Deactivate(void);
 };
-LINK_ENTITY_TO_CLASS( monster_pipebomb, Jumping_Satchel );
 
 //=========================================================
-// Deactivate - do whatever it is we do to an orphaned 
+// Deactivate - do whatever it is we do to an orphaned
 // satchel when we don't want it in the world anymore.
 //=========================================================
-void CSatchelCharge::Deactivate( void )
+void CSatchelCharge::Deactivate(void)
 {
-	
+
 	pev->takedamage = DAMAGE_NO;
 	pev->solid = SOLID_NOT;
-	UTIL_Remove( this );
+	UTIL_Remove(this);
 }
 
-void Jumping_Satchel::Deactivate( void )
+void Jumping_Satchel::Deactivate(void)
 {
 	// Use( m_pPlayer, m_pPlayer, USE_ON, 0 );
 	pev->takedamage = DAMAGE_NO;
 	pev->solid = SOLID_NOT;
-	UTIL_Remove( this );
+	UTIL_Remove(this);
 }
 
-void CSatchelCharge :: Spawn( void )
+void CSatchelCharge ::Spawn(void)
 {
-	Precache( );
+	Precache();
 	// motor
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
 
-	SET_MODEL(ENT(pev), "models/w_medkit.mdl");
-	//UTIL_SetSize(pev, Vector( -16, -16, -4), Vector(16, 16, 32));	// Old box -- size of headcrab monsters/players get blocked by this
-	UTIL_SetSize(pev, Vector( -5, -5, -3), Vector(5, 5, 3));	// Uses point-sized, and can be stepped over
-	UTIL_SetOrigin( pev, pev->origin );
+	SET_MODEL(ENT(pev), "models/w_satchel.mdl"); //w_medkit
+	// UTIL_SetSize(pev, Vector( -16, -16, -4), Vector(16, 16, 32));	// Old box -- size of headcrab monsters/players get blocked by this
+	UTIL_SetSize(pev, Vector(-5, -5, -3), Vector(5, 5, 3)); // Uses point-sized, and can be stepped over
+	UTIL_SetOrigin(pev, pev->origin);
 
-	SetTouch( SatchelSlide );
-	SetUse( DetonateUse );
-	SetThink( SatchelThink );
+	SetTouch(SatchelSlide);
+	SetUse(DetonateUse);
+	SetThink(SatchelThink);
 	pev->nextthink = gpGlobals->time + 0.1;
 
 	pev->gravity = 0.5;
 	pev->friction = 0.8;
 
-
-	pev->dmg = 116;
+	pev->dmg = 120.0;
 	pev->sequence = 1;
-	
-	pev->health = 150;
-	pev->takedamage = DAMAGE_AIM;
+
+	pev->body = 0;
+
+	pev->health = 100.0;
+	pev->takedamage = DAMAGE_YES;
 }
 
-
-void CSatchelCharge::SatchelSlide( CBaseEntity *pOther )
+void CSatchelCharge::SatchelSlide(CBaseEntity *pOther)
 {
-	entvars_t	*pevOther = pOther->pev;
+	entvars_t *pevOther = pOther->pev;
 
 	// don't hit the guy that launched this grenade
-	if ( pOther->edict() == pev->owner )
+	if (pOther->edict() == pev->owner)
 		return;
 
 	// pev->avelocity = Vector (300, 300, 300);
-	pev->gravity = 1;// normal gravity now
+	pev->gravity = 1.0; // normal gravity now
 
 	// HACKHACK - On ground isn't always set, so look for ground underneath
 	TraceResult tr;
-	UTIL_TraceLine( pev->origin, pev->origin - Vector(0,0,10), ignore_monsters, edict(), &tr );
+	UTIL_TraceLine(pev->origin, pev->origin - Vector(0, 0, 10), ignore_monsters, edict(), &tr);
 
-	if ( tr.flFraction < 1.0 )
+	if (tr.flFraction < 1.0)
 	{
 		// add a bit of static friction
 		pev->velocity = pev->velocity * 0.95;
 		pev->avelocity = pev->avelocity * 0.9;
 		// play sliding sound, volume based on velocity
 	}
-	if ( !(pev->flags & FL_ONGROUND) && pev->velocity.Length2D() > 10 )
+	if (!(pev->flags & FL_ONGROUND) && pev->velocity.Length2D() > 10)
 	{
 		BounceSound();
 	}
-	StudioFrameAdvance( );
-	
+	StudioFrameAdvance();
 }
 
-
-void CSatchelCharge :: SatchelThink( void )
+void CSatchelCharge ::SatchelThink(void)
 {
-	StudioFrameAdvance( );
+	StudioFrameAdvance();
 	pev->nextthink = gpGlobals->time + 0.1;
 
 	if (!IsInWorld())
 	{
-		UTIL_Remove( this );
+		UTIL_Remove(this);
 		return;
 	}
 
@@ -227,19 +212,19 @@ void CSatchelCharge :: SatchelThink( void )
 		pev->velocity.z -= 8;
 }
 
-void CSatchelCharge :: Precache( void )
+void CSatchelCharge ::Precache(void)
 {
 	PRECACHE_MODEL("models/grenade.mdl");
 	PRECACHE_SOUND("weapons/g_bounce1.wav");
 	PRECACHE_SOUND("weapons/g_bounce2.wav");
 	PRECACHE_SOUND("weapons/g_bounce3.wav");
 	PRECACHE_SOUND("zxc/crystal_heal.wav");
-	PRECACHE_MODEL( "sprites/shrinkf.spr" );
-	PRECACHE_MODEL( "models/crystal.mdl" );
+	PRECACHE_MODEL("sprites/shrinkf.spr");
+	PRECACHE_MODEL("models/crystal.mdl");
 	PRECACHE_SOUND("zxc/warningbell1.wav");
 	PRECACHE_SOUND("zxc/sg_24.wav");
-	PRECACHE_MODEL( "sprites/xflare1.spr" );
-	
+	PRECACHE_MODEL("sprites/xflare1.spr");
+
 	PRECACHE_MODEL("models/v_satchel.mdl");
 	PRECACHE_MODEL("models/v_satchel_radio.mdl");
 	PRECACHE_MODEL("models/w_satchel.mdl");
@@ -253,69 +238,70 @@ void CSatchelCharge :: Precache( void )
 	PRECACHE_SOUND("weapons/pl_gun1.wav");
 }
 
-void CSatchelCharge :: BounceSound( void )
+void CSatchelCharge ::BounceSound(void)
 {
-	switch ( RANDOM_LONG( 0, 2 ) )
+	switch (RANDOM_LONG(0, 2))
 	{
-	case 0:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce1.wav", 1, ATTN_NORM);	break;
-	case 1:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce2.wav", 1, ATTN_NORM);	break;
-	case 2:	EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce3.wav", 1, ATTN_NORM);	break;
+	case 0:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce1.wav", 1, ATTN_NORM);
+		break;
+	case 1:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce2.wav", 1, ATTN_NORM);
+		break;
+	case 2:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "weapons/g_bounce3.wav", 1, ATTN_NORM);
+		break;
 	}
 }
-LINK_ENTITY_TO_CLASS( weapon_satchel, CSatchel );
 
 //=========================================================
 // CALLED THROUGH the newly-touched weapon's instance. The existing player weapon is pOriginal
 //=========================================================
-int CSatchel::AddDuplicate( CBasePlayerItem *pOriginal )
+int CSatchel::AddDuplicate(CBasePlayerItem *pOriginal)
 {
 	CSatchel *pSatchel;
 
-
 	pSatchel = (CSatchel *)pOriginal;
 
-	if ( pSatchel->m_chargeReady != 0 )
+	if (pSatchel->m_chargeReady != 0)
 	{
 		return FALSE;
 	}
 
-	return CBasePlayerWeapon::AddDuplicate ( pOriginal );
+	return CBasePlayerWeapon::AddDuplicate(pOriginal);
 }
 
 //=========================================================
 //=========================================================
-int CSatchel::AddToPlayer( CBasePlayer *pPlayer )
+int CSatchel::AddToPlayer(CBasePlayer *pPlayer)
 {
-	int bResult = CBasePlayerItem::AddToPlayer( pPlayer );
+	int bResult = CBasePlayerItem::AddToPlayer(pPlayer);
 
-	pPlayer->pev->weapons |= (1<<m_iId);
+	pPlayer->pev->weapons |= (1 << m_iId);
 	m_chargeReady = 0;
 
-	if ( bResult )
+	if (bResult)
 	{
-		return AddWeapon( );
+		return AddWeapon();
 	}
 	return FALSE;
 }
 
-void CSatchel::Spawn( )
+void CSatchel::Spawn()
 {
-	Precache( );
+	Precache();
 	m_iId = WEAPON_SATCHEL;
 	SET_MODEL(ENT(pev), "models/w_satchel.mdl");
 
 	m_iDefaultAmmo = SATCHEL_DEFAULT_GIVE;
-	m_flNextCrystalTime = gpGlobals->time; //start timer
-	m_flNextSatchelsLimit = 0;
-	FallInit();// get ready to fall down.
+	m_flNextCrystalTime = gpGlobals->time; // start timer
+	FallInit(); // get ready to fall down.
 }
 
-
-void CSatchel::Precache( void )
+void CSatchel::Precache(void)
 {
-	UTIL_PrecacheOther( "monster_satchel" );
+	UTIL_PrecacheOther("monster_satchel");
 }
-
 
 int CSatchel::GetItemInfo(ItemInfo *p)
 {
@@ -330,21 +316,21 @@ int CSatchel::GetItemInfo(ItemInfo *p)
 	p->iFlags = ITEM_FLAG_SELECTONEMPTY | ITEM_FLAG_LIMITINWORLD | ITEM_FLAG_EXHAUSTIBLE;
 	p->iId = m_iId = WEAPON_SATCHEL;
 	p->iWeight = SATCHEL_WEIGHT;
-	//creload = 0;
+	// creload = 0;
 	return 1;
 }
 
 //=========================================================
 //=========================================================
-BOOL CSatchel::IsUseable( void )
+BOOL CSatchel::IsUseable(void)
 {
-	if ( m_pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] > 0 ) 
+	if (m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] > 0)
 	{
 		// player is carrying some satchels
 		return TRUE;
 	}
 
-	if ( m_chargeReady != 0 )
+	if (m_chargeReady != 0)
 	{
 		// player isn't carrying any satchels, but has some out
 		return TRUE;
@@ -353,15 +339,15 @@ BOOL CSatchel::IsUseable( void )
 	return FALSE;
 }
 
-BOOL CSatchel::CanDeploy( void )
+BOOL CSatchel::CanDeploy(void)
 {
-	if ( m_pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] > 0 ) 
+	if (m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] > 0)
 	{
 		// player is carrying some satchels
 		return TRUE;
 	}
 
-	if ( m_chargeReady != 0 )
+	if (m_chargeReady != 0)
 	{
 		// player isn't carrying any satchels, but has some out
 		return TRUE;
@@ -370,83 +356,76 @@ BOOL CSatchel::CanDeploy( void )
 	return FALSE;
 }
 
-BOOL CSatchel::Deploy( )
+BOOL CSatchel::Deploy()
 {
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 360 );
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 3.0;
 
-	if ( m_chargeReady )
-		return DefaultDeploy( "models/v_satchel_radio.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive" );
+	if (m_chargeReady)
+		return DefaultDeploy("models/v_satchel_radio.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
 	else
-		return DefaultDeploy( "models/v_satchel.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip" );
+		return DefaultDeploy("models/v_satchel.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
 
-	
 	return TRUE;
 }
 
-
-void CSatchel::Holster( int skiplocal /* = 0 */ )
+void CSatchel::Holster(int skiplocal /* = 0 */)
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
-	
-	if ( m_chargeReady )
+
+	if (m_chargeReady)
 	{
-		SendWeaponAnim( SATCHEL_RADIO_HOLSTER );
+		SendWeaponAnim(SATCHEL_RADIO_HOLSTER);
 	}
 	else
 	{
-		SendWeaponAnim( SATCHEL_DROP );
+		SendWeaponAnim(SATCHEL_DROP);
 	}
 	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "common/null.wav", 1.0, ATTN_NORM);
 
-	if ( !m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] && !m_chargeReady )
+	if (!m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] && !m_chargeReady)
 	{
-		m_pPlayer->pev->weapons &= ~(1<<WEAPON_SATCHEL);
-		SetThink( DestroyItem );
+		m_pPlayer->pev->weapons &= ~(1 << WEAPON_SATCHEL);
+		SetThink(DestroyItem);
 		pev->nextthink = gpGlobals->time + 0.1;
 	}
 }
-
-
-	
 
 void CSatchel::PrimaryAttack()
 {
 	switch (m_chargeReady)
 	{
 	case 0:
-		{
-			Throw( );
-		}
-		break;
+	{
+		Throw();
+	}
+	break;
 	case 1:
+	{
+		SendWeaponAnim(SATCHEL_RADIO_FIRE);
+
+		edict_t *pPlayer = m_pPlayer->edict();
+
+		CBaseEntity *pSatchel = NULL;
+
+		while ((pSatchel = UTIL_FindEntityByClassname(pSatchel, "monster_satchel")) != NULL) // 1.35 fix 'no happened' bug
 		{
-			SendWeaponAnim( SATCHEL_RADIO_FIRE );
-
-			edict_t *pPlayer = m_pPlayer->edict( );
-
-			CBaseEntity *pSatchel = NULL;
-
-			while ( (pSatchel = UTIL_FindEntityByClassname( pSatchel, "monster_satchel" ) ) != NULL) // 1.35 fix 'no happened' bug
+			if (FClassnameIs(pSatchel->pev, "monster_satchel") || FClassnameIs(pSatchel->pev, "monster_pipebomb"))
 			{
-				if (FClassnameIs( pSatchel->pev, "monster_satchel") || FClassnameIs( pSatchel->pev, "monster_pipebomb"))
+				if (pSatchel->pev->owner == pPlayer)
 				{
-					if (pSatchel->pev->owner == pPlayer)
-					{
-						m_pPlayer->m_flNextSatchelsLimit = 0;
-						pSatchel->Use( m_pPlayer, m_pPlayer, USE_ON, 0 );
-						m_chargeReady = 2;
-					}
+					pSatchel->Use(m_pPlayer, m_pPlayer, USE_ON, 0);
+					m_chargeReady = 2;
 				}
 			}
-
-			m_chargeReady = 2;
-			m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
-			m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
-			break;
 		}
+
+		m_chargeReady = 2;
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
+		break;
+	}
 
 	case 2:
 		// we're reloading, don't allow fire
@@ -456,54 +435,45 @@ void CSatchel::PrimaryAttack()
 	}
 }
 
-
-void CSatchel::SecondaryAttack( void )
+void CSatchel::SecondaryAttack(void)
 {
-	if (  m_pPlayer->m_flNextSatchelsLimit < 10 ) //now player can throw only 10 satchel's
-	{
 
-		if ( m_chargeReady != 2 )
+		if (m_chargeReady != 2)
 		{
-			Throw( );
+			Throw();
 		}
-		
-	}
 	
 }
 
-
-void CSatchel::ThirdAttack( void )
+void CSatchel::ThirdAttack(void)
 {
-	// Invisible 
+	// Invisible
 	// new code for 1.26
 
-	if ( (g_zxc_cheats.value == 3) )
-		return;
-
-	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 4)
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 5)
 	{
-		CBasePlayer *pl = ( CBasePlayer *) CBasePlayer::Instance( m_pPlayer->pev ); 
+		CBasePlayer *pl = (CBasePlayer *)CBasePlayer::Instance(m_pPlayer->pev);
 
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.9, ATTN_NORM); 
-	
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.9, ATTN_NORM);
+
 		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
-		m_pPlayer->pev->health = 10; 
-		
-		SET_MODEL( ENT(m_pPlayer->pev), "models/rpgrocket.mdl" );
+		// m_pPlayer->pev->health = 10;
+
+		SET_MODEL(ENT(m_pPlayer->pev), "models/rpgrocket.mdl");
 
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
 		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
-		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 4;
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 5;
 		m_pPlayer->pev->effects |= EF_NODRAW; // true invis
 		pl->m_pActiveItem->m_iId = WEAPON_CROWBAR;
-		UTIL_ScreenFade( m_pPlayer, Vector(0,0,200), 1.95, 3.5, 70, FFADE_IN );
-		
-		MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, ENT(m_pPlayer->pev) );
-			WRITE_STRING( "Now you are invisible." );
+		UTIL_ScreenFade(m_pPlayer, Vector(0, 0, 200), 1.95, 3.5, 70, FFADE_IN);
+
+		MESSAGE_BEGIN(MSG_ONE, gmsgHudText, NULL, ENT(m_pPlayer->pev));
+		WRITE_STRING("Now you are invisible.");
 		MESSAGE_END();
-		
-		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "buttons/bell1.wav", 0.75, ATTN_NORM, 1.0, 102 );
+
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "buttons/bell1.wav", 0.75, ATTN_NORM, 1.0, 102);
 		return;
 	}
 }
@@ -511,25 +481,23 @@ void CSatchel::ThirdAttack( void )
 void CSatchel::FourthAttack()
 {
 
-	if ( (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 2) && m_chargeReady != 2)
+	if (g_zxc_promode.value == 0 && (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 2) && m_chargeReady != 2)
 	{
 		Vector vecSrc = m_pPlayer->pev->origin;
 		Vector vecThrow = gpGlobals->v_forward * 274 + m_pPlayer->pev->velocity;
 
-		CBaseEntity *pSatchel = Create( "monster_pipebomb", vecSrc, Vector( 0, 0, 0), m_pPlayer->edict() );
+		CBaseEntity *pSatchel = Create("monster_pipebomb", vecSrc, Vector(0, 0, 0), m_pPlayer->edict());
 		pSatchel->pev->velocity = vecThrow;
 
-		SendWeaponAnim( SATCHEL_RADIO_FIRE );
+		SendWeaponAnim(SATCHEL_RADIO_FIRE);
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio.mdl");
 		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_satchel_radio.mdl");
 
-		
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
 		m_chargeReady = 1;
-	
-		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-=2;
-		
+
+		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 2;
 	}
 
 	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
@@ -537,38 +505,32 @@ void CSatchel::FourthAttack()
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 }
 
-
-
-
-
-void CSatchel::Throw( void )
+void CSatchel::Throw(void)
 {
-	if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
 	{
 		Vector vecSrc = m_pPlayer->pev->origin;
 
 		Vector vecThrow = gpGlobals->v_forward * 274 + m_pPlayer->pev->velocity;
 
-		m_pPlayer->m_flNextSatchelsLimit ++;
-		
 #ifndef CLIENT_DLL
-		CBaseEntity *pSatchel = Create( "monster_satchel", vecSrc, Vector( 0, 0, 0), m_pPlayer->edict() );
+		CBaseEntity *pSatchel = Create("monster_satchel", vecSrc, Vector(0, 0, 0), m_pPlayer->edict());
 		pSatchel->pev->velocity = vecThrow;
 		pSatchel->pev->avelocity.y = 400;
 
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio.mdl");
 		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_satchel_radio.mdl");
 #else
-		LoadVModel ( "models/v_satchel_radio.mdl", m_pPlayer );
+		LoadVModel("models/v_satchel_radio.mdl", m_pPlayer);
 #endif
 
-		SendWeaponAnim( SATCHEL_RADIO_DRAW );
+		SendWeaponAnim(SATCHEL_RADIO_DRAW);
 
 		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
 		m_chargeReady = 1;
-		
+
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 1.0;
@@ -576,40 +538,39 @@ void CSatchel::Throw( void )
 	}
 }
 
-
-void CSatchel::WeaponIdle( void )
+void CSatchel::WeaponIdle(void)
 {
 
-if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 6) // && creload==0
-	
-	if (  m_pPlayer->m_flNextCrystalTime < gpGlobals->time )
-	{
+	if (m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= 5) // && creload==0
 
+		if (m_pPlayer->m_flNextCrystalTime < gpGlobals->time)
 		{
-			// reload when reload is pressed, or if no buttons are down and weapon is empty.
-			Reload();
-			m_pPlayer->m_flNextCrystalTime = gpGlobals->time + 90;
-			return;
-		}
-	}
 
-	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
+			{
+				// reload when reload is pressed, or if no buttons are down and weapon is empty.
+				Reload();
+				m_pPlayer->m_flNextCrystalTime = gpGlobals->time + 90;
+				return;
+			}
+		}
+
+	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 
-	switch( m_chargeReady )
+	switch (m_chargeReady)
 	{
 	case 0:
-		SendWeaponAnim( SATCHEL_FIDGET1 );
+		SendWeaponAnim(SATCHEL_FIDGET1);
 		// use tripmine animations
-		strcpy( m_pPlayer->m_szAnimExtention, "trip" );
+		strcpy(m_pPlayer->m_szAnimExtention, "trip");
 		break;
 	case 1:
-		SendWeaponAnim( SATCHEL_RADIO_FIDGET1 );
+		SendWeaponAnim(SATCHEL_RADIO_FIDGET1);
 		// use hivehand animations
-		strcpy( m_pPlayer->m_szAnimExtention, "hive" );
+		strcpy(m_pPlayer->m_szAnimExtention, "hive");
 		break;
 	case 2:
-		if ( !m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
+		if (!m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
 		{
 			m_chargeReady = 0;
 			RetireWeapon();
@@ -620,13 +581,13 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel.mdl");
 		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_satchel.mdl");
 #else
-		LoadVModel ( "models/v_satchel.mdl", m_pPlayer );
+		LoadVModel("models/v_satchel.mdl", m_pPlayer);
 #endif
 
-		SendWeaponAnim( SATCHEL_DRAW );
+		SendWeaponAnim(SATCHEL_DRAW);
 
 		// use tripmine animations
-		strcpy( m_pPlayer->m_szAnimExtention, "trip" );
+		strcpy(m_pPlayer->m_szAnimExtention, "trip");
 
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
 		m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.5;
@@ -636,20 +597,17 @@ if ( m_pPlayer->pev->button & IN_RELOAD && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoTyp
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 10.0;
 }
 
-
-void CSatchel :: Reload( void )
+void CSatchel ::Reload(void)
 {
 
-	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
 	Vector vecThrow = gpGlobals->v_forward;
-	Vector GunPosition = m_pPlayer->GetGunPosition( );
-	Heal_Crystal :: Create( GunPosition, vecThrow, m_pPlayer );
+	Vector GunPosition = m_pPlayer->GetGunPosition();
+	// CHealCrystal :: Create( GunPosition, vecThrow, m_pPlayer );
+	CBaseEntity::Create("heal_crystal", GunPosition, Vector(0, 0, 0), m_pPlayer->edict());
 	m_fInAttack = 0;
-	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]-= 6;
-
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 5;
 }
-
-
 
 //=========================================================
 // DeactivateSatchels - removes all satchels owned by
@@ -657,49 +615,47 @@ void CSatchel :: Reload( void )
 //
 // Made this global on purpose.
 //=========================================================
-void DeactivateSatchels( CBasePlayer *pOwner ) 
+void DeactivateSatchels(CBasePlayer *pOwner)
 {
-	edict_t *pFind; 
+	edict_t *pFind;
 
-	pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_satchel" );
+	pFind = FIND_ENTITY_BY_CLASSNAME(NULL, "monster_satchel");
 
-	while ( !FNullEnt( pFind ) )
+	while (!FNullEnt(pFind))
 	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind );
+		CBaseEntity *pEnt = CBaseEntity::Instance(pFind);
 		CSatchelCharge *pSatchel = (CSatchelCharge *)pEnt;
 
-		if ( pSatchel )
+		if (pSatchel)
 		{
-			if ( pSatchel->pev->owner == pOwner->edict() )
+			if (pSatchel->pev->owner == pOwner->edict())
 			{
-				pSatchel->Use( pOwner, pOwner, USE_ON, 0 );
-				pOwner->m_flNextSatchelsLimit = 0;
+				pSatchel->Use(pOwner, pOwner, USE_ON, 0);
 				// pSatchel->Deactivate();
 			}
 		}
 
-		pFind = FIND_ENTITY_BY_CLASSNAME( pFind, "monster_satchel" );
+		pFind = FIND_ENTITY_BY_CLASSNAME(pFind, "monster_satchel");
 	}
-	
+
 	///////////////
-	edict_t *pFind2; 
-	pFind2 = FIND_ENTITY_BY_CLASSNAME( NULL, "monster_pipebomb" );
-	while ( !FNullEnt( pFind2 ) )
+	edict_t *pFind2;
+	pFind2 = FIND_ENTITY_BY_CLASSNAME(NULL, "monster_pipebomb");
+	while (!FNullEnt(pFind2))
 	{
-		CBaseEntity *pEnt = CBaseEntity::Instance( pFind2 );
+		CBaseEntity *pEnt = CBaseEntity::Instance(pFind2);
 		CSatchelCharge *pSatchel = (CSatchelCharge *)pEnt;
 
-		if ( pSatchel )
+		if (pSatchel)
 		{
-			if ( pSatchel->pev->owner == pOwner->edict() )
+			if (pSatchel->pev->owner == pOwner->edict())
 			{
-				pSatchel->Use( pOwner, pOwner, USE_ON, 0 );
-				pOwner->m_flNextSatchelsLimit = 0;
+				pSatchel->Use(pOwner, pOwner, USE_ON, 0);
 				// pSatchel->Deactivate();
 			}
 		}
 
-		pFind2 = FIND_ENTITY_BY_CLASSNAME( pFind2, "monster_pipebomb" );
+		pFind2 = FIND_ENTITY_BY_CLASSNAME(pFind2, "monster_pipebomb");
 	}
 }
 
@@ -707,262 +663,265 @@ void DeactivateSatchels( CBasePlayer *pOwner )
 
 ////// New code for heal crystal
 
-#define SQUEEK_DETONATE_DELAY	90.0
+#define SQUEEK_DETONATE_DELAY 90.0
 
-void    Heal_Crystal :: Spawn( )
+void CHealCrystal ::Spawn()
 {
 
-        Precache( );
-		SET_MODEL(ENT(pev), "models/crystal.mdl");
-		
-        pev->movetype = MOVETYPE_TOSS; //So gravity affects it a *tad*
-        pev->solid = SOLID_BBOX;
+	Precache();
+	SET_MODEL(ENT(pev), "models/crystal.mdl");
 
-        UTIL_SetSize( pev, Vector(-4,-4,-5), Vector(4,4,5) );//Point sized bounding box
-        UTIL_SetOrigin( pev, pev->origin );
-        pev->classname = MAKE_STRING( "Crystal" );
+	pev->movetype = MOVETYPE_TOSS; // So gravity affects it a *tad*
+	pev->solid = SOLID_BBOX;
 
-        SetThink( MoveThink );
-        SetTouch( Hit );
+	UTIL_SetSize(pev, Vector(-5, -5, -4), Vector(5, 5, 12));
+	UTIL_SetOrigin(pev, pev->origin);
+	//pev->classname = MAKE_STRING("Crystal");
 
-        pev->velocity = gpGlobals->v_forward;
-        pev->angles.x = -(pev->angles.x);
+	SetThink(MoveThink);
+	SetTouch(Hit);
 
-        pev->nextthink = gpGlobals->time + 0.1;
-        pev->dmg = -70;
-		
-		pev->effects = EF_MUZZLEFLASH;
-		m_flDie = gpGlobals->time + SQUEEK_DETONATE_DELAY;
+	pev->velocity = gpGlobals->v_forward;
+	pev->angles.x = -(pev->angles.x);
 
-		pev->gravity = 0;
-		pev->friction = 1;
+	pev->nextthink = gpGlobals->time + 0.1;
+	pev->dmg = 1.0;
+	pev->takedamage = 0;
 
-		EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/sg_24.wav", 1.0, ATTN_NORM);
+	pev->effects = EF_MUZZLEFLASH;
+	m_flDie = gpGlobals->time + SQUEEK_DETONATE_DELAY;
+
+	pev->gravity = 0;
+	pev->friction = 1;
+
+	EMIT_SOUND(ENT(pev), CHAN_STATIC, "zxc/sg_24.wav", 1.0, ATTN_NORM);
 }
 
-void    Heal_Crystal :: Precache( )
+void CHealCrystal ::Precache()
 {
-        BeamSprite = PRECACHE_MODEL( BLASTER_BEAM_SPRITE );
-        PRECACHE_MODEL( "models/crystal.mdl" );
-		PRECACHE_SOUND ("weapons/rocket1.wav");
-		m_iSpriteTexture = PRECACHE_MODEL( "sprites/shrinkf.spr" );
+	BeamSprite = PRECACHE_MODEL(BLASTER_BEAM_SPRITE);
+	PRECACHE_MODEL("models/crystal.mdl");
+	PRECACHE_SOUND("weapons/rocket1.wav");
+	m_iSpriteTexture = PRECACHE_MODEL("sprites/shrinkf.spr");
 }
 
-void    Heal_Crystal :: Hit( CBaseEntity* Target )
+void CHealCrystal ::Hit(CBaseEntity *Target)
 {
-
 }
 
-void    Heal_Crystal:: Explode(int DamageType)
+
+
+CHealCrystal *CHealCrystal ::Create(Vector Pos, Vector Aim, CBaseEntity *Owner)
+{
+	CHealCrystal *Beam = GetClassPtr((CHealCrystal *)NULL);
+
+	UTIL_SetOrigin(Beam->pev, Pos);
+	Beam->pev->angles = Aim;
+	Beam->Spawn();
+	Beam->SetTouch(CHealCrystal ::Hit);
+	Beam->pev->owner = Owner->edict();
+	return Beam;
+}
+
+void CHealCrystal ::MoveThink()
 {
 	CBaseEntity *pEntity = NULL;
 
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 250 )) != NULL)
-    {
-		pEntity->pev->friction = 1.0;
-		
-		if ((pEntity->pev->takedamage==DAMAGE_AIM || pEntity->pev->movetype==MOVETYPE_WALK) && (FVisible( pEntity ))) ///check only players
+	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 250.0)) != NULL)
+	{
+		if (pEntity->IsAlive() && (pEntity->IsPlayer() || pEntity->IsMonster()) && (FVisible(pEntity))) /// check only players
 		{
-			pEntity->TakeHealth(10, DMG_GENERIC); //give health all around
-			pEntity->pev->armorvalue += 1; //(v 1.21)
-			pEntity->pev->fuser1 += 1; //(v 1.34)
+			pEntity->TakeHealth(pev->dmg * 10.0, DMG_GENERIC); // give health all around
+
+			//if (pEntity->pev->max_health < 500.0)
+				pEntity->pev->max_health += 1.0;
+			if (pEntity->pev->armorvalue < 100.0)
+				pEntity->pev->armorvalue += 1.0;
+			if (pEntity->pev->fuser1 < 100.0)
+				pEntity->pev->fuser1 += 1.0;
 		}
 	}
+
+	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.15, ATTN_NORM); // play sound
 	
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/crystal_heal.wav", 0.15, ATTN_NORM); //play sound
-	pev->nextthink = gpGlobals->time + 1.0;
-	SetThink(MoveThink);
-}
 
-Heal_Crystal* Heal_Crystal :: Create( Vector Pos, Vector Aim, CBaseEntity* Owner )
-{
-        Heal_Crystal* Beam = GetClassPtr( (Heal_Crystal*)NULL );
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+		WRITE_BYTE(TE_BEAMCYLINDER);
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z);
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z + 550); // reach damage radius over .2 seconds
+		WRITE_SHORT(m_iSpriteTexture);
+		WRITE_BYTE(0);	 // startframe
+		WRITE_BYTE(0);	 // framerate
+		WRITE_BYTE(3);	 // life
+		WRITE_BYTE(50);	 // width
+		WRITE_BYTE(0);	 // noise
+		WRITE_BYTE(0);	 // r, g, b
+		WRITE_BYTE(50);	 // r, g, b
+		WRITE_BYTE(50);	 // r, g, b
+		WRITE_BYTE(192); // brightness
+		WRITE_BYTE(0);	 // speed
+	MESSAGE_END();
 
-        UTIL_SetOrigin( Beam->pev, Pos );
-        Beam->pev->angles = Aim;
-        Beam->Spawn( );
-        Beam->SetTouch( Heal_Crystal :: Hit );
-        Beam->pev->owner = Owner->edict( );
-        return Beam;
-
-}
-
-void    Heal_Crystal :: MoveThink( )
-{
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-			WRITE_BYTE( TE_BEAMCYLINDER );
-			WRITE_COORD( pev->origin.x);
-			WRITE_COORD( pev->origin.y);
-			WRITE_COORD( pev->origin.z);
-			WRITE_COORD( pev->origin.x);
-			WRITE_COORD( pev->origin.y);
-			WRITE_COORD( pev->origin.z + 550 ); // reach damage radius over .2 seconds
-			WRITE_SHORT( m_iSpriteTexture );
-			WRITE_BYTE( 0 ); // startframe
-			WRITE_BYTE( 0 ); // framerate
-			WRITE_BYTE( 3 ); // life
-			WRITE_BYTE( 50 );  // width
-			WRITE_BYTE( 0 );   // noise
-			WRITE_BYTE( 0 );   // r, g, b
-			WRITE_BYTE( 50 );   // r, g, b
-			WRITE_BYTE( 50 );   // r, g, b
-			WRITE_BYTE( 128 ); // brightness
-			WRITE_BYTE( 0 );		// speed
-		MESSAGE_END();
-		
-
-	Explode(DMG_GENERIC);
-		
+	// lights
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY );
+		WRITE_BYTE(TE_DLIGHT);
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z);
+		WRITE_BYTE( 25 );		// radius * 0.1
+		WRITE_BYTE(0);	 // r, g, b
+		WRITE_BYTE(54);	 // r, g, b
+		WRITE_BYTE(16);	 // r, g, b
+		WRITE_BYTE( 128 );		// life * 10
+		WRITE_BYTE( 16 );		// decay * 0.1
+	MESSAGE_END( );
 
 	if (gpGlobals->time >= m_flDie)
-		{
-			// lots of smoke
-			MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-				WRITE_BYTE( TE_SMOKE );
-				WRITE_COORD( pev->origin.x  );
-				WRITE_COORD( pev->origin.y  );
-				WRITE_COORD( pev->origin.z - 32 );
-				WRITE_SHORT( g_sModelIndexSmoke );
-				WRITE_BYTE( 55 ); // scale * 10
-				WRITE_BYTE( 1 ); // framerate
-			MESSAGE_END();
+	{
+		// lots of smoke
+		MESSAGE_BEGIN(MSG_BROADCAST, SVC_TEMPENTITY);
+			WRITE_BYTE(TE_SMOKE);
+			WRITE_COORD(pev->origin.x);
+			WRITE_COORD(pev->origin.y);
+			WRITE_COORD(pev->origin.z - 32);
+			WRITE_SHORT(g_sModelIndexSmoke);
+			WRITE_BYTE(55); // scale * 10
+			WRITE_BYTE(1);	// framerate
+		MESSAGE_END();
 
-		SetThink( SUB_Remove );
-		}
+		SetThink(SUB_Remove);
+	}
+	
+	pev->nextthink = gpGlobals->time + 1.0;
 }
 
 ////////////////////////
 ////////////////////////
-void Jumping_Satchel :: Spawn( void )
+void Jumping_Satchel ::Spawn(void)
 {
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
+	pev->body = 1;
 
 	SET_MODEL(ENT(pev), "models/snapbug.mdl");
-	UTIL_SetSize(pev, Vector( -4, -4, -4), Vector(4, 4, 4));	// Uses point-sized, and can be stepped over
-	UTIL_SetOrigin( pev, pev->origin );
+	UTIL_SetSize(pev, Vector(-4, -4, -4), Vector(4, 4, 4)); // Uses point-sized, and can be stepped over
+	UTIL_SetOrigin(pev, pev->origin);
 
-	SetTouch( SatchelSlide );
-	SetUse( DetonateUse2 );
-	SetThink( SatchelThink );
+	SetTouch(SatchelSlide);
+	SetUse(DetonateUse2);
+	SetThink(SatchelThink);
 	pev->nextthink = gpGlobals->time + 0.9;
 	pev->classname = MAKE_STRING("monster_satchel");
 
 	pev->gravity = 0.5;
 	pev->friction = 0.5;
 
-	pev->dmg = 206;
+	pev->dmg = 250.0;
 	pev->sequence = 1;
-	
-	pev->health = 150;
-	pev->takedamage = DAMAGE_YES;
-	
 
+	pev->health = 35.0;
+	pev->takedamage = DAMAGE_YES;
 }
 
-
-void Jumping_Satchel::SatchelSlide( CBaseEntity *pOther )
+void Jumping_Satchel::SatchelSlide(CBaseEntity *pOther)
 {
-	entvars_t	*pevOther = pOther->pev;
+	entvars_t *pevOther = pOther->pev;
 
 	// don't hit the guy that launched this grenade
-	if ( pOther->edict() == pev->owner )
+	if (pOther->edict() == pev->owner)
 		return;
 
-	pev->gravity = 1;// normal gravity now
+	pev->gravity = 1; // normal gravity now
 
 	// HACKHACK - On ground isn't always set, so look for ground underneath
 	TraceResult tr;
-	UTIL_TraceLine( pev->origin, pev->origin - Vector(0,0,10), ignore_monsters, edict(), &tr );
+	UTIL_TraceLine(pev->origin, pev->origin - Vector(0, 0, 10), ignore_monsters, edict(), &tr);
 
-	if ( tr.flFraction < 1.0 )
+	if (tr.flFraction < 1.0)
 	{
 		// add a bit of static friction
 		pev->velocity = pev->velocity * 0.95;
 		pev->avelocity = pev->avelocity * 0.9;
 	}
-	
-	StudioFrameAdvance( );
-	
+
+	StudioFrameAdvance();
 }
 
-
-void Jumping_Satchel :: SatchelThink( void )
+void Jumping_Satchel ::SatchelThink(void)
 {
-
 
 	if (!IsInWorld())
 	{
-		UTIL_Remove( this );
+		UTIL_Remove(this);
 		return;
 	}
 
-	
 	if (pev->velocity.Length2D() < 3 && (pev->flags & FL_ONGROUND))
 	{
-	
-		pev->velocity.x += RANDOM_FLOAT ( -450, 450 );
-		pev->velocity.y += RANDOM_FLOAT ( -450, 450 );
-		pev->velocity.z += 160;
 
+		pev->velocity.x += RANDOM_FLOAT(-450, 450);
+		pev->velocity.y += RANDOM_FLOAT(-450, 450);
+		pev->velocity.z += 160;
 	}
-	
-	//angle
-	switch ( RANDOM_LONG( 0, 1 ) )
+
+	// angle
+	switch (RANDOM_LONG(0, 1))
 	{
-	case 0:	
-		{
+	case 0:
+	{
 		pev->avelocity.y += 90;
 		pev->angles.y += 90;
 		break;
-		}
-	case 1:	
-		{
-		EMIT_SOUND_DYN( ENT(pev), CHAN_BODY, "weapons/pl_gun1.wav", 0.35, ATTN_NORM, 1.0, RANDOM_LONG(85,100) );
+	}
+	case 1:
+	{
+		EMIT_SOUND_DYN(ENT(pev), CHAN_BODY, "weapons/pl_gun1.wav", 0.35, ATTN_NORM, 1.0, RANDOM_LONG(85, 100));
 		pev->avelocity.y -= 90;
 		pev->angles.y -= 90;
 		break;
-		}
+	}
 	}
 
 	pev->nextthink = gpGlobals->time + 1.5;
-
 }
 
-
 ////////////////////////////
 ////////////////////////////
 
-void TriipleDamage_Crystal::Spawn( void )
+void TriipleDamage_Crystal::Spawn(void)
 {
-	SET_MODEL( ENT(pev), "models/crystal3.mdl" );
+	SET_MODEL(ENT(pev), "models/crystal3.mdl");
 	pev->movetype = MOVETYPE_FLY;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -6, -6, -6), Vector(6, 6, 6) );
-	UTIL_SetOrigin( pev, pev->origin );
+	UTIL_SetSize(pev, Vector(-6, -6, -6), Vector(6, 6, 6));
+	UTIL_SetOrigin(pev, pev->origin);
 	pev->gravity = 0.0;
-	m_flDie = 1200;
-	
-	pev->dmg = 64;
-	
+	m_flDie = 600;
+
+	pev->dmg = 100.0;
+
 	pev->avelocity.y = -250;
-	
-	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
+
+	pev->rendermode = kRenderTransAdd; // kRenderTransAlpha
 	pev->renderamt = 200;
-	
-	pev->classname = MAKE_STRING( "weapon_satchel" );
-	
+
+	pev->classname = MAKE_STRING("weapon_satchel");
+
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/superphys_launch2.wav", 1.0, ATTN_NORM);
-	m_LaserSprite = PRECACHE_MODEL( "sprites/xbeam4.spr" );
-	
+	m_LaserSprite = PRECACHE_MODEL("sprites/xbeam4.spr");
+
 	// SetTouch( MoveTouch );
-	SetThink( MoveThink );
-	pev->nextthink = gpGlobals->time + 2.0; 
+	SetThink(MoveThink);
+	pev->nextthink = gpGlobals->time + 2.0;
 }
 
-void TriipleDamage_Crystal::MoveThink( void )
+void TriipleDamage_Crystal::MoveThink(void)
 {
-	if ( pev->rendermode != kRenderNormal )
+	if (pev->rendermode != kRenderNormal)
 	{
 		pev->rendermode = kRenderNormal;
 		pev->movetype = MOVETYPE_TOSS;
@@ -970,241 +929,245 @@ void TriipleDamage_Crystal::MoveThink( void )
 
 	CBaseEntity *pEntity = NULL;
 
-	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, 286 )) != NULL)
-       	{
-		
-		if ( (FVisible( pEntity )))
+	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 286)) != NULL)
+	{
+
+		if ((FVisible(pEntity)))
+		{
 			{
+				if ((pEntity->edict() != edict()) && (pEntity->IsAlive()) && (pEntity->TripleShot == 1) && (pEntity->pev->flags & (FL_CLIENT))) // !(pEntity->pev->flags & (FL_MONSTER|FL_CLIENT))
 				{
-				if ((pEntity->edict() != edict()) && (pEntity->IsAlive()) && (pEntity->TripleShot == 0) && (pEntity->pev->flags & (FL_CLIENT)) ) // !(pEntity->pev->flags & (FL_MONSTER|FL_CLIENT))
-					{
 
-					//shock ray 1
-					MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-						WRITE_BYTE( TE_BEAMPOINTS );
-						WRITE_COORD(pev->origin.x);
-						WRITE_COORD(pev->origin.y);
-						WRITE_COORD(pev->origin.z+70);
-						WRITE_COORD( pEntity->pev->origin.x ); //tr.vecEndPos.
-						WRITE_COORD( pEntity->pev->origin.y );
-						WRITE_COORD( pEntity->pev->origin.z );
-						WRITE_SHORT( m_LaserSprite ); //sprite
-						WRITE_BYTE( 0 ); // Starting frame
-						WRITE_BYTE( 0  ); // framerate * 0.1
-						WRITE_BYTE( 8 ); // life * 0.1
-						WRITE_BYTE( 8 ); // width
-						WRITE_BYTE( 0 ); // noise
-						WRITE_BYTE( 220 ); // color r,g,b
-						WRITE_BYTE( 220 ); // color r,g,b
-						WRITE_BYTE( 200 ); // color r,g,b
-						WRITE_BYTE( 200 ); // brightness
-						WRITE_BYTE( 0 ); // scroll speed
-					MESSAGE_END();
-					
-					MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-						WRITE_BYTE( TE_BEAMTORUS );
-						WRITE_COORD( pEntity->pev->origin.x);
-						WRITE_COORD( pEntity->pev->origin.y);
-						WRITE_COORD( pEntity->pev->origin.z);
-						WRITE_COORD( pEntity->pev->origin.x);
-						WRITE_COORD( pEntity->pev->origin.y);
-						WRITE_COORD( pEntity->pev->origin.z - 200 ); // reach damage radius over .2 seconds
-						WRITE_SHORT( m_LaserSprite );
-						WRITE_BYTE( 0 ); // startframe
-						WRITE_BYTE( 0 ); // framerate
-						WRITE_BYTE( 4 ); // life
-						WRITE_BYTE( 12 );  // width
-						WRITE_BYTE( 0 );   // noise
-						WRITE_BYTE( 220 );   // r, g, b
-						WRITE_BYTE( 200 );   // r, g, b
-						WRITE_BYTE( 200 );   // r, g, b
-						WRITE_BYTE( 240 ); // brightness
-						WRITE_BYTE( 0 );		// speed
+					// shock ray 1
+					MESSAGE_BEGIN(MSG_BROADCAST, SVC_TEMPENTITY);
+					WRITE_BYTE(TE_BEAMPOINTS);
+					WRITE_COORD(pev->origin.x);
+					WRITE_COORD(pev->origin.y);
+					WRITE_COORD(pev->origin.z + 70);
+					WRITE_COORD(pEntity->pev->origin.x); // tr.vecEndPos.
+					WRITE_COORD(pEntity->pev->origin.y);
+					WRITE_COORD(pEntity->pev->origin.z);
+					WRITE_SHORT(m_LaserSprite); // sprite
+					WRITE_BYTE(0);				// Starting frame
+					WRITE_BYTE(0);				// framerate * 0.1
+					WRITE_BYTE(8);				// life * 0.1
+					WRITE_BYTE(8);				// width
+					WRITE_BYTE(0);				// noise
+					WRITE_BYTE(220);			// color r,g,b
+					WRITE_BYTE(220);			// color r,g,b
+					WRITE_BYTE(200);			// color r,g,b
+					WRITE_BYTE(200);			// brightness
+					WRITE_BYTE(0);				// scroll speed
 					MESSAGE_END();
 
-					EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build1.wav", 1, ATTN_NORM, 0, RANDOM_LONG(100,180));
-					pEntity->TripleShot = 1; // enable X dmg for entities
-					pEntity->TripleShotS = 3; // bullets X dmg multiplier
+					MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+					WRITE_BYTE(TE_BEAMTORUS);
+					WRITE_COORD(pEntity->pev->origin.x);
+					WRITE_COORD(pEntity->pev->origin.y);
+					WRITE_COORD(pEntity->pev->origin.z);
+					WRITE_COORD(pEntity->pev->origin.x);
+					WRITE_COORD(pEntity->pev->origin.y);
+					WRITE_COORD(pEntity->pev->origin.z - 200); // reach damage radius over .2 seconds
+					WRITE_SHORT(m_LaserSprite);
+					WRITE_BYTE(0);	 // startframe
+					WRITE_BYTE(0);	 // framerate
+					WRITE_BYTE(4);	 // life
+					WRITE_BYTE(12);	 // width
+					WRITE_BYTE(0);	 // noise
+					WRITE_BYTE(220); // r, g, b
+					WRITE_BYTE(200); // r, g, b
+					WRITE_BYTE(200); // r, g, b
+					WRITE_BYTE(240); // brightness
+					WRITE_BYTE(0);	 // speed
+					MESSAGE_END();
+
+					EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "zxc/Build1.wav", 1, ATTN_NORM, 0, RANDOM_LONG(100, 180));
+					pEntity->TripleShot = 3;  // enable X dmg for entities
 				}
 			}
 		}
 	}
 
-	pev->nextthink = gpGlobals->time + 0.1; 
+	pev->nextthink = gpGlobals->time + 0.1;
 	m_flDie -= 1;
-	
+
 	if (m_flDie <= 0)
 	{
-		UTIL_Remove( this );
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg, CLASS_NONE, DMG_POISON  ); 
-		EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/explode3.wav", 1.0, ATTN_NORM); //play sound
-		
+		UTIL_Remove(this);
+		::RadiusDamage(pev->origin, pev, VARS(pev->owner), pev->dmg, pev->dmg, CLASS_NONE, DMG_POISON);
+		EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/explode3.wav", 1.0, ATTN_NORM); // play sound
+
 		// explosions
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-			WRITE_BYTE( TE_EXPLOSION );
-			WRITE_COORD( pev->origin.x );
-			WRITE_COORD( pev->origin.y );
-			WRITE_COORD( pev->origin.z );
-			WRITE_SHORT( g_sModelIndexFireball );
-			WRITE_BYTE( 75  ); // scale * 10
-			WRITE_BYTE( 10  ); // framerate
-			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+		WRITE_BYTE(TE_EXPLOSION);
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z);
+		WRITE_SHORT(g_sModelIndexFireball);
+		WRITE_BYTE(75); // scale * 10
+		WRITE_BYTE(10); // framerate
+		WRITE_BYTE(TE_EXPLFLAG_NONE);
 		MESSAGE_END();
 	}
 }
 
-
-
-
 ////////////////////////////
 ////////////////////////////
 
-void TRocket::Spawn( void )
+void TRocket::Spawn(void)
 {
-	SET_MODEL( ENT(pev), "models/alt_nuke2.mdl" );
+	SET_MODEL(ENT(pev), "models/alt_nuke2.mdl");
 	pev->movetype = MOVETYPE_FLY;
 	pev->solid = SOLID_BBOX;
-	UTIL_SetSize( pev, Vector( -6, -6, -6), Vector(6, 6, 6) );
-	UTIL_SetOrigin( pev, pev->origin );
-	
+	UTIL_SetSize(pev, Vector(-6, -6, -6), Vector(6, 6, 6));
+	UTIL_SetOrigin(pev, pev->origin);
+
 	pev->gravity = 0.0;
 	m_flDie = 36;
-	
-	pev->dmg = 172;
-	
-	pev->rendermode = kRenderTransAdd; //kRenderTransAlpha
-	pev->renderamt = 200;
-	
-	pev->classname = MAKE_STRING( "weapon_tripmine" );
-	
+
+	pev->dmg = 172.0;
+
+	pev->rendermode = kRenderTransAdd; // kRenderTransAlpha
+	pev->renderamt = 200.0;
+
+	pev->classname = MAKE_STRING("weapon_tripmine");
+
 	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/superphys_launch2.wav", 1.0, ATTN_NORM);
-	SetTouch( MoveTouch );
-	m_LaserSprite = PRECACHE_MODEL( "sprites/xbeam4.spr" );
-	
-	SetThink( MoveThink );
-	pev->nextthink = gpGlobals->time + 1.0; 
+	SetTouch(MoveTouch);
+	m_LaserSprite = PRECACHE_MODEL("sprites/xbeam4.spr");
+
+	SetThink(MoveThink);
+	pev->nextthink = gpGlobals->time + 1.0;
 }
 
-void TRocket::MoveThink( void )
+void TRocket::MoveThink(void)
 {
-	if ( pev->rendermode != kRenderNormal )
+	if (pev->rendermode != kRenderNormal)
 	{
-		UTIL_MakeVectors ( pev->angles );
+		UTIL_MakeVectors(pev->angles);
 		Vector vecThrow = gpGlobals->v_up * 256;
 		pev->velocity = vecThrow;
 		pev->rendermode = kRenderNormal;
-		pev->angles = UTIL_VecToAngles (pev->velocity);
-		
+		pev->angles = UTIL_VecToAngles(pev->velocity);
 	}
 
-	// mega hardcoreeed 
+	// mega hardcoreeed
 	if (m_flDie > 26)
 	{
-		UTIL_MakeVectors ( pev->angles );
-		
-		Vector vecSrc	 = pev->origin;
-		Vector vecAiming = gpGlobals->v_forward + Vector(0,0,-45); // -gpGlobals->v_forward + Vector(0,-45,0); 
+		UTIL_MakeVectors(pev->angles);
+
+		Vector vecSrc = pev->origin;
+		Vector vecAiming = gpGlobals->v_forward + Vector(0, 0, -45); // -gpGlobals->v_forward + Vector(0,-45,0);
 		TraceResult tr;
 
-		UTIL_TraceLine( vecSrc, vecSrc + vecAiming * 8000, dont_ignore_monsters, ENT(pev), &tr );
-		
-		CBaseEntity *pEnt = CBaseEntity::Create( "monster_tripmine", tr.vecEndPos + tr.vecPlaneNormal * 8, Vector(pev->angles.x+45,pev->angles.y,pev->angles.z) , pev->owner );
+		UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 8000, dont_ignore_monsters, ENT(pev), &tr);
 
+		CBaseEntity *pEnt = CBaseEntity::Create("monster_tripmine", tr.vecEndPos + tr.vecPlaneNormal * 8, Vector(pev->angles.x + 45, pev->angles.y, pev->angles.z), pev->owner);
+		pEnt->pev->rendermode = kRenderTransColor;
+		pEnt->pev->rendercolor.x = 250;
+		pEnt->pev->rendercolor.y = 200;
+		pEnt->pev->rendercolor.z = 200;
+		pEnt->pev->renderamt = 255;
 		// pEnt->SetThink( SUB_Remove );
 		// pEnt->pev->takedamage = DAMAGE_NO;
 		// pEnt->pev->nextthink = gpGlobals->time + 20.0;
 	}
-	
-	pev->nextthink = gpGlobals->time + 0.3; 
+
+	pev->nextthink = gpGlobals->time + 0.3;
 	m_flDie -= 1;
-	
+
 	if (m_flDie <= 0)
 	{
-		UTIL_Remove( this );
-		::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg*3, CLASS_NONE, DMG_POISON  ); 
-		EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/explode3.wav", 1.0, ATTN_NORM); //play sound
-		
+		UTIL_Remove(this);
+		::RadiusDamage(pev->origin, pev, VARS(pev->owner), pev->dmg, pev->dmg * 3, CLASS_NONE, DMG_POISON);
+		EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/explode3.wav", 1.0, ATTN_NORM); // play sound
+
 		// explosions
-		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-			WRITE_BYTE( TE_EXPLOSION );
-			WRITE_COORD( pev->origin.x );
-			WRITE_COORD( pev->origin.y );
-			WRITE_COORD( pev->origin.z );
-			WRITE_SHORT( g_sModelIndexFireball );
-			WRITE_BYTE( 75  ); // scale * 10
-			WRITE_BYTE( 10  ); // framerate
-			WRITE_BYTE( TE_EXPLFLAG_NONE );
+		MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+		WRITE_BYTE(TE_EXPLOSION);
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z);
+		WRITE_SHORT(g_sModelIndexFireball);
+		WRITE_BYTE(75); // scale * 10
+		WRITE_BYTE(10); // framerate
+		WRITE_BYTE(TE_EXPLFLAG_NONE);
 		MESSAGE_END();
-		
-	
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_LARGEFUNNEL );
-			WRITE_COORD(pev->origin.x);
-			WRITE_COORD(pev->origin.y);
-			WRITE_COORD(pev->origin.z);
-			WRITE_SHORT( g_sModelIndexFireball ); // model
-			WRITE_SHORT( RANDOM_LONG(0,10) ); 
+
+		MESSAGE_BEGIN(MSG_BROADCAST, SVC_TEMPENTITY);
+		WRITE_BYTE(TE_LARGEFUNNEL);
+		WRITE_COORD(pev->origin.x);
+		WRITE_COORD(pev->origin.y);
+		WRITE_COORD(pev->origin.z);
+		WRITE_SHORT(g_sModelIndexFireball); // model
+		WRITE_SHORT(RANDOM_LONG(0, 10));
 		MESSAGE_END();
-	
 	}
 }
 
-
-void TRocket::MoveTouch( CBaseEntity *pOther )
+void TRocket::MoveTouch(CBaseEntity *pOther)
 {
 	TraceResult TResult;
-	Vector      StartPosition;
+	Vector StartPosition;
 	StartPosition = pev->origin - pev->velocity.Normalize() * 32;
-	
 
-	UTIL_TraceLine( StartPosition,
-					StartPosition + pev->velocity.Normalize() * 64,
-					dont_ignore_monsters,
-					ENT( pev ),
-					&TResult );
+	UTIL_TraceLine(StartPosition,
+				   StartPosition + pev->velocity.Normalize() * 64,
+				   dont_ignore_monsters,
+				   ENT(pev),
+				   &TResult);
 
 	// Pull out of the wall a bit
-	if ( TResult.flFraction != 1.0 )
+	if (TResult.flFraction != 1.0)
 	{
 		pev->origin = TResult.vecEndPos + (TResult.vecPlaneNormal * 25.6);
 	}
 
-	if( TResult.fAllSolid ) return;
+	if (TResult.fAllSolid)
+	{
+		UTIL_Remove(this);
+		return;
+	}
 
 	// animated sprite
-	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
-		WRITE_BYTE( TE_SPRITE );
-		WRITE_COORD( pev->origin.x );
-		WRITE_COORD( pev->origin.y );
-		WRITE_COORD( pev->origin.z );
-		WRITE_SHORT( g_sModelIndexFireball );
-		WRITE_BYTE( 70 ); // scale
-		WRITE_BYTE( 172 ); // brightness
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pev->origin);
+	WRITE_BYTE(TE_SPRITE);
+	WRITE_COORD(pev->origin.x);
+	WRITE_COORD(pev->origin.y);
+	WRITE_COORD(pev->origin.z);
+	WRITE_SHORT(g_sModelIndexFireball);
+	WRITE_BYTE(70);	 // scale
+	WRITE_BYTE(172); // brightness
 	MESSAGE_END();
 
-	//lights
+	// lights
 	Vector vecSrc = pev->origin + gpGlobals->v_right * 2;
-	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, vecSrc );
-		WRITE_BYTE(TE_DLIGHT);
-		WRITE_COORD(vecSrc.x);	// X
-		WRITE_COORD(vecSrc.y);	// Y
-		WRITE_COORD(vecSrc.z);	// Z
-		WRITE_BYTE( 24 );		// radius * 0.1
-		WRITE_BYTE( 150 );		// r
-		WRITE_BYTE( 200 );		// g
-		WRITE_BYTE( 200 );		// b
-		WRITE_BYTE( 128 );		// time * 10
-		WRITE_BYTE( 16 );		// decay * 0.1
-	MESSAGE_END( );
-	
-	//play sound
-	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/energy_sing_explosion2.wav", 1.0, ATTN_NORM); //play sound
-	EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/energy_sing_explosion2.wav", 1.0, ATTN_NORM); //play sound
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, vecSrc);
+	WRITE_BYTE(TE_DLIGHT);
+	WRITE_COORD(vecSrc.x); // X
+	WRITE_COORD(vecSrc.y); // Y
+	WRITE_COORD(vecSrc.z); // Z
+	WRITE_BYTE(24);		   // radius * 0.1
+	WRITE_BYTE(150);	   // r
+	WRITE_BYTE(200);	   // g
+	WRITE_BYTE(200);	   // b
+	WRITE_BYTE(128);	   // time * 10
+	WRITE_BYTE(16);		   // decay * 0.1
+	MESSAGE_END();
 
-	::RadiusDamage( pev->origin, pev, VARS( pev->owner ), pev->dmg, pev->dmg*5, CLASS_NONE, DMG_ENERGYBEAM  );
-				
+	// play sound
+	EMIT_SOUND(ENT(pev), CHAN_BODY, "zxc/energy_sing_explosion2.wav", 1.0, ATTN_NORM);	// play sound
+	EMIT_SOUND(ENT(pev), CHAN_VOICE, "zxc/energy_sing_explosion2.wav", 1.0, ATTN_NORM); // play sound
 
-	SetTouch( NULL );
-	UTIL_Remove( this );
+	::RadiusDamage(pev->origin, pev, VARS(pev->owner), pev->dmg, pev->dmg * 5, CLASS_NONE, DMG_ENERGYBEAM);
 
+	SetTouch(NULL);
+	UTIL_Remove(this);
 }
+
+LINK_ENTITY_TO_CLASS(weapon_satchel, CSatchel);
+LINK_ENTITY_TO_CLASS(monster_pipebomb, Jumping_Satchel);
+LINK_ENTITY_TO_CLASS(monster_satchel, CSatchelCharge);
+LINK_ENTITY_TO_CLASS(info_airstrike_node, TRocket);
+LINK_ENTITY_TO_CLASS(heal_crystal, CHealCrystal);
+LINK_ENTITY_TO_CLASS(weapon_bola, TriipleDamage_Crystal);

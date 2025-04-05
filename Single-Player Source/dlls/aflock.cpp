@@ -37,7 +37,9 @@ public:
 	void Precache( void );
 	void KeyValue( KeyValueData *pkvd );
 	void SpawnFlock( void );
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	// Sounds are shared by the flock
 	static  void PrecacheFlockSounds( void );
@@ -46,7 +48,13 @@ public:
 	float	m_flFlockRadius;
 };
 
+TYPEDESCRIPTION	CFlockingFlyerFlock::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFlockingFlyerFlock, m_cFlockSize, FIELD_INTEGER ),
+	DEFINE_FIELD( CFlockingFlyerFlock, m_flFlockRadius, FIELD_FLOAT ),
+};
 
+IMPLEMENT_SAVERESTORE( CFlockingFlyerFlock, CBaseMonster );
 //=========================================================
 //=========================================================
 class CFlockingFlyer : public CBaseMonster
@@ -79,7 +87,9 @@ public:
 	void SquadUnlink( void );
 	void SquadAdd( CFlockingFlyer *pAdd );
 	void SquadDisband( void );
-
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 	CFlockingFlyer *m_pSquadLeader;
 	CFlockingFlyer *m_pSquadNext;
 	BOOL	m_fTurning;// is this boid turning?
@@ -93,8 +103,27 @@ public:
 	float	m_flAlertTime;
 	float	m_flFlockNextSoundTime;
 };
+
 LINK_ENTITY_TO_CLASS( monster_flyer, CFlockingFlyer );
 LINK_ENTITY_TO_CLASS( monster_flyer_flock, CFlockingFlyerFlock );
+
+TYPEDESCRIPTION	CFlockingFlyer::m_SaveData[] = 
+{
+	DEFINE_FIELD( CFlockingFlyer, m_pSquadLeader, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CFlockingFlyer, m_pSquadNext, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CFlockingFlyer, m_fTurning, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CFlockingFlyer, m_fCourseAdjust, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CFlockingFlyer, m_fPathBlocked, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CFlockingFlyer, m_vecReferencePoint, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CFlockingFlyer, m_vecAdjustedVelocity, FIELD_VECTOR ),
+	DEFINE_FIELD( CFlockingFlyer, m_flGoalSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CFlockingFlyer, m_flLastBlockedTime, FIELD_TIME ),
+	DEFINE_FIELD( CFlockingFlyer, m_flFakeBlockedTime, FIELD_TIME ),
+	DEFINE_FIELD( CFlockingFlyer, m_flAlertTime, FIELD_TIME ),
+//	DEFINE_FIELD( CFlockingFlyer, m_flFlockNextSoundTime, FIELD_TIME ),	// don't need to save
+};
+
+IMPLEMENT_SAVERESTORE( CFlockingFlyer, CBaseMonster );
 
 //=========================================================
 //=========================================================

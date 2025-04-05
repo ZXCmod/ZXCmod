@@ -78,7 +78,7 @@ class CHoundeye : public CSquadMonster
 public:
 	void Spawn( void );
 	void Precache( void );
-	int  Classify ( );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void SetYawSpeed ( void );
 	void WarmUpSound ( void );
@@ -99,10 +99,11 @@ public:
 	Schedule_t *GetScheduleOfType ( int Type );
 	Schedule_t *CHoundeye :: GetSchedule( void );
 
-
+	int	Save( CSave &save ); 
+	int Restore( CRestore &restore );
 
 	CUSTOM_SCHEDULES;
-
+	static TYPEDESCRIPTION m_SaveData[];
 
 	int m_iSpriteTexture;
 	BOOL m_fAsleep;// some houndeyes sleep in idle mode if this is set, the houndeye is lying down
@@ -111,12 +112,21 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_houndeye, CHoundeye );
 
+TYPEDESCRIPTION	CHoundeye::m_SaveData[] = 
+{
+	DEFINE_FIELD( CHoundeye, m_iSpriteTexture, FIELD_INTEGER ),
+	DEFINE_FIELD( CHoundeye, m_fAsleep, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CHoundeye, m_fDontBlink, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CHoundeye, m_vecPackCenter, FIELD_POSITION_VECTOR ),
+};
+
+IMPLEMENT_SAVERESTORE( CHoundeye, CSquadMonster );
 
 //=========================================================
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CHoundeye :: Classify (  )
+int	CHoundeye :: Classify ( void )
 {
 	return	CLASS_ALIEN_MONSTER;
 }
@@ -293,11 +303,11 @@ void CHoundeye :: HandleAnimEvent( MonsterEvent_t *pEvent )
 			break;
 
 		case HOUND_AE_ANGERSOUND1:
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "houndeye/he_pain3.wav", 1, ATTN_NORM);	
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "houndeye/he_pain3.wav", 1, ATTN_NORM, 0, pev->fuser4);
 			break;
 
 		case HOUND_AE_ANGERSOUND2:
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "houndeye/he_pain1.wav", 1, ATTN_NORM);	
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "houndeye/he_pain1.wav", 1, ATTN_NORM, 0, pev->fuser4);
 			break;
 
 		case HOUND_AE_CLOSE_EYE:
@@ -327,11 +337,12 @@ void CHoundeye :: Spawn()
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_YELLOW;
 	pev->effects		= 0;
-	pev->health			= RANDOM_LONG(9,155);
+	pev->health			= 150;
+	pev->fuser4	= 33;
 	pev->yaw_speed		= 5;//!!! should we put this in the monster's changeanim function since turn rates may vary with state/anim?
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
-	m_fAsleep			= RANDOM_LONG(0,1); // everyone spawns awake
+	m_fAsleep			= FALSE; // everyone spawns awake
 	m_fDontBlink		= FALSE;
 	m_afCapability		|= bits_CAP_SQUAD;
 
@@ -379,18 +390,19 @@ void CHoundeye :: Precache()
 //=========================================================
 // IdleSound
 //=========================================================
+// EMIT_SOUND_DYN_DYN(ENT(pev), CHAN_VOICE, "barney/ba_die2.wav", 1, ATTN_NORM, 0, GetVoicePitch());
 void CHoundeye :: IdleSound ( void )
 {
 	switch ( RANDOM_LONG(0,2) )
 	{
 	case 0:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_idle1.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_idle1.wav", 0.5, ATTN_NORM, 0, pev->fuser4);
 		break;
 	case 1:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_idle2.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_idle2.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	case 2:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_idle3.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_idle3.wav", 0.5, ATTN_NORM, 0, pev->fuser4);
 		break;
 	}
 }
@@ -403,10 +415,10 @@ void CHoundeye :: WarmUpSound ( void )
 	switch ( RANDOM_LONG(0,1) )
 	{
 	case 0:
-		EMIT_SOUND( ENT(pev), CHAN_WEAPON, "houndeye/he_attack1.wav", 0.7, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "houndeye/he_attack1.wav", 0.47, ATTN_NORM, 0, pev->fuser4);
 		break;
 	case 1:
-		EMIT_SOUND( ENT(pev), CHAN_WEAPON, "houndeye/he_attack3.wav", 0.7, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_WEAPON, "houndeye/he_attack3.wav", 0.47, ATTN_NORM, 0, pev->fuser4);
 		break;
 	}
 }
@@ -419,13 +431,13 @@ void CHoundeye :: WarnSound ( void )
 	switch ( RANDOM_LONG(0,2) )
 	{
 	case 0:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_hunt1.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_hunt1.wav", 0.5, ATTN_NORM, 0, pev->fuser4);
 		break;
 	case 1:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_hunt2.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_hunt2.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	case 2:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_hunt3.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_hunt3.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	}
 }
@@ -444,13 +456,13 @@ void CHoundeye :: AlertSound ( void )
 	switch ( RANDOM_LONG(0,2) )
 	{
 	case 0:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_alert1.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_alert1.wav", 0.5, ATTN_NORM, 0, pev->fuser4);
 		break;
 	case 1:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_alert2.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_alert2.wav", 0.5, ATTN_NORM, 0, pev->fuser4);
 		break;
 	case 2:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_alert3.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_alert3.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	}
 }
@@ -463,13 +475,13 @@ void CHoundeye :: DeathSound ( void )
 	switch ( RANDOM_LONG(0,2) )
 	{
 	case 0:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_die1.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_die1.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	case 1:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_die2.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_die2.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	case 2:
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_die3.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_die3.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	}
 }
@@ -482,13 +494,13 @@ void CHoundeye :: PainSound ( void )
 	switch ( RANDOM_LONG(0,2) )
 	{
 	case 0:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_pain3.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_pain3.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	case 1:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_pain4.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_pain4.wav", 0.5, ATTN_NORM, 0, pev->fuser4);	
 		break;
 	case 2:	
-		EMIT_SOUND( ENT(pev), CHAN_VOICE, "houndeye/he_pain5.wav", 1, ATTN_NORM );	
+		EMIT_SOUND_DYN( ENT(pev), CHAN_VOICE, "houndeye/he_pain5.wav", 0.5, ATTN_NORM, 0, pev->fuser4);
 		break;
 	}
 }
@@ -507,34 +519,34 @@ void CHoundeye :: WriteBeamColor ( void )
 		{
 		case 2:
 			// no case for 0 or 1, cause those are impossible for monsters in Squads.
-			bRed	= RANDOM_LONG(3,255);
-			bGreen	= RANDOM_LONG(3,155);
-			bBlue	= RANDOM_LONG(3,155);
+			bRed	= 101;
+			bGreen	= 133;
+			bBlue	= 221;
 			break;
 		case 3:
-			bRed	= RANDOM_LONG(3,155);
-			bGreen	= RANDOM_LONG(3,255);
-			bBlue	= RANDOM_LONG(3,155);
+			bRed	= 67;
+			bGreen	= 85;
+			bBlue	= 255;
 			break;
 		case 4:
-			bRed	= RANDOM_LONG(3,155);
-			bGreen	= RANDOM_LONG(3,155);
-			bBlue	= RANDOM_LONG(3,255);
+			bRed	= 62;
+			bGreen	= 33;
+			bBlue	= 211;
 			break;
 		default:
 			ALERT ( at_aiconsole, "Unsupported Houndeye SquadSize!\n" );
-			bRed	= RANDOM_LONG(3,255);
-			bGreen	= RANDOM_LONG(3,155);
-			bBlue	= RANDOM_LONG(3,155);
+			bRed	= 188;
+			bGreen	= 220;
+			bBlue	= 255;
 			break;
 		}
 	}
 	else
 	{
 		// solo houndeye - weakest beam
-		bRed	= RANDOM_LONG(3,155);
-		bGreen	= RANDOM_LONG(3,155);
-		bBlue	= RANDOM_LONG(33,255);
+		bRed	= 188;
+		bGreen	= 220;
+		bBlue	= 255;
 	}
 	
 	WRITE_BYTE( bRed   );
@@ -553,9 +565,9 @@ void CHoundeye :: SonicAttack ( void )
 
 	switch ( RANDOM_LONG( 0, 2 ) )
 	{
-	case 0:	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "houndeye/he_blast1.wav", 1, ATTN_NORM);	break;
-	case 1:	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "houndeye/he_blast2.wav", 1, ATTN_NORM);	break;
-	case 2:	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "houndeye/he_blast3.wav", 1, ATTN_NORM);	break;
+	case 0:	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "houndeye/he_blast1.wav", 1, ATTN_NORM, 0, pev->fuser4);	break;
+	case 1:	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "houndeye/he_blast2.wav", 1, ATTN_NORM, 0, pev->fuser4);	break;
+	case 2:	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "houndeye/he_blast3.wav", 1, ATTN_NORM, 0, pev->fuser4);	break;
 	}
 
 	// blast circles
@@ -618,12 +630,12 @@ void CHoundeye :: SonicAttack ( void )
 				if ( SquadCount() > 1 )
 				{
 					// squad gets attack bonus.
-					flAdjustedDamage = 34 + 15 * ( HOUNDEYE_SQUAD_BONUS * ( SquadCount() - 1 ) );
+					flAdjustedDamage = 12 * ( HOUNDEYE_SQUAD_BONUS * ( SquadCount() - 1 ) );
 				}
 				else
 				{
 					// solo
-					flAdjustedDamage = 34;
+					flAdjustedDamage = 7;
 				}
 
 				flDist = (pEntity->Center() - pev->origin).Length();

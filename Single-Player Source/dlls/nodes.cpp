@@ -1563,11 +1563,11 @@ void CTestHull :: ShowBadNode( void )
 
 	UTIL_MakeVectors ( pev->angles );
 
-	UTIL_ParticleEffect ( pev->origin, g_vecZero, 255, 25 );
-	UTIL_ParticleEffect ( pev->origin + gpGlobals->v_forward * 64, g_vecZero, 255, 25 );
-	UTIL_ParticleEffect ( pev->origin - gpGlobals->v_forward * 64, g_vecZero, 255, 25 );
-	UTIL_ParticleEffect ( pev->origin + gpGlobals->v_right * 64, g_vecZero, 255, 25 );
-	UTIL_ParticleEffect ( pev->origin - gpGlobals->v_right * 64, g_vecZero, 255, 25 );
+	// UTIL_ParticleEffect ( pev->origin, g_vecZero, 255, 25 );
+	// UTIL_ParticleEffect ( pev->origin + gpGlobals->v_forward * 64, g_vecZero, 255, 25 );
+	// UTIL_ParticleEffect ( pev->origin - gpGlobals->v_forward * 64, g_vecZero, 255, 25 );
+	// UTIL_ParticleEffect ( pev->origin + gpGlobals->v_right * 64, g_vecZero, 255, 25 );
+	// UTIL_ParticleEffect ( pev->origin - gpGlobals->v_right * 64, g_vecZero, 255, 25 );
 
 	pev->nextthink = gpGlobals->time + 0.1;
 }
@@ -2086,17 +2086,17 @@ void CTestHull :: PathFind ( void )
 
 		pNextNode = &WorldGraph.m_pNodes[ iPath [ i + 1 ] ];
 
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_SHOWLINE);
+		// MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		// 	WRITE_BYTE( TE_SHOWLINE);
 			
-			WRITE_COORD( pNode->m_vecOrigin.x );
-			WRITE_COORD( pNode->m_vecOrigin.y );
-			WRITE_COORD( pNode->m_vecOrigin.z + NODE_HEIGHT );
+		// 	WRITE_COORD( pNode->m_vecOrigin.x );
+		// 	WRITE_COORD( pNode->m_vecOrigin.y );
+		// 	WRITE_COORD( pNode->m_vecOrigin.z + NODE_HEIGHT );
 
-			WRITE_COORD( pNextNode->m_vecOrigin.x);
-			WRITE_COORD( pNextNode->m_vecOrigin.y);
-			WRITE_COORD( pNextNode->m_vecOrigin.z + NODE_HEIGHT);
-		MESSAGE_END();
+		// 	WRITE_COORD( pNextNode->m_vecOrigin.x);
+		// 	WRITE_COORD( pNextNode->m_vecOrigin.y);
+		// 	WRITE_COORD( pNextNode->m_vecOrigin.z + NODE_HEIGHT);
+		// MESSAGE_END();
 
 		pNode = pNextNode;
 	}
@@ -3610,28 +3610,28 @@ void CNodeViewer :: DrawThink( void )
 			return;
 		}
 
-		extern short g_sModelIndexLaser;
-		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
-			WRITE_BYTE( TE_BEAMPOINTS );
-			WRITE_COORD( WorldGraph.m_pNodes[ m_aFrom[m_iDraw] ].m_vecOrigin.x );
-			WRITE_COORD( WorldGraph.m_pNodes[ m_aFrom[m_iDraw] ].m_vecOrigin.y );
-			WRITE_COORD( WorldGraph.m_pNodes[ m_aFrom[m_iDraw] ].m_vecOrigin.z + NODE_HEIGHT );
+		// extern short g_sModelIndexLaser;
+		// MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+		// 	WRITE_BYTE( TE_BEAMPOINTS );
+		// 	WRITE_COORD( WorldGraph.m_pNodes[ m_aFrom[m_iDraw] ].m_vecOrigin.x );
+		// 	WRITE_COORD( WorldGraph.m_pNodes[ m_aFrom[m_iDraw] ].m_vecOrigin.y );
+		// 	WRITE_COORD( WorldGraph.m_pNodes[ m_aFrom[m_iDraw] ].m_vecOrigin.z + NODE_HEIGHT );
 
-			WRITE_COORD( WorldGraph.m_pNodes[ m_aTo[m_iDraw] ].m_vecOrigin.x );
-			WRITE_COORD( WorldGraph.m_pNodes[ m_aTo[m_iDraw] ].m_vecOrigin.y );
-			WRITE_COORD( WorldGraph.m_pNodes[ m_aTo[m_iDraw] ].m_vecOrigin.z + NODE_HEIGHT );
-			WRITE_SHORT( g_sModelIndexLaser );
-			WRITE_BYTE( 0 ); // framerate
-			WRITE_BYTE( 0 ); // framerate
-			WRITE_BYTE( 250 ); // life
-			WRITE_BYTE( 40 );  // width
-			WRITE_BYTE( 0 );   // noise
-			WRITE_BYTE( m_vecColor.x );   // r, g, b
-			WRITE_BYTE( m_vecColor.y );   // r, g, b
-			WRITE_BYTE( m_vecColor.z );   // r, g, b
-			WRITE_BYTE( 128 );	// brightness
-			WRITE_BYTE( 0 );		// speed
-		MESSAGE_END();
+		// 	WRITE_COORD( WorldGraph.m_pNodes[ m_aTo[m_iDraw] ].m_vecOrigin.x );
+		// 	WRITE_COORD( WorldGraph.m_pNodes[ m_aTo[m_iDraw] ].m_vecOrigin.y );
+		// 	WRITE_COORD( WorldGraph.m_pNodes[ m_aTo[m_iDraw] ].m_vecOrigin.z + NODE_HEIGHT );
+		// 	WRITE_SHORT( g_sModelIndexLaser );
+		// 	WRITE_BYTE( 0 ); // framerate
+		// 	WRITE_BYTE( 0 ); // framerate
+		// 	WRITE_BYTE( 250 ); // life
+		// 	WRITE_BYTE( 40 );  // width
+		// 	WRITE_BYTE( 0 );   // noise
+		// 	WRITE_BYTE( m_vecColor.x );   // r, g, b
+		// 	WRITE_BYTE( m_vecColor.y );   // r, g, b
+		// 	WRITE_BYTE( m_vecColor.z );   // r, g, b
+		// 	WRITE_BYTE( 128 );	// brightness
+		// 	WRITE_BYTE( 0 );		// speed
+		// MESSAGE_END();
 
 		m_iDraw++;
 	}

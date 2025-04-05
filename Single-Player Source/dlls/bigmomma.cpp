@@ -44,13 +44,21 @@ public:
 	// Reach delay in pev->speed
 	// Reach sequence in pev->netname
 	
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int		m_preSequence;
 };
 
 LINK_ENTITY_TO_CLASS( info_bigmomma, CInfoBM );
 
+TYPEDESCRIPTION	CInfoBM::m_SaveData[] = 
+{
+	DEFINE_FIELD( CInfoBM, m_preSequence, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CInfoBM, CPointEntity );
 
 void CInfoBM::Spawn( void )
 {
@@ -100,13 +108,21 @@ public:
 	void Touch( CBaseEntity *pOther );
 	void EXPORT Animate( void );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	int  m_maxFrame;
 };
 
 LINK_ENTITY_TO_CLASS( bmortar, CBMortar );
 
+TYPEDESCRIPTION	CBMortar::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBMortar, m_maxFrame, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CBMortar, CBaseEntity );
 
 
 //=========================================================
@@ -154,7 +170,7 @@ void MortarSpray( const Vector &position, const Vector &direction, int spriteMod
 
 // UNDONE:	
 //
-#define BIG_CHILDCLASS		"monster_babycrab"
+#define BIG_CHILDCLASS		"monster_headcrab"
 
 class CBigMomma : public CBaseMonster
 {
@@ -176,7 +192,7 @@ public:
 	BOOL ShouldGoToNode( void );
 
 	void SetYawSpeed( void );
-	int  Classify (  );
+	int  Classify ( void );
 	void HandleAnimEvent( MonsterEvent_t *pEvent );
 	void LayHeadcrab( void );
 
@@ -273,6 +289,9 @@ public:
 	BOOL CheckMeleeAttack2( float flDot, float flDist );	// Lay a crab
 	BOOL CheckRangeAttack1( float flDot, float flDist );	// Mortar launch
 
+virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	static const char *pChildDieSounds[];
 	static const char *pSackSounds[];
@@ -295,6 +314,16 @@ private:
 };
 LINK_ENTITY_TO_CLASS( monster_bigmomma, CBigMomma );
 
+TYPEDESCRIPTION	CBigMomma::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBigMomma, m_nodeTime, FIELD_TIME ),
+	DEFINE_FIELD( CBigMomma, m_crabTime, FIELD_TIME ),
+	DEFINE_FIELD( CBigMomma, m_mortarTime, FIELD_TIME ),
+	DEFINE_FIELD( CBigMomma, m_painSoundTime, FIELD_TIME ),
+	DEFINE_FIELD( CBigMomma, m_crabCount, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CBigMomma, CBaseMonster );
 
 const char *CBigMomma::pChildDieSounds[] = 
 {
@@ -375,7 +404,7 @@ void CBigMomma :: KeyValue( KeyValueData *pkvd )
 // Classify - indicates this monster's place in the 
 // relationship table.
 //=========================================================
-int	CBigMomma :: Classify (  )
+int	CBigMomma :: Classify ( void )
 {
 	return	CLASS_ALIEN_MONSTER;
 }
@@ -436,7 +465,7 @@ void CBigMomma :: HandleAnimEvent( MonsterEvent_t *pEvent )
 					
 			if ( pHurt )
 			{
-				pHurt->TakeDamage( pev, VARS( pev->owner ), 64, DMG_CRUSH | DMG_SLASH );
+				pHurt->TakeDamage( pev, pev, gSkillData.bigmommaDmgSlash, DMG_CRUSH | DMG_SLASH );
 				pHurt->pev->punchangle.x = 15;
 				switch( pEvent->event )
 				{
@@ -572,7 +601,7 @@ int CBigMomma :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 
 void CBigMomma :: LayHeadcrab( void )
 {
-/* 	CBaseEntity *pChild = CBaseEntity::Create( BIG_CHILDCLASS, pev->origin, pev->angles, edict() );
+CBaseEntity *pChild = CBaseEntity::Create( BIG_CHILDCLASS, pev->origin, pev->angles, edict() );
 
 	pChild->pev->spawnflags |= SF_MONSTER_FALL_TO_GROUND;
 
@@ -593,7 +622,7 @@ void CBigMomma :: LayHeadcrab( void )
 	UTIL_DecalTrace( &tr, DECAL_MOMMABIRTH );
 
 	EMIT_SOUND_DYN( edict(), CHAN_WEAPON, RANDOM_SOUND_ARRAY(pBirthSounds), 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
-	m_crabCount++; */
+	m_crabCount++; 
 }
 
 
@@ -1216,7 +1245,7 @@ void CBMortar::Touch( CBaseEntity *pOther )
 	if ( pev->owner )
 		pevOwner = VARS(pev->owner);
 
-	RadiusDamage( pev->origin, pev, pevOwner, 45, 128, CLASS_NONE, DMG_ACID );
+	RadiusDamage( pev->origin, pev, pevOwner, 45, 256, CLASS_NONE, DMG_ACID );
 	UTIL_Remove( this );
 }
 

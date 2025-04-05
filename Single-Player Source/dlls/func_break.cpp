@@ -124,16 +124,31 @@ void CBreakable::KeyValue( KeyValueData* pkvd )
 // func_breakable - bmodel that breaks into pieces after taking damage
 //
 LINK_ENTITY_TO_CLASS( func_breakable, CBreakable );
+TYPEDESCRIPTION CBreakable::m_SaveData[] =
+{
+	DEFINE_FIELD( CBreakable, m_Material, FIELD_INTEGER ),
+	DEFINE_FIELD( CBreakable, m_Explosion, FIELD_INTEGER ),
+
+// Don't need to save/restore these because we precache after restore
+//	DEFINE_FIELD( CBreakable, m_idShard, FIELD_INTEGER ),
+
+	DEFINE_FIELD( CBreakable, m_angle, FIELD_FLOAT ),
+	DEFINE_FIELD( CBreakable, m_iszGibModel, FIELD_STRING ),
+	DEFINE_FIELD( CBreakable, m_iszSpawnObject, FIELD_STRING ),
+
+	// Explosion magnitude is stored in pev->impulse
+};
+
+IMPLEMENT_SAVERESTORE( CBreakable, CBaseEntity );
 
 void CBreakable::Spawn( void )
 {
     Precache( );    
 
-	// if ( FBitSet( pev->spawnflags, SF_BREAK_TRIGGER_ONLY ) )
-		// pev->takedamage	= DAMAGE_NO;
-	// else
-	
-	pev->takedamage	= DAMAGE_YES; // all have dmg
+	if ( FBitSet( pev->spawnflags, SF_BREAK_TRIGGER_ONLY ) )
+		pev->takedamage	= DAMAGE_NO;
+	else
+	pev->takedamage	= DAMAGE_YES;
   
 	pev->solid		= SOLID_BSP;
     pev->movetype	= MOVETYPE_PUSH;
@@ -265,14 +280,11 @@ void CBreakable::MaterialSoundRandom( edict_t *pEdict, Materials soundMaterial, 
 	const char	**pSoundList;
 	int			soundCount = 0;
 	
-	
-
 	pSoundList = MaterialSoundList( soundMaterial, soundCount );
 
 	if ( soundCount )
 		EMIT_SOUND( pEdict, CHAN_BODY, pSoundList[ RANDOM_LONG(0,soundCount-1) ], volume, 1.0 );
 }
-
 
 
 void CBreakable::Precache( void )
@@ -342,7 +354,6 @@ void CBreakable::Precache( void )
 	// Precache the spawn item's data
 	if ( m_iszSpawnObject )
 		UTIL_PrecacheOther( (char *)STRING( m_iszSpawnObject ) );
-
 }
 
 // play shard sound when func_breakable takes damage.
@@ -489,7 +500,6 @@ void CBreakable::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE us
 
 void CBreakable::TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType )
 {
-
 	// random spark if this is a 'computer' object
 	if (RANDOM_LONG(0,1) )
 	{
@@ -739,11 +749,8 @@ void CBreakable::Die( void )
 	// Fire targets on break
 	SUB_UseTargets( NULL, USE_TOGGLE, 0 );
 	
-
-	// SetThink( SUB_Remove );
-	
-	
-	pev->nextthink = pev->ltime + 0.1;
+	SetThink( SUB_Remove );
+		pev->nextthink = pev->ltime + 0.1;
 	if ( m_iszSpawnObject )
 		CBaseEntity::Create( (char *)STRING(m_iszSpawnObject), VecBModelOrigin(pev), pev->angles, edict() );
 
@@ -787,13 +794,15 @@ public:
 //	virtual void	SetActivator( CBaseEntity *pActivator ) { m_pPusher = pActivator; }
 
 	virtual int	ObjectCaps( void ) { return (CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_CONTINUOUS_USE; }
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
 
 	inline float MaxSpeed( void ) { return m_maxSpeed; }
 	
 	// breakables use an overridden takedamage
 	virtual int TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType );
 
+static	TYPEDESCRIPTION m_SaveData[];
 
 	static char *m_soundNames[3];
 	int		m_lastSound;	// no need to save/restore, just keeps the same sound from playing twice in a row
@@ -801,6 +810,13 @@ public:
 	float	m_soundTime;
 };
 
+TYPEDESCRIPTION	CPushable::m_SaveData[] = 
+{
+	DEFINE_FIELD( CPushable, m_maxSpeed, FIELD_FLOAT ),
+	DEFINE_FIELD( CPushable, m_soundTime, FIELD_TIME ),
+};
+
+IMPLEMENT_SAVERESTORE( CPushable, CBreakable );
 
 LINK_ENTITY_TO_CLASS( func_pushable, CPushable );
 

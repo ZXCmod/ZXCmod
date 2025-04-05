@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -15,7 +15,7 @@
 //=========================================================
 // barnacle - stationary ceiling mounted 'fishing' monster
 //=========================================================
-/* 
+
 #include	"extdll.h"
 #include	"util.h"
 #include	"cbase.h"
@@ -112,7 +112,7 @@ void CBarnacle :: Spawn()
 	pev->takedamage		= DAMAGE_AIM;
 	m_bloodColor		= BLOOD_COLOR_RED;
 	pev->effects		= EF_INVLIGHT; // take light from the ceiling 
-	pev->health			= 95;
+	pev->health			= 25;
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState		= MONSTERSTATE_NONE;
 	m_flKillVictimTime	= 0;
@@ -322,7 +322,7 @@ void CBarnacle :: Killed( entvars_t *pevAttacker, int iGib )
 {
 	CBaseMonster *pVictim;
 
-	//pev->solid = SOLID_NOT;
+	pev->solid = SOLID_NOT;
 	pev->takedamage = DAMAGE_NO;
 
 	if ( m_hEnemy != NULL )
@@ -365,8 +365,7 @@ void CBarnacle :: WaitTillDead ( void )
 	{
 		// death anim finished. 
 		StopAnimation();
-		SUB_Remove();
-		//SetThink ( SUB_Remove );
+		SetThink ( NULL );
 	}
 }
 
@@ -427,4 +426,3 @@ CBaseEntity *CBarnacle :: TongueTouchEnt ( float *pflLength )
 
 	return NULL;
 }
- */

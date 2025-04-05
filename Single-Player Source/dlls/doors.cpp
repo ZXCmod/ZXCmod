@@ -46,6 +46,10 @@ public:
 		else
 			return (CBaseToggle::ObjectCaps() & ~FCAP_ACROSS_TRANSITION);
 	};
+virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual void SetToggleState( int state );
 
@@ -72,6 +76,21 @@ public:
 	BYTE	m_bUnlockedSentence;
 };
 
+
+TYPEDESCRIPTION	CBaseDoor::m_SaveData[] = 
+{
+	DEFINE_FIELD( CBaseDoor, m_bHealthValue, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseDoor, m_bMoveSnd, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseDoor, m_bStopSnd, FIELD_CHARACTER ),
+	
+	DEFINE_FIELD( CBaseDoor, m_bLockedSound, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseDoor, m_bLockedSentence, FIELD_CHARACTER ),
+	DEFINE_FIELD( CBaseDoor, m_bUnlockedSound, FIELD_CHARACTER ),	
+	DEFINE_FIELD( CBaseDoor, m_bUnlockedSentence, FIELD_CHARACTER ),	
+
+};
+
+IMPLEMENT_SAVERESTORE( CBaseDoor, CBaseToggle );
 
 
 #define DOOR_SENTENCEWAIT	6
@@ -552,7 +571,7 @@ void CBaseDoor::DoorGoUp( void )
 	// emit door moving and stop sounds on CHAN_STATIC so that the multicast doesn't
 	// filter them out and leave a client stuck with looping door sounds!
 	if ( !FBitSet( pev->spawnflags, SF_DOOR_SILENT ) )
-		EMIT_SOUND(ENT(pev), CHAN_STATIC, (char*)STRING(pev->noiseMoving), 1, ATTN_NORM);
+			EMIT_SOUND(ENT(pev), CHAN_STATIC, (char*)STRING(pev->noiseMoving), 1, ATTN_NORM);
 
 	m_toggle_state = TS_GOING_UP;
 	
@@ -681,7 +700,7 @@ void CBaseDoor::Blocked( CBaseEntity *pOther )
 	edict_t	*pentTarget = NULL;
 	CBaseDoor	*pDoor		= NULL;
 
-	STOP_SOUND( ENT(pev), CHAN_STATIC, (char*)STRING(pev->noiseMoving) );
+	
 	// Hurt the blocker a little.
 	if ( pev->dmg )
 		pOther->TakeDamage( pev, pev, pev->dmg, DMG_CRUSH );
@@ -866,14 +885,21 @@ public:
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual int	ObjectCaps( void ) { return CBaseToggle :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
-
-	
+virtual int	Save( CSave &save );
+	virtual int	Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	BYTE	m_bMoveSnd;			// sound a door makes while moving	
 };
 
 LINK_ENTITY_TO_CLASS( momentary_door, CMomentaryDoor );
 
+TYPEDESCRIPTION	CMomentaryDoor::m_SaveData[] = 
+{
+	DEFINE_FIELD( CMomentaryDoor, m_bMoveSnd, FIELD_CHARACTER ),
+};
+
+IMPLEMENT_SAVERESTORE( CMomentaryDoor, CBaseToggle );
 
 void CMomentaryDoor::Spawn( void )
 {

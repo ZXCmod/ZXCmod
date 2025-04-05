@@ -35,7 +35,9 @@ class CRuleEntity : public CBaseEntity
 public:
 	void	Spawn( void );
 	void	KeyValue( KeyValueData *pkvd );
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	void	SetMaster( int iszMaster ) { m_iszMaster = iszMaster; }
 
@@ -46,6 +48,12 @@ private:
 	string_t	m_iszMaster;
 };
 
+TYPEDESCRIPTION	CRuleEntity::m_SaveData[] = 
+{
+	DEFINE_FIELD( CRuleEntity, m_iszMaster, FIELD_STRING),
+};
+
+IMPLEMENT_SAVERESTORE( CRuleEntity, CBaseEntity );
 
 
 void CRuleEntity::Spawn( void )
@@ -217,7 +225,9 @@ public:
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void	KeyValue( KeyValueData *pkvd );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 	inline	BOOL	MessageToAll( void ) { return (pev->spawnflags & SF_ENVTEXT_ALLPLAYERS); }
 	inline	void	MessageSet( const char *pMessage ) { pev->message = ALLOC_STRING(pMessage); }
@@ -230,6 +240,14 @@ private:
 
 LINK_ENTITY_TO_CLASS( game_text, CGameText );
 
+// Save parms as a block.  Will break save/restore if the structure changes, but this entity didn't ship with Half-Life, so
+// it can't impact saved Half-Life games.
+TYPEDESCRIPTION	CGameText::m_SaveData[] = 
+{
+	DEFINE_ARRAY( CGameText, m_textParms, FIELD_CHARACTER, sizeof(hudtextparms_t) ),
+};
+
+IMPLEMENT_SAVERESTORE( CGameText, CRulePointEntity );
 
 
 void CGameText::KeyValue( KeyValueData *pkvd )
@@ -486,7 +504,9 @@ public:
 	void		KeyValue( KeyValueData *pkvd );
 	void		Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-
+virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
 
 private:
 	string_t	m_iszInTarget;
@@ -496,6 +516,15 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS( game_zone_player, CGamePlayerZone );
+TYPEDESCRIPTION	CGamePlayerZone::m_SaveData[] = 
+{
+	DEFINE_FIELD( CGamePlayerZone, m_iszInTarget, FIELD_STRING ),
+	DEFINE_FIELD( CGamePlayerZone, m_iszOutTarget, FIELD_STRING ),
+	DEFINE_FIELD( CGamePlayerZone, m_iszInCount, FIELD_STRING ),
+	DEFINE_FIELD( CGamePlayerZone, m_iszOutCount, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CGamePlayerZone, CRuleBrushEntity );
 
 void CGamePlayerZone::KeyValue( KeyValueData *pkvd )
 {
